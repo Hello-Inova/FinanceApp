@@ -95,7 +95,7 @@ def ler_lancamentos():
     try:
         print("Lendo arquivo:", os.path.abspath(LANCA_FILE))
 
-        with open(LANCA_FILE, "r", encoding="latin-1") as f:
+        with open(LANCA_FILE, "r", encoding="utf-8") as f:
             dados = json.load(f)
 
         print("Registros encontrados:", len(dados))

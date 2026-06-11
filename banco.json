@@ -1,18 +1,42 @@
 [
     {
-        "data": "2026-06-11",
-        "tipo": "SaÃ­da",
-        "descricao": "teste",
-        "valor": 1500,
-        "obs": "teste",
-        "id": "ff30ff60-8f7c-4610-bf80-3d7618d35104"
+        "data": "2026-06-15",
+        "tipo": "Entrada",
+        "descricao": "Salario João",
+        "valor": 3500,
+        "obs": "Confuence",
+        "id": "0182171a-c3af-48ce-9c00-224de262c12a"
     },
     {
-        "data": "1999-06-15",
-        "tipo": "Entrada",
-        "descricao": "Salario",
-        "valor": 3500,
-        "obs": "Teste",
-        "id": "bb27e4fc-5791-4316-8661-a54fd91f43cb"
+        "data": "2026-06-20",
+        "tipo": "Saída",
+        "descricao": "Aluguel Casa",
+        "valor": 3000,
+        "obs": "",
+        "id": "259a7993-683d-4a42-9eab-df76d4abe2f8"
+    },
+    {
+        "data": "2026-06-16",
+        "tipo": "Saída",
+        "descricao": "Enel",
+        "valor": 250,
+        "obs": "",
+        "id": "bd96a7d4-fceb-4561-9e1b-fd18d28edd36"
+    },
+    {
+        "data": "2026-06-16",
+        "tipo": "Saída",
+        "descricao": "Net Casa",
+        "valor": 109,
+        "obs": "",
+        "id": "eac9d306-7dc9-489c-8aee-f1ab2460a34a"
+    },
+    {
+        "data": "2026-06-16",
+        "tipo": "Saída",
+        "descricao": "Net Celular",
+        "valor": 99,
+        "obs": "",
+        "id": "882b24f2-1b81-4f58-80b2-2ecceba3d0c6"
     }
 ]
