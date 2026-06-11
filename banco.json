@@ -38,5 +38,29 @@
         "valor": 99,
         "obs": "",
         "id": "882b24f2-1b81-4f58-80b2-2ecceba3d0c6"
+    },
+    {
+        "data": "2026-06-20",
+        "tipo": "Saída",
+        "descricao": "teste",
+        "valor": 500,
+        "obs": "",
+        "id": "7cc59763-8034-4e2d-8caf-86f4c8378f9e"
+    },
+    {
+        "data": "2026-06-17",
+        "tipo": "Entrada",
+        "descricao": "Salario",
+        "valor": 1000,
+        "obs": "",
+        "id": "77379522-a191-4636-97a2-9118a7dec368"
+    },
+    {
+        "data": "2026-07-15",
+        "tipo": "Entrada",
+        "descricao": "Salario Joao",
+        "valor": 3500,
+        "obs": "",
+        "id": "c2354c2b-d4fd-4f0f-843e-cacfd805123f"
     }
 ]

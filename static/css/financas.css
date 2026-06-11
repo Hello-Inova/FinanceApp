@@ -1,0 +1,100 @@
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
+    margin: 0;
+    padding: 6px;
+}
+
+/* CONTAINER MENOR */
+.container {
+    width: 100%;
+    max-width: 900px;
+    margin: auto;
+    background: #161616;
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* TÍTULO MENOR */
+h1 {
+    text-align: center;
+    color: #f4f6fb;
+    font-size: 18px;
+    margin: 8px 0 12px 0;
+}
+
+/* FILTRO COMPACTO */
+.top-bar {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+select, button {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.05);
+    background: #333;
+    color: #eaeaea;
+    font-size: 12px;
+}
+
+/* CARDS MAIS PEQUENOS */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+/* CARD ULTRA COMPACTO */
+.card {
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.card h3 {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.card p {
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 6px;
+}
+
+/* BORDAS MAIS FINAS */
+.green { border-left: 4px solid #2ecc71; }
+.red   { border-left: 4px solid #e74c3c; }
+.blue  { border-left: 4px solid #3498db; }
+
+/* GRÁFICO MAIS APERTADO */
+.chart-box {
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* RESPONSIVO FORTE */
+@media (max-width: 700px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    h1 {
+        font-size: 16px;
+    }
+
+    select, button {
+        width: 100%;
+    }
+}

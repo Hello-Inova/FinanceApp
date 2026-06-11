@@ -110,7 +110,6 @@ def salvar_lancamentos(dados):
     with open(LANCA_FILE, "w", encoding="utf-8") as f:
         json.dump(dados, f, indent=4, ensure_ascii=False)
 
-
 # =========================
 # LISTAR LANÇAMENTOS
 # =========================
@@ -182,6 +181,22 @@ def editar(id):
         "status": "ok"
     })
 
+
+
+# 📈 FINANÇAS
+@app.route("/financas")
+def financas():
+    return render_template("financas.html")
+
+# 📡 API FINANCEIRA (banco.json)
+@app.route("/api/financas")
+def api_financas():
+    path = os.path.join(os.path.dirname(__file__), "banco.json")
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    return jsonify(data)
 
 # =========================
 # EXECUÇÃO

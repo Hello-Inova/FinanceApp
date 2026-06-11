@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Financeiro</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/financas.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📊 Dashboard Financeiro</h1>
+
+    <!-- FILTRO -->
+    <div class="top-bar">
+        <select id="filtroMes"></select>
+        <button id="btnFiltrar">Filtrar</button>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="cards">
+        <div class="card green">
+            <h3>Entradas</h3>
+            <p id="totalEntradas">R$ 0</p>
+        </div>
+
+        <div class="card red">
+            <h3>Saídas</h3>
+            <p id="totalSaidas">R$ 0</p>
+        </div>
+
+        <div class="card blue">
+            <h3>Saldo</h3>
+            <p id="saldo">R$ 0</p>
+        </div>
+    </div>
+
+    <!-- GRAFICO -->
+    <div class="chart-box">
+        <canvas id="grafico"></canvas>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/financas.js') }}"></script>
+
+</body>
+</html>
