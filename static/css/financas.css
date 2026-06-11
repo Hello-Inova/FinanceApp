@@ -1,15 +1,25 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: Arial, sans-serif;
     background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
-    margin: 0;
-    padding: 6px;
+
+    display: flex;
+    justify-content: center;  /* centraliza horizontal */
+    align-items: center;      /* centraliza vertical */
+
+    min-height: 100vh;
 }
 
-/* CONTAINER MENOR */
+/* CONTAINER CENTRALIZADO */
 .container {
     width: 100%;
     max-width: 900px;
-    margin: auto;
+
     background: #161616;
     border-radius: 10px;
     padding: 10px;
