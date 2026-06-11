@@ -1,7 +1,12 @@
 [
-  {
-    "nome": "Jo\u00e3o Silva",
-    "email": "jooao_1999@hotmail.com",
-    "senha": "89986176"
-  }
+    {
+        "nome": "João Silva",
+        "email": "jooao_1999@hotmail.com",
+        "senha": "89986176"
+    },
+    {
+        "nome": "Anchelly",
+        "email": "vellarck@gmail.com",
+        "senha": "1234"
+    }
 ]

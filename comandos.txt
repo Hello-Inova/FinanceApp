@@ -1,0 +1,30 @@
+    -   Se o git push foi concluído sem erros, seu projeto já está no GitHub.
+
+    -   Para confirmar, execute:
+__________________________
+
+git remote -v
+__________________________ 
+
+    -   e também:
+______________________________________________________________________________
+
+git status
+______________________________________________________________________________
+
+    -   O resultado esperado é algo parecido com:
+______________________________________________________________________________
+
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+______________________________________________________________________________
+
+    -   Daqui para frente, sempre que fizer alterações no projeto, basta usar:
+______________________________________________________________________________
+
+git add .
+git commit -m "Descrição da alteração"
+git push
+______________________________________________________________________________

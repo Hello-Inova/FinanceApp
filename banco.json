@@ -1,50 +1,18 @@
 [
     {
-        "data": "2026-06-15",
-        "tipo": "Entrada",
-        "descricao": "Salario",
-        "valor": 3500,
-        "obs": "Confluence",
-        "id": "cb4141d1-f032-4f38-a3ce-bb94381029f0"
-    },
-    {
-        "data": "2026-06-20",
-        "tipo": "Saída",
-        "descricao": "Aluguel",
-        "valor": 3000,
-        "obs": "Aluguel Casa",
-        "id": "c8c9ee60-9f9c-4586-9ad3-3b51df1c0c72"
-    },
-    {
-        "data": "2026-06-16",
-        "tipo": "Saída",
-        "descricao": "Enel",
-        "valor": 100,
-        "obs": "",
-        "id": "e5374283-0425-411f-99ce-3f81b1a86e1d"
-    },
-    {
-        "data": "2026-06-16",
-        "tipo": "Saída",
-        "descricao": "Net Casa",
-        "valor": 100,
-        "obs": "",
-        "id": "a417d2f4-f070-4d01-b650-ac35dcb8be80"
-    },
-    {
-        "data": "2026-06-16",
-        "tipo": "Saída",
-        "descricao": "Net Celular",
-        "valor": 100,
-        "obs": "",
-        "id": "876a310c-cdb9-4811-a8c7-8db2fd2362ec"
-    },
-    {
         "data": "2026-06-11",
-        "tipo": "Saída",
+        "tipo": "SaÃƒÂ­da",
         "descricao": "teste",
         "valor": 1500,
         "obs": "teste",
         "id": "ff30ff60-8f7c-4610-bf80-3d7618d35104"
+    },
+    {
+        "data": "1999-06-15",
+        "tipo": "Entrada",
+        "descricao": "Salario",
+        "valor": 3500,
+        "obs": "Teste",
+        "id": "bb27e4fc-5791-4316-8661-a54fd91f43cb"
     }
 ]

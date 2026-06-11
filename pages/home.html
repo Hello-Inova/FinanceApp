@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <title>Dashboard Financeiro</title>
 
-<link rel="stylesheet" href="home.css">
-</head>
+<link rel="stylesheet"href="{{ url_for('static', filename='css/home.css') }}"></head>
 
 <body>
 
@@ -21,7 +20,7 @@
       <button onclick="toggleMenu(event)" class="hamburger">☰</button>      <h3>Menu</h3>
     </div>
 
-    <button id="btnDashboard" onclick="location.href='home.html'">📊 Dashboard</button>
+    <button id="btnDashboard" onclick="location.href='/home'">📊 Dashboard</button>
     <button id="btnCadUser" onclick="abrirModalCadUser()">🧑‍💻 Cadastro de Usuário</button>
 
 
@@ -181,7 +180,6 @@
 
 </div>
 
-
-<script src="home.js"></script>
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
 </body>
 </html>

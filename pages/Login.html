@@ -5,15 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
   <!-- Importando o CSS externo -->
-    <link rel="stylesheet" href="Login.css">
-</head>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}"></head>
 
 <body>
 
   <div class="login-container">
     <h2>Login</h2>
 
-    <form>
+    <form id="loginForm">
       <div class="input-group">
         <label for="email">E-mail</label>
         <input type="email" id="email" placeholder="Digite seu e-mail" required>
@@ -21,7 +20,9 @@
 
       <div class="input-group">
         <label for="password">Senha</label>
-        <input type="password" id="password" placeholder="Digite sua senha" required>
+        <input type="password" id="password" placeholder="Digite sua senha" required><br><br>
+        <span id="error-message" style="color: red; display: none;">Usuario ou Senha incorretos</span>
+
       </div>
 
       <button type="submit">Entrar</button>
@@ -32,6 +33,6 @@
     </div>
     
   </div>
-
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
 </html>

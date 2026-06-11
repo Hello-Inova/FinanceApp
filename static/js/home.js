@@ -324,4 +324,6 @@ window.editar = editar;
 /* =========================
 INIT
 ========================= */
-carregar();
+window.addEventListener("DOMContentLoaded", () => {
+    carregar();
+});
