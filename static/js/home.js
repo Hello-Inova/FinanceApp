@@ -1,6 +1,3 @@
-// =========================
-// CONFIG
-// =========================
 const API_URL = window.location.origin;
 
 let entradas = 0;
@@ -37,7 +34,7 @@ async function carregar() {
     renderizarTabela();
 
   } catch (error) {
-    console.error("Erro carregar:", error);
+    console.error(error);
   }
 }
 
@@ -146,7 +143,9 @@ function renderizarTabela() {
   const inicio = (paginaAtual - 1) * itensPorPagina;
   const fim = inicio + itensPorPagina;
 
-  dadosGlobais.slice(inicio, fim).forEach(item => {
+  const paginaDados = dadosGlobais.slice(inicio, fim);
+
+  paginaDados.forEach(item => {
     const row = tabela.insertRow();
 
     row.insertCell(0).innerText = item.data || "-";
@@ -180,9 +179,13 @@ function calcularTotais() {
     else saidas += valor;
   });
 
-  document.getElementById("totalEntradas").innerText = formatarMoeda(entradas);
-  document.getElementById("totalSaidas").innerText = formatarMoeda(saidas);
-  document.getElementById("saldo").innerText = formatarMoeda(entradas - saidas);
+  const elEntradas = document.getElementById("totalEntradas");
+  const elSaidas = document.getElementById("totalSaidas");
+  const elSaldo = document.getElementById("saldo");
+
+  if (elEntradas) elEntradas.innerText = formatarMoeda(entradas);
+  if (elSaidas) elSaidas.innerText = formatarMoeda(saidas);
+  if (elSaldo) elSaldo.innerText = formatarMoeda(entradas - saidas);
 }
 
 
@@ -193,34 +196,13 @@ function atualizarPaginacao() {
   const totalPaginas = Math.max(1, Math.ceil(dadosGlobais.length / itensPorPagina));
 
   const pageInfo = document.getElementById("pageInfo");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
 
-  if (pageInfo) {
-    pageInfo.innerText = `Página ${paginaAtual} de ${totalPaginas}`;
-  }
-
-  document.getElementById("prevBtn").disabled = paginaAtual === 1;
-  document.getElementById("nextBtn").disabled = paginaAtual === totalPaginas;
+  if (pageInfo) pageInfo.innerText = `Página ${paginaAtual} de ${totalPaginas}`;
+  if (prevBtn) prevBtn.disabled = paginaAtual === 1;
+  if (nextBtn) nextBtn.disabled = paginaAtual === totalPaginas;
 }
-
-
-// =========================
-// BOTÕES
-// =========================
-document.getElementById("prevBtn")?.addEventListener("click", () => {
-  if (paginaAtual > 1) {
-    paginaAtual--;
-    renderizarTabela();
-  }
-});
-
-document.getElementById("nextBtn")?.addEventListener("click", () => {
-  const totalPaginas = Math.ceil(dadosGlobais.length / itensPorPagina);
-
-  if (paginaAtual < totalPaginas) {
-    paginaAtual++;
-    renderizarTabela();
-  }
-});
 
 
 // =========================
@@ -232,15 +214,33 @@ function toggleMenu() {
 
 
 // =========================
+// CADASTRO USUÁRIO (CORREÇÃO)
+// =========================
+function abrirModalCadUser() {
+  const modal = document.getElementById("modalCadUser");
+  if (modal) modal.style.display = "flex";
+}
+
+function fecharModalCadUser() {
+  const modal = document.getElementById("modalCadUser");
+  if (modal) modal.style.display = "none";
+}
+
+
+// =========================
 // GLOBAL EXPORT
 // =========================
 window.deletar = deletar;
 window.editar = editar;
 window.toggleMenu = toggleMenu;
 window.salvarEdicao = salvarEdicao;
+window.abrirModalCadUser = abrirModalCadUser;
+window.fecharModalCadUser = fecharModalCadUser;
 
 
 // =========================
 // INIT
 // =========================
-window.addEventListener("DOMContentLoaded", carregar);
+window.addEventListener("DOMContentLoaded", () => {
+  carregar();
+});
