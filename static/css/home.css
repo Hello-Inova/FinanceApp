@@ -346,6 +346,23 @@ tr:hover {
   transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Transição suave para o foco */
   outline: none;
 }
+/* Efeito ao clicar/focar no campo */
+#modalNovoRegistro input:focus,
+#modalNovoRegistro select:focus {  
+  border-color: #9055ff;     /* Borda roxa combinando com a identidade do seu gráfico */
+  box-shadow: 0 0 0 3px rgba(144, 85, 255, 0.2); /* Sombra suave ao redor */
+}
+
+/* Ajuste específico para o texto placeholder (dentro do input) */
+#modalNovoRegistro input::placeholder {
+  color: #777;               /* Cor cinza discreta para o texto de instrução */
+}
+
+/* Ajuste para as opções do select não ficarem transparentes ou ilegíveis */
+#modalNovoRegistro select option {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
 
 .modal-content,
 .modal-registro-content {
