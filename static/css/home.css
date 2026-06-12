@@ -30,6 +30,7 @@ body {
 
   border-radius: 12px;
   padding: 20px;
+  width: 100%;
 
   /* sombra suave para destacar */
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
@@ -47,31 +48,46 @@ h1 {
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
+/* CARD MAIS BAIXO E COMPACTO */
 .card {
-  background: #3a2727;
-  padding: 20px;
+  background: #333;
+  padding: 6px 12px;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+  border-left: 5px solid transparent;
+
+  min-height: 70px;
+
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center; /* eixo Y */
+  align-items: center;     /* eixo X */
   text-align: center;
 }
 
+/* TÍTULO */
 .card h3 {
-  margin-bottom: 10px;
+  margin: 0 0 4px 0;
   color: #ccc;
+  font-size: 13px;
 }
 
+/* VALOR */
 .card span {
   font-size: 20px;
   font-weight: bold;
 }
 
-.entrada { color: green; }
-.saida { color: red; }
-.saldo { color: blue; }
+#CardEntrada { border-left: 10px solid #2ecc71; color: #2ecc71; }
+#CardSaida { border-left: 10px solid #e74c3c; color: #e74c3c; }
+#CardSaldo { border-left: 10px solid #1e90ff; color: #1e90ff; }
+
 
 form {
   display: grid;
@@ -135,7 +151,7 @@ tr:hover {
 /* botão hambúrguer agora dentro do menu */
 .hamburger {
   font-size: 20px;
-  background: #222;
+  background: #3a2727;
   color: white;
 
   border: none;
@@ -188,7 +204,7 @@ tr:hover {
 /* título */
 .menu-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
   color: white;
 }
 
@@ -196,12 +212,24 @@ tr:hover {
 .sidebar button {
   color: white;
   text-decoration: none;
-  padding: 6px 10px;
+  padding: 10px 10px;
   border-radius: 6px;
-  background: none;
   border: none;
   text-align: left;
   cursor: pointer;
+
+  
+}
+#btnMenuin {
+  background: #3a2727;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+#btnMenuin:hover {
+  background: #0056b3;
 }
 
 .sidebar button:hover {
@@ -228,3 +256,4 @@ tr:hover {
   display:none;
   position:fixed;
 }
+

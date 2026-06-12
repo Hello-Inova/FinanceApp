@@ -3,7 +3,7 @@ html, body {
     margin: 0;
     padding: 0;
 }
-
+ 
 body {
     font-family: Arial, sans-serif;
     background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
@@ -30,7 +30,7 @@ body {
 h1 {
     text-align: center;
     color: #f4f6fb;
-    font-size: 18px;
+    font-size: 30px;
     margin: 8px 0 12px 0;
 }
 
@@ -62,7 +62,7 @@ select, button {
 
 /* CARD ULTRA COMPACTO */
 .card {
-    background: white;
+    background: #333;
     padding: 10px;
     border-radius: 10px;
     text-align: center;
@@ -70,21 +70,47 @@ select, button {
 }
 
 .card h3 {
-    margin: 0;
-    font-size: 12px;
-    color: #666;
+  margin: 0;
+  font-size: 14px;
+  color: #ffffff;
 }
 
 .card p {
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 6px;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 6px 0 0 0;
 }
 
-/* BORDAS MAIS FINAS */
-.green { border-left: 4px solid #2ecc71; }
-.red   { border-left: 4px solid #e74c3c; }
-.blue  { border-left: 4px solid #3498db; }
+/* BASE DO CARD (IMPORTANTE) */
+.card {
+  border-left: 5px solid transparent;
+}
+
+/* CORES POR TIPO */
+#CardEntrada {
+  border-left-color: #2ecc71;
+}
+
+#CardSaida {
+  border-left-color: #e74c3c;
+}
+
+#CardSaldo {
+  border-left-color: #1e90ff;
+}
+
+/* CORES DO TEXTO (SÓ O VALOR) */
+#CardEntrada p {
+  color: #2ecc71;
+}
+
+#CardSaida p {
+  color: #e74c3c;
+}
+
+#CardSaldo p {
+  color: #1e90ff;
+}
 
 /* GRÁFICO MAIS APERTADO */
 .chart-box {

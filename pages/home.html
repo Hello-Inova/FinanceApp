@@ -17,7 +17,7 @@
   <div id="sidebar" class="sidebar">
 
     <div class="menu-header">
-      <button onclick="toggleMenu(event)" class="hamburger">☰</button>      <h3>Menu</h3>
+      <button onclick="toggleMenu(event)" class="hamburger" id="btnMenuin">☰</button>      <h3>Menu</h3>
     </div>
 
     <button id="btnDashboard" onclick="location.href='/home'">📊 Dashboard</button>
@@ -35,17 +35,17 @@
 
   <!-- CARDS -->
   <div class="cards">
-    <div class="card">
+    <div class="card" id="CardEntrada">
       <h3>Entradas</h3>
       <span class="entrada" id="totalEntradas">R$ 0,00</span>
     </div>
 
-    <div class="card">
+    <div class="card" id="CardSaida">
       <h3>Saídas</h3>
       <span class="saida" id="totalSaidas">R$ 0,00</span>
     </div>
 
-    <div class="card">
+    <div class="card" id="CardSaldo">
       <h3>Saldo</h3>
       <span class="saldo" id="saldo">R$ 0,00</span>
     </div>

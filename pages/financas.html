@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/financas.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
+ 
 <body>
 
 <div class="container">
@@ -22,17 +22,17 @@
 
     <!-- KPI CARDS -->
     <div class="cards">
-        <div class="card green">
+        <div class="card green" id="CardEntrada">
             <h3>Entradas</h3>
             <p id="totalEntradas">R$ 0</p>
         </div>
 
-        <div class="card red">
+        <div class="card red" id="CardSaida">
             <h3>Saídas</h3>
             <p id="totalSaidas">R$ 0</p>
         </div>
 
-        <div class="card blue">
+        <div class="card blue" id="CardSaldo">
             <h3>Saldo</h3>
             <p id="saldo">R$ 0</p>
         </div>
