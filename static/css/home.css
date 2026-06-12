@@ -333,6 +333,14 @@ tr:hover {
 
   z-index: 9999;
 }
+#modalNovoRegistro input,
+#modalNovoRegistro select{  
+  background: none;
+  border: 1px solid #555;
+  color: white;
+  font-size: 16px;
+
+}
 
 .modal-content,
 .modal-registro-content {
