@@ -56,22 +56,17 @@ document.getElementById("form")?.addEventListener("submit", async (e) => {
     obs: document.getElementById("obs").value
   };
 
-  try {
-    const res = await fetch(`${API_URL}/lancamentos`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(item)
-    });
+  const res = await fetch(`${API_URL}/lancamentos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(item)
+  });
 
-    const result = await res.json();
+  const result = await res.json();
 
-    if (res.ok && result.status === "ok") {
-      document.getElementById("form").reset();
-      carregar();
-    }
-
-  } catch (err) {
-    console.error("Erro salvar:", err);
+  if (res.ok && result.status === "ok") {
+    document.getElementById("form").reset();
+    carregar();
   }
 });
 
@@ -80,16 +75,11 @@ document.getElementById("form")?.addEventListener("submit", async (e) => {
 // DELETE
 // =========================
 async function deletar(id) {
-  try {
-    await fetch(`${API_URL}/lancamentos/${id}`, {
-      method: "DELETE"
-    });
+  await fetch(`${API_URL}/lancamentos/${id}`, {
+    method: "DELETE"
+  });
 
-    carregar();
-
-  } catch (err) {
-    console.error("Erro deletar:", err);
-  }
+  carregar();
 }
 
 
@@ -124,19 +114,14 @@ async function salvarEdicao() {
     obs: document.getElementById("editObs").value
   };
 
-  try {
-    await fetch(`${API_URL}/lancamentos/${editId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(atualizado)
-    });
+  await fetch(`${API_URL}/lancamentos/${editId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(atualizado)
+  });
 
-    fecharModal();
-    carregar();
-
-  } catch (err) {
-    console.error("Erro editar:", err);
-  }
+  fecharModal();
+  carregar();
 }
 
 
@@ -161,9 +146,7 @@ function renderizarTabela() {
   const inicio = (paginaAtual - 1) * itensPorPagina;
   const fim = inicio + itensPorPagina;
 
-  const paginaDados = dadosGlobais.slice(inicio, fim);
-
-  paginaDados.forEach(item => {
+  dadosGlobais.slice(inicio, fim).forEach(item => {
     const row = tabela.insertRow();
 
     row.insertCell(0).innerText = item.data || "-";
@@ -197,13 +180,9 @@ function calcularTotais() {
     else saidas += valor;
   });
 
-  const elEntradas = document.getElementById("totalEntradas");
-  const elSaidas = document.getElementById("totalSaidas");
-  const elSaldo = document.getElementById("saldo");
-
-  if (elEntradas) elEntradas.innerText = formatarMoeda(entradas);
-  if (elSaidas) elSaidas.innerText = formatarMoeda(saidas);
-  if (elSaldo) elSaldo.innerText = formatarMoeda(entradas - saidas);
+  document.getElementById("totalEntradas").innerText = formatarMoeda(entradas);
+  document.getElementById("totalSaidas").innerText = formatarMoeda(saidas);
+  document.getElementById("saldo").innerText = formatarMoeda(entradas - saidas);
 }
 
 
@@ -214,20 +193,18 @@ function atualizarPaginacao() {
   const totalPaginas = Math.max(1, Math.ceil(dadosGlobais.length / itensPorPagina));
 
   const pageInfo = document.getElementById("pageInfo");
-  const prevBtn = document.getElementById("prevBtn");
-  const nextBtn = document.getElementById("nextBtn");
 
   if (pageInfo) {
     pageInfo.innerText = `Página ${paginaAtual} de ${totalPaginas}`;
   }
 
-  if (prevBtn) prevBtn.disabled = paginaAtual === 1;
-  if (nextBtn) nextBtn.disabled = paginaAtual === totalPaginas;
+  document.getElementById("prevBtn").disabled = paginaAtual === 1;
+  document.getElementById("nextBtn").disabled = paginaAtual === totalPaginas;
 }
 
 
 // =========================
-// PAGINAÇÃO BOTÕES
+// BOTÕES
 // =========================
 document.getElementById("prevBtn")?.addEventListener("click", () => {
   if (paginaAtual > 1) {
@@ -255,7 +232,7 @@ function toggleMenu() {
 
 
 // =========================
-// EXPOSE GLOBAL
+// GLOBAL EXPORT
 // =========================
 window.deletar = deletar;
 window.editar = editar;
@@ -266,6 +243,4 @@ window.salvarEdicao = salvarEdicao;
 // =========================
 // INIT
 // =========================
-window.addEventListener("DOMContentLoaded", () => {
-  carregar();
-});
+window.addEventListener("DOMContentLoaded", carregar);

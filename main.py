@@ -17,7 +17,7 @@ LANCA_FILE = "banco.json"
 
 
 # =========================
-# GARANTE ARQUIVOS NO DEPLOY
+# GARANTE ARQUIVOS
 # =========================
 def garantir_arquivo(file):
     if not os.path.exists(file):
@@ -59,8 +59,11 @@ def financas():
 # USUÁRIOS
 # =========================
 def ler_usuarios():
-    with open(USUARIOS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(USUARIOS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return []
 
 
 def salvar_usuarios(dados):
@@ -71,12 +74,9 @@ def salvar_usuarios(dados):
 @app.route("/usuarios", methods=["POST"])
 def usuarios():
     data = request.get_json()
-
     usuarios = ler_usuarios()
     usuarios.append(data)
-
     salvar_usuarios(usuarios)
-
     return jsonify({"success": True})
 
 
@@ -119,12 +119,12 @@ def get_lancamentos():
 
 @app.route("/lancamentos", methods=["POST"])
 def add_lancamento():
-    dados = ler_lancamentos()
     novo = request.get_json()
 
     if not novo:
         return jsonify({"status": "erro"}), 400
 
+    dados = ler_lancamentos()
     novo["id"] = str(uuid.uuid4())
 
     dados.append(novo)
@@ -136,11 +136,8 @@ def add_lancamento():
 @app.route("/lancamentos/<id>", methods=["DELETE"])
 def deletar(id):
     dados = ler_lancamentos()
-
     novos = [d for d in dados if d.get("id") != id]
-
     salvar_lancamentos(novos)
-
     return jsonify({"status": "ok"})
 
 
@@ -155,21 +152,18 @@ def editar(id):
             break
 
     salvar_lancamentos(dados)
-
     return jsonify({"status": "ok"})
 
 
 # =========================
-# API FINANCEIRA
+# FINANÇAS API
 # =========================
 @app.route("/api/financas")
 def api_financas():
     path = os.path.join(os.path.dirname(__file__), "banco.json")
 
     with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    return jsonify(data)
+        return jsonify(json.load(f))
 
 
 # =========================
