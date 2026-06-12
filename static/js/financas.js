@@ -1,210 +1,315 @@
+const API_URL = window.location.origin;
+
 let dados = [];
 let chart;
 
-document.addEventListener("DOMContentLoaded", () => {
-    carregarDados();
-
-    document.getElementById("btnFiltrar")
-        .addEventListener("click", filtrar);
-});
-
-async function carregarDados() {
-    const res = await fetch("/api/financas");
-    const raw = await res.json();
-
-    console.log("📦 RAW API:", raw);
-
-    // 🔥 CORRETO: usa estrutura real da API
-    dados = raw.map(d => ({
-        data: d.data,
-        descricao: d.descricao,
-        tipo: d.tipo,
-        valor: Number(d.valor)
-    }));
-
-    console.log("✅ NORMALIZADO:", dados);
-
-    preencherSelect();
-    atualizar(dados);
+// =========================
+// UTIL
+// =========================
+function formatarMoeda(valor) {
+    return Number(valor || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+    });
 }
 
 function obterMes(dataStr) {
     const d = new Date(dataStr);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+    return `${d.getFullYear()}-${String(
+        d.getMonth() + 1
+    ).padStart(2, "0")}`;
 }
 
+// =========================
+// CARREGAR DADOS
+// =========================
+async function carregarDados() {
+
+    try {
+
+        const res = await fetch(`${API_URL}/api/financas`);
+        dados = await res.json();
+
+        dados = dados.map(item => ({
+            ...item,
+            valor: Number(item.valor || 0)
+        }));
+
+        preencherSelect();
+        atualizar(dados);
+
+    } catch (err) {
+        console.error("Erro ao carregar finanças:", err);
+    }
+
+}
+
+// =========================
+// FILTRO
+// =========================
 function preencherSelect() {
-    const select = document.getElementById("filtroMes");
 
-    select.innerHTML = `<option value="all">Todos os meses</option>`;
+    const select =
+        document.getElementById("filtroMes");
 
-    const meses = [...new Set(dados.map(d => obterMes(d.data)))];
+    select.innerHTML =
+        `<option value="all">Todos os meses</option>`;
 
-    meses.forEach(m => {
-        select.innerHTML += `<option value="${m}">${m}</option>`;
+    const meses = [
+        ...new Set(
+            dados.map(d => obterMes(d.data))
+        )
+    ];
+
+    meses.sort().reverse();
+
+    meses.forEach(mes => {
+
+        select.innerHTML += `
+            <option value="${mes}">
+                ${mes}
+            </option>
+        `;
+
     });
+
 }
 
-function atualizar(data) {
-    const entradas = data
-        .filter(d => d.tipo === "Entrada")
-        .reduce((a, b) => a + b.valor, 0);
+function filtrar() {
 
-    const saidas = data
-        .filter(d => d.tipo === "Saída")
-        .reduce((a, b) => a + b.valor, 0);
+    const mes =
+        document.getElementById("filtroMes").value;
 
-    document.getElementById("totalEntradas").innerText = `R$ ${entradas}`;
-    document.getElementById("totalSaidas").innerText = `R$ ${saidas}`;
-    document.getElementById("saldo").innerText = `R$ ${entradas - saidas}`;
+    if (mes === "all") {
+        atualizar(dados);
+        return;
+    }
 
-    const ctx = document.getElementById("grafico").getContext("2d");
+    const filtrados = dados.filter(
+        d => obterMes(d.data) === mes
+    );
 
-    if (chart) chart.destroy();
+    atualizar(filtrados);
+
+}
+
+// =========================
+// DASHBOARD
+// =========================
+function atualizar(lista) {
+
+    const entradas = lista
+        .filter(d =>
+            String(d.tipo).toLowerCase() === "entrada"
+        )
+        .reduce(
+            (acc, item) => acc + Number(item.valor),
+            0
+        );
+
+    const saidas = lista
+        .filter(d => {
+            const tipo =
+                String(d.tipo).toLowerCase();
+
+            return tipo === "saída" ||
+                   tipo === "saida";
+        })
+        .reduce(
+            (acc, item) => acc + Number(item.valor),
+            0
+        );
+
+    totalEntradas.innerText =
+        formatarMoeda(entradas);
+
+    totalSaidas.innerText =
+        formatarMoeda(saidas);
+
+    saldo.innerText =
+        formatarMoeda(entradas - saidas);
+
+    const ctx =
+        document
+            .getElementById("grafico")
+            .getContext("2d");
+
+    if (chart) {
+        chart.destroy();
+    }
 
     chart = new Chart(ctx, {
         type: "bar",
         data: {
-            labels: data.map(d => d.descricao),
+            labels: lista.map(
+                item => item.descricao
+            ),
             datasets: [
                 {
                     label: "Entradas",
-                    data: data.map(d => d.tipo === "Entrada" ? d.valor : 0),
+                    data: lista.map(item => {
+
+                        const tipo =
+                            String(item.tipo)
+                            .toLowerCase();
+
+                        return tipo === "entrada"
+                            ? item.valor
+                            : 0;
+
+                    }),
                     backgroundColor: "green"
                 },
                 {
                     label: "Saídas",
-                    data: data.map(d => d.tipo === "Saída" ? d.valor : 0),
+                    data: lista.map(item => {
+
+                        const tipo =
+                            String(item.tipo)
+                            .toLowerCase();
+
+                        return (
+                            tipo === "saída" ||
+                            tipo === "saida"
+                        )
+                            ? item.valor
+                            : 0;
+
+                    }),
                     backgroundColor: "red"
                 }
             ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
         }
     });
+
 }
 
-function filtrar() {
-    const mes = document.getElementById("filtroMes").value;
-
-    if (mes === "all") {
-        atualizar(dados);
-    } else {
-        atualizar(dados.filter(d => obterMes(d.data) === mes));
-    }
-}
+// =========================
+// MENU
+// =========================
 function toggleMenu() {
-  document.getElementById("sidebar").classList.toggle("active");
-}
-window.toggleMenu = toggleMenu;
 
+    document
+        .getElementById("sidebar")
+        ?.classList.toggle("active");
+
+}
+
+// =========================
+// CADASTRO USUÁRIO
+// =========================
 function abrirModalCadUser() {
-  document.getElementById("modalCadUser").style.display = "flex";
+    modalCadUser.style.display = "flex";
 }
+
 function fecharModalCadUser() {
-  document.getElementById("modalCadUser").style.display = "none";
-}
-
-function cadastrarUsuario() {
-
-  if (!validarSenhas()) {
-    return;
-  }
-
-  const nome = document.getElementById("nome").value;
-  const email = document.getElementById("email").value;
-  const senha = document.getElementById("senha").value;
-
-  const sucesso = document.getElementById("cadastroSucesso");
-
-  fetch("http://localhost:5000/usuarios", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ nome, email, senha })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("Erro no cadastro");
-    }
-    return response.text(); // 👈 mais seguro que json()
-  })
-  .then(() => {
-
-    console.log("cadastro ok");
-
-    sucesso.style.display = "block";
-
-    document.getElementById("nome").value = "";
-    document.getElementById("email").value = "";
-    document.getElementById("senha").value = "";
-    document.getElementById("confirmarSenha").value = "";
-
-  })
-  .catch(error => {
-    console.error(error);
-  });
-}
-
-function validarSenhas() {
-  console.log("validando senhas...");
-
-  const senha = document.getElementById("senha");
-  const confirmar = document.getElementById("confirmarSenha");
-  const erroSenha = document.getElementById("erroSenha");
-  const msgCampos = document.getElementById("msgCamposVazios");
-
-  const campos = document.querySelectorAll("input, select, textarea");
-
-  let valido = true;
-
-  // 🔥 valida campos vazios
-  campos.forEach(campo => {
-    if (campo.value.trim() === "") {
-      campo.style.border = "1px solid red";
-      valido = false;
-    } else {
-      campo.style.border = "1px solid #333";
-    }
-  });
-
-  // 🚨 mensagem de campos vazios
-  if (!valido) {
-    msgCampos.style.display = "block";
-    return false;
-  } else {
-    msgCampos.style.display = "none";
-  }
-
-  // 🔐 valida senha
-  if (senha.value !== confirmar.value) {
-    erroSenha.style.display = "block";
-
-    senha.style.border = "1px solid red";
-    confirmar.style.border = "1px solid red";
-
-    return false;
-  }
-
-  // sucesso
-  erroSenha.style.display = "none";
-
-  senha.style.border = "1px solid #333";
-  confirmar.style.border = "1px solid #333";
-
-  return true;
+    modalCadUser.style.display = "none";
 }
 
 function togglePassword() {
-  const senha = document.getElementById("senha");
-  const confirmar = document.getElementById("confirmarSenha");
-  const btn = document.getElementById("togglePassword");
 
-  const isPassword = senha.type === "password";
+    const show =
+        senha.type === "password";
 
-  // alterna tipo dos dois inputs
-  senha.type = isPassword ? "text" : "password";
-  confirmar.type = isPassword ? "text" : "password";
+    senha.type =
+        show ? "text" : "password";
 
-  // opcional: muda ícone
-  btn.textContent = isPassword ? "🙈" : "👁️";
+    confirmarSenha.type =
+        show ? "text" : "password";
+
 }
+
+function validarSenhas() {
+
+    if (
+        senha.value.trim() === "" ||
+        confirmarSenha.value.trim() === ""
+    ) {
+        return false;
+    }
+
+    if (
+        senha.value !==
+        confirmarSenha.value
+    ) {
+
+        erroSenha.style.display = "block";
+        return false;
+
+    }
+
+    erroSenha.style.display = "none";
+
+    return true;
+
+}
+
+async function cadastrarUsuario() {
+
+    if (!validarSenhas()) {
+        return;
+    }
+
+    try {
+
+        await fetch(`${API_URL}/usuarios`, {
+            method: "POST",
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+            body: JSON.stringify({
+                nome: nome.value,
+                email: email.value,
+                senha: senha.value
+            })
+        });
+
+        cadastroSucesso.style.display =
+            "block";
+
+        nome.value = "";
+        email.value = "";
+        senha.value = "";
+        confirmarSenha.value = "";
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+}
+
+// =========================
+// EXPORT GLOBAL
+// =========================
+window.toggleMenu = toggleMenu;
+window.abrirModalCadUser = abrirModalCadUser;
+window.fecharModalCadUser = fecharModalCadUser;
+window.togglePassword = togglePassword;
+window.cadastrarUsuario = cadastrarUsuario;
+
+// =========================
+// INIT
+// =========================
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        carregarDados();
+
+        document
+            .getElementById("btnFiltrar")
+            ?.addEventListener(
+                "click",
+                filtrar
+            );
+
+    }
+);
