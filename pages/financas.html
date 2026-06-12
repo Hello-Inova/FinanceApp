@@ -5,10 +5,16 @@
     <title>Dashboard Financeiro</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/financas.css') }}">
+
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
  
 <body>
+
+<div id="menu-container"></div>
+
 
 <div class="container">
 
@@ -42,6 +48,50 @@
     <div class="chart-box">
         <canvas id="grafico"></canvas>
     </div>
+
+    <div id="modalCadUser"
+      style="
+        position:fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        background:rgba(0,0,0,0.6);
+        z-index:9999;
+        justify-content:center;
+        align-items:center;
+      ">
+
+    <div style="
+      background:#1e1e1e;
+      padding:20px;
+      border-radius:10px;
+      width:300px;
+      color:white;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    ">
+      
+      <h3 id="h3">Cadastrar Usuário</h3>
+
+      <input type="text" id="nome" placeholder="Nome" required>
+      <input type="text" id="email" placeholder="Email" required>
+      <input type="password" id="senha" placeholder="Senha" required>
+      <input type="password" id="confirmarSenha" placeholder="Confirmar Senha" required>
+      <button type="button" id="togglePassword" onclick="togglePassword()">👁️</button>
+
+
+      <span id="erroSenha" style="color: red; display: none;">As Senhas não são iguais.</span>
+      <div id="msgCamposVazios" style="display:none; color:red; margin-bottom:10px;">Preencha os campos vazios!</div>
+      <span id="cadastroSucesso" style="color: green; display: none;">Usuário cadastrado com sucesso!</span>
+
+      <button onclick="cadastrarUsuario()">Cadastrar</button>
+      <button onclick="fecharModalCadUser()">Cancelar</button>
+
+
+    </div>
+  </div>
 
 </div>
 

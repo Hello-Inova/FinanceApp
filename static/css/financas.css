@@ -134,3 +134,140 @@ select, button {
         width: 100%;
     }
 }
+
+
+/* botão hambúrguer agora dentro do menu */
+.hamburger {
+  font-size: 20px;
+  background: #3a2727;
+  color: white;
+
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-right: 10px;
+
+  top: 10px !important;
+  left: 10px !important;
+}
+#btnMenu {
+top: 20px !important;
+left: 20px !important;
+position: fixed;
+}
+#btnMenu:hover {
+  background: #0056b3;
+}
+
+/* sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -300px;
+
+  width: 240px;
+  height: 100%;
+
+  background: #111;
+  color: white;
+
+  padding: 20px;
+
+  transition: 0.3s ease;
+  z-index: 1000;
+
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* abre menu */
+.sidebar.active {
+  left: 0;
+}
+
+/* título do menu */
+.menu-header {
+  margin-bottom: 10px;
+}
+
+/* header do menu */
+.menu-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+/* título */
+.menu-header h3 {
+  margin: 0;
+  font-size: 22px;
+  color: white;
+}
+
+/* links */
+.sidebar button {
+  color: white;
+  text-decoration: none;
+  padding: 10px 10px;
+  border-radius: 6px;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+
+  
+}
+#btnMenuin {
+  background: #3a2727;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+#btnMenuin:hover {
+  background: #0056b3;
+}
+
+.sidebar button:hover {
+  background: #0056b3;
+}
+
+#confirmarSenha{
+  width: 75%;
+}
+#togglePassword {
+  width: 15%;
+  background: none;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: -16%;
+  margin-left: auto;
+}
+#modalCadUser{
+  display:none;
+  position:fixed;
+}
+input, select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: none;
+  color: #eaeaea;
+}
+button:hover {
+  background: #0056b3;
+}
+button {
+  background: #333;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-right: 10px;
+}

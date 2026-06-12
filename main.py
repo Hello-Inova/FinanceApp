@@ -1,16 +1,29 @@
 from flask import Flask, request, jsonify, render_template
+from flask import send_from_directory
 from flask_cors import CORS
 import json
 import uuid
 import os
 
 # Procura os arquivos HTML dentro da pasta pages
-app = Flask(__name__, template_folder="pages")
+app = Flask(
+    __name__,
+    template_folder="pages",
+    static_folder="static"
+)
+
 CORS(app)
 
 USUARIOS_FILE = "usuarios.json"
 LANCA_FILE = "banco.json"
 
+# =========================
+# MENU
+# =========================
+
+@app.route("/components/<path:filename>")
+def components(filename):
+    return send_from_directory("components", filename)
 
 # =========================
 # PÁGINA INICIAL

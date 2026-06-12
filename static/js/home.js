@@ -290,16 +290,53 @@ function cadastrarUsuario() {
 function validarSenhas() {
   console.log("validando senhas...");
 
-  const senha = document.getElementById("senha").value;
-  const confirmar = document.getElementById("confirmarSenha").value;
-  const erro = document.getElementById("erroSenha");
+  const nome = document.getElementById("nome");
+  const email = document.getElementById("email");
+  const senha = document.getElementById("senha");
+  const confirmar = document.getElementById("confirmarSenha");
 
-  if (senha !== confirmar) {
-    erro.style.display = "block";
+  const erroSenha = document.getElementById("erroSenha");
+  const msgCampos = document.getElementById("msgCamposVazios");
+
+  // 🔥 apenas campos obrigatórios
+  const campos = [nome, email, senha, confirmar];
+
+  let valido = true;
+
+  // valida campos vazios
+  campos.forEach(campo => {
+    if (campo.value.trim() === "") {
+      campo.style.border = "1px solid red";
+      valido = false;
+    } else {
+      campo.style.border = "1px solid #333";
+    }
+  });
+
+  // 🚨 mensagem de campos vazios
+  if (!valido) {
+    msgCampos.style.display = "block";
+    return false;
+  } else {
+    msgCampos.style.display = "none";
+  }
+
+  // 🔐 valida senha
+  if (senha.value !== confirmar.value) {
+    erroSenha.style.display = "block";
+
+    senha.style.border = "1px solid red";
+    confirmar.style.border = "1px solid red";
+
     return false;
   }
 
-  erro.style.display = "none";
+  // sucesso
+  erroSenha.style.display = "none";
+
+  senha.style.border = "1px solid #333";
+  confirmar.style.border = "1px solid #333";
+
   return true;
 }
 

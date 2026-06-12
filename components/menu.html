@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="menu-container">
+
+  <button class="hamburger" onclick="toggleMenu()"id="btnMenu">
+    ☰
+  </button>
+
+  <div id="sidebar" class="sidebar">
+
+    <div class="menu-header">
+      <button onclick="toggleMenu(event)" class="hamburger" id="btnMenuin">☰</button>      <h3>Menu</h3>
+    </div>
+
+    <button id="btnDashboard" onclick="location.href='/home'">📊 Dashboard</button>
+    <button id="btnCadUser" onclick="abrirModalCadUser()">🧑‍💻 Cadastro de Usuário</button>
+    <button id="btnFinancas" onclick="location.href='/financas'">📈 Dashboard Financeiro</button>
+
+
+  </div>
+
+</div>
+</body>
+</html>

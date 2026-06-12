@@ -4,30 +4,13 @@
 <meta charset="UTF-8">
 <title>Dashboard Financeiro</title>
 
-<link rel="stylesheet"href="{{ url_for('static', filename='css/home.css') }}"></head>
+<link rel="stylesheet"href="{{ url_for('static', filename='css/home.css') }}">
+<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
 
+</head>
 <body>
 
-<div class="menu-container">
-
-  <button class="hamburger" onclick="toggleMenu()">
-    ☰
-  </button>
-
-  <div id="sidebar" class="sidebar">
-
-    <div class="menu-header">
-      <button onclick="toggleMenu(event)" class="hamburger" id="btnMenuin">☰</button>      <h3>Menu</h3>
-    </div>
-
-    <button id="btnDashboard" onclick="location.href='/home'">📊 Dashboard</button>
-    <button id="btnCadUser" onclick="abrirModalCadUser()">🧑‍💻 Cadastro de Usuário</button>
-    <button id="btnFinancas" onclick="location.href='/financas'">📈 Dashboard Financeiro</button>
-
-
-  </div>
-
-</div>
+<div id="menu-container"></div>
 
 <div class="container">
 
@@ -169,7 +152,8 @@
       <button type="button" id="togglePassword" onclick="togglePassword()">👁️</button>
 
 
-      <span id="erroSenha" style="color: red; display: none;">As Senhas não são iguais.</span>
+      <div id="msgCamposVazios" style="display:none; color:red; margin-bottom:10px;">Preencha os campos vazios!</div>
+      <span id="erroSenha" style="color: red; display: none;">As Senhas não são iguais.</span>  
       <span id="cadastroSucesso" style="color: green; display: none;">Usuário cadastrado com sucesso!</span>
 
       <button onclick="cadastrarUsuario()">Cadastrar</button>
