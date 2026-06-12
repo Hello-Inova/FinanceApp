@@ -263,3 +263,131 @@ tr:hover {
   position:fixed;
 }
 
+/* =========================
+   RESPONSIVO MOBILE
+========================= */
+@media (max-width: 768px) {
+
+  body {
+    padding: 5px;
+  }
+
+  .container {
+    padding: 12px;
+    margin-top: 50px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  /* Cards em coluna */
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .card {
+    min-height: 65px;
+  }
+
+  .card span {
+    font-size: 18px;
+  }
+
+  /* Formulário */
+  form {
+    grid-template-columns: 1fr;
+  }
+
+  form button {
+    grid-column: auto;
+    width: 100%;
+  }
+
+  input,
+  select,
+  button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Tabela com scroll horizontal */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  th,
+  td {
+    min-width: 120px;
+  }
+
+  /* Paginação */
+  #prevBtn,
+  #nextBtn {
+    width: auto;
+    padding: 10px;
+  }
+
+  #pageInfo {
+    font-size: 14px;
+  }
+
+  /* Modal */
+  #modalCadUser > div,
+  #modalEdit > div {
+    width: 90% !important;
+    max-width: 350px;
+  }
+
+  /* Campo senha */
+  #confirmarSenha {
+    width: 100%;
+  }
+
+  #togglePassword {
+    width: auto;
+    margin-top: 0;
+    margin-left: 0;
+    align-self: flex-end;
+  }
+
+  /* Botão menu */
+  #btnMenu {
+    top: 10px !important;
+    left: 10px !important;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+  }
+
+}
+
+/* =========================
+   TELAS MUITO PEQUENAS
+========================= */
+@media (max-width: 480px) {
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .card h3 {
+    font-size: 12px;
+  }
+
+  .card span {
+    font-size: 16px;
+  }
+
+  th,
+  td {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+}
