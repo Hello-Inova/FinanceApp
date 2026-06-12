@@ -334,12 +334,17 @@ tr:hover {
   z-index: 9999;
 }
 #modalNovoRegistro input,
-#modalNovoRegistro select{  
-  background: none;
-  border: 1px solid #555;
-  color: white;
+#modalNovoRegistro select {  
+  background-color: #1a1a1a; /* Fundo escuro sutil para destacar do fundo do modal */
+  border: 1px solid #444;    /* Borda suave */
+  border-radius: 6px;        /* Cantos arredondados modernos */
+  color: #ffffff;            /* Texto branco bem legível */
   font-size: 16px;
-
+  padding: 10px 14px;        /* Espaçamento interno para o texto não ficar colado */
+  width: 100%;               /* Faz os campos ocuparem toda a largura disponível */
+  box-sizing: border-box;    /* Garante que o padding não quebre a largura */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Transição suave para o foco */
+  outline: none;
 }
 
 .modal-content,
