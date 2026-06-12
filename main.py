@@ -5,6 +5,14 @@ import json
 import uuid
 import os
 
+# =========================
+# GARANTE ARQUIVOS JSON NO DEPLOY
+# =========================
+for file in ["usuarios.json", "banco.json"]:
+    if not os.path.exists(file):
+        with open(file, "w") as f:
+            f.write("[]")
+
 # Procura os arquivos HTML dentro da pasta pages
 app = Flask(
     __name__,
@@ -215,4 +223,4 @@ def api_financas():
 # EXECUÇÃO
 # =========================
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
