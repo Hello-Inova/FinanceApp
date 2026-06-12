@@ -1,4 +1,7 @@
-const API_URL = "";
+// =========================
+// CONFIG
+// =========================
+const API_URL = window.location.origin;
 
 let entradas = 0;
 let saidas = 0;
@@ -6,6 +9,17 @@ let editId = null;
 let dadosGlobais = [];
 let paginaAtual = 1;
 const itensPorPagina = 4;
+
+
+// =========================
+// UTIL
+// =========================
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
 
 
 // =========================
@@ -23,7 +37,7 @@ async function carregar() {
     renderizarTabela();
 
   } catch (error) {
-    console.error(error);
+    console.error("Erro carregar:", error);
   }
 }
 
@@ -31,7 +45,7 @@ async function carregar() {
 // =========================
 // SALVAR
 // =========================
-document.getElementById("form").addEventListener("submit", async (e) => {
+document.getElementById("form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const item = {
@@ -42,17 +56,22 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     obs: document.getElementById("obs").value
   };
 
-  const res = await fetch(`${API_URL}/lancamentos`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(item)
-  });
+  try {
+    const res = await fetch(`${API_URL}/lancamentos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(item)
+    });
 
-  const result = await res.json();
+    const result = await res.json();
 
-  if (res.ok && result.status === "ok") {
-    document.getElementById("form").reset();
-    carregar();
+    if (res.ok && result.status === "ok") {
+      document.getElementById("form").reset();
+      carregar();
+    }
+
+  } catch (err) {
+    console.error("Erro salvar:", err);
   }
 });
 
@@ -61,11 +80,16 @@ document.getElementById("form").addEventListener("submit", async (e) => {
 // DELETE
 // =========================
 async function deletar(id) {
-  await fetch(`${API_URL}/lancamentos/${id}`, {
-    method: "DELETE"
-  });
+  try {
+    await fetch(`${API_URL}/lancamentos/${id}`, {
+      method: "DELETE"
+    });
 
-  carregar();
+    carregar();
+
+  } catch (err) {
+    console.error("Erro deletar:", err);
+  }
 }
 
 
@@ -100,22 +124,38 @@ async function salvarEdicao() {
     obs: document.getElementById("editObs").value
   };
 
-  await fetch(`${API_URL}/lancamentos/${editId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(atualizado)
-  });
+  try {
+    await fetch(`${API_URL}/lancamentos/${editId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(atualizado)
+    });
 
-  fecharModal();
-  carregar();
+    fecharModal();
+    carregar();
+
+  } catch (err) {
+    console.error("Erro editar:", err);
+  }
 }
 
 
 // =========================
-// RENDER TABELA
+// MODAL
+// =========================
+function fecharModal() {
+  document.getElementById("modalEdit").style.display = "none";
+  editId = null;
+}
+
+
+// =========================
+// TABELA
 // =========================
 function renderizarTabela() {
   const tabela = document.getElementById("tabela");
+  if (!tabela) return;
+
   tabela.innerHTML = "";
 
   const inicio = (paginaAtual - 1) * itensPorPagina;
@@ -129,10 +169,7 @@ function renderizarTabela() {
     row.insertCell(0).innerText = item.data || "-";
     row.insertCell(1).innerText = item.tipo || "-";
     row.insertCell(2).innerText = item.descricao || "-";
-    row.insertCell(3).innerText = Number(item.valor || 0).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL"
-    });
+    row.insertCell(3).innerText = formatarMoeda(item.valor);
     row.insertCell(4).innerText = item.obs || "-";
 
     row.insertCell(5).innerHTML = `
@@ -160,15 +197,70 @@ function calcularTotais() {
     else saidas += valor;
   });
 
-  document.getElementById("totalEntradas").innerText =
-    entradas.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const elEntradas = document.getElementById("totalEntradas");
+  const elSaidas = document.getElementById("totalSaidas");
+  const elSaldo = document.getElementById("saldo");
 
-  document.getElementById("totalSaidas").innerText =
-    saidas.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-  document.getElementById("saldo").innerText =
-    (entradas - saidas).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  if (elEntradas) elEntradas.innerText = formatarMoeda(entradas);
+  if (elSaidas) elSaidas.innerText = formatarMoeda(saidas);
+  if (elSaldo) elSaldo.innerText = formatarMoeda(entradas - saidas);
 }
+
+
+// =========================
+// PAGINAÇÃO
+// =========================
+function atualizarPaginacao() {
+  const totalPaginas = Math.max(1, Math.ceil(dadosGlobais.length / itensPorPagina));
+
+  const pageInfo = document.getElementById("pageInfo");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  if (pageInfo) {
+    pageInfo.innerText = `Página ${paginaAtual} de ${totalPaginas}`;
+  }
+
+  if (prevBtn) prevBtn.disabled = paginaAtual === 1;
+  if (nextBtn) nextBtn.disabled = paginaAtual === totalPaginas;
+}
+
+
+// =========================
+// PAGINAÇÃO BOTÕES
+// =========================
+document.getElementById("prevBtn")?.addEventListener("click", () => {
+  if (paginaAtual > 1) {
+    paginaAtual--;
+    renderizarTabela();
+  }
+});
+
+document.getElementById("nextBtn")?.addEventListener("click", () => {
+  const totalPaginas = Math.ceil(dadosGlobais.length / itensPorPagina);
+
+  if (paginaAtual < totalPaginas) {
+    paginaAtual++;
+    renderizarTabela();
+  }
+});
+
+
+// =========================
+// MENU
+// =========================
+function toggleMenu() {
+  document.getElementById("sidebar")?.classList.toggle("active");
+}
+
+
+// =========================
+// EXPOSE GLOBAL
+// =========================
+window.deletar = deletar;
+window.editar = editar;
+window.toggleMenu = toggleMenu;
+window.salvarEdicao = salvarEdicao;
 
 
 // =========================
@@ -177,6 +269,3 @@ function calcularTotais() {
 window.addEventListener("DOMContentLoaded", () => {
   carregar();
 });
-
-window.deletar = deletar;
-window.editar = editar;
