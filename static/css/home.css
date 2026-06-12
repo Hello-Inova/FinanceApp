@@ -134,14 +134,16 @@ h1 {
    TABELA
 ========================= */
 
-.table-container {
+.tabela-container {
+  width: 100%;
   overflow-x: auto;
 }
 
 table {
   width: 100%;
+  min-width: 700px;
+
   border-collapse: collapse;
-  background: #161616;
 }
 
 th {
@@ -499,4 +501,98 @@ tr:hover {
   .modal-registro-content {
     padding: 15px;
   }
+}
+/* =========================
+   PAGINAÇÃO
+========================= */
+
+.paginacao {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+#prevBtn,
+#nextBtn {
+  width: auto !important;
+  min-width: 120px;
+
+  background: #3a2727;
+  color: white;
+
+  border: none;
+  border-radius: 6px;
+
+  padding: 10px 15px;
+
+  cursor: pointer;
+}
+
+#prevBtn:hover,
+#nextBtn:hover {
+  background: #0056b3;
+}
+
+#pageInfo {
+  color: white;
+  font-weight: bold;
+}
+/* =========================
+   MENU
+========================= */
+
+#btnMenu {
+  position: fixed;
+
+  top: 12px;
+  left: 12px;
+
+  width: auto !important;
+
+  padding: 10px 14px;
+
+  background: #3a2727;
+
+  z-index: 9999;
+}
+
+#btnMenuin {
+  width: auto !important;
+
+  padding: 10px 14px;
+
+  background: #3a2727;
+}
+
+.sidebar {
+  position: fixed;
+
+  top: 0;
+  left: -280px;
+
+  width: 240px;
+  height: 100vh;
+
+  background: #111;
+
+  padding: 20px;
+
+  transition: 0.3s;
+
+  z-index: 9998;
+}
+
+.sidebar.active {
+  left: 0;
+}
+
+.sidebar button {
+  width: 100%;
+
+  text-align: left;
+
+  margin-bottom: 8px;
 }
