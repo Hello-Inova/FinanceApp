@@ -119,8 +119,17 @@ function renderizarTabela() {
     row.insertCell(4).innerText = item.obs;
 
     row.insertCell(5).innerHTML = `
-      <button onclick="deletar('${item.id}')">🗑️</button>
-      <button onclick="editar('${item.id}')">✏️</button>
+      <div class="acoes-tabela">
+        <button class="btn-acao btn-delete"
+          onclick="deletar('${item.id}')">
+          🗑️
+        </button>
+
+        <button class="btn-acao btn-edit"
+          onclick="editar('${item.id}')">
+          ✏️
+        </button>
+      </div>
     `;
   });
 

@@ -361,6 +361,17 @@ tr:hover {
     width: 220px;
   }
 
+  .acoes-tabela {
+    gap: 4px;
+  }
+
+  .btn-acao {
+    width: 30px !important;
+    height: 30px !important;
+
+    font-size: 14px;
+  }
+
 }
 
 /* =========================
@@ -383,6 +394,13 @@ tr:hover {
   th,
   td {
     padding: 8px;
+    font-size: 12px;
+  }
+
+  .btn-acao {
+    width: 28px !important;
+    height: 28px !important;
+
     font-size: 12px;
   }
 
@@ -455,4 +473,50 @@ tr:hover {
   .menu-header h3 {
     font-size: 16px;
   }
+}
+
+/* =========================
+   BOTÕES DA TABELA
+========================= */
+
+.acoes-tabela {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-acao {
+  width: 36px !important;
+  height: 36px !important;
+
+  padding: 0 !important;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  border: none;
+  border-radius: 6px;
+
+  cursor: pointer;
+
+  font-size: 16px;
+
+  grid-column: unset !important;
+}
+
+.btn-delete {
+  background: #e74c3c;
+}
+
+.btn-edit {
+  background: #1e90ff;
+}
+
+.btn-delete:hover {
+  background: #c0392b;
+}
+
+.btn-edit:hover {
+  background: #0066cc;
 }
