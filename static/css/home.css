@@ -1,142 +1,147 @@
-html, body {
-  height: 100%;
+/* =========================
+   RESET
+========================= */
+
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
   font-family: Arial, sans-serif;
   background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
-
-  min-height: 100vh;
-  width: 100%;
-
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-
-  padding: 10px;
-  box-sizing: border-box;
-
   color: #eaeaea;
+  padding: 10px;
 }
+
+/* =========================
+   CONTAINER
+========================= */
 
 .container {
   max-width: 1100px;
-  margin: auto;
+  margin: 0 auto;
 
-  /* card principal com profundidade */
   background: #161616;
 
   border-radius: 12px;
+
   padding: 20px;
-  width: 100%;
 
-  /* sombra suave para destacar */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255,255,255,0.05);
 
-  /* borda sutil para definição */
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 30px rgba(0,0,0,.6);
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 20px;
   color: #00bfff;
+  margin-bottom: 20px;
 }
+
+/* =========================
+   CARDS
+========================= */
 
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 15px;
-}
+  gap: 12px;
 
-/* CARD MAIS BAIXO E COMPACTO */
-.card {
-  background: #333;
-  padding: 6px 12px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-
-  border-left: 5px solid transparent;
-
-  min-height: 70px;
-
-  display: flex;
-  flex-direction: column;
-
-  justify-content: center; /* eixo Y */
-  align-items: center;     /* eixo X */
-  text-align: center;
-}
-
-/* TÍTULO */
-.card h3 {
-  margin: 0 0 4px 0;
-  color: #ccc;
-  font-size: 13px;
-}
-
-/* VALOR */
-.card span {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-#CardEntrada { border-left: 10px solid #2ecc71; color: #2ecc71; }
-#CardSaida { border-left: 10px solid #e74c3c; color: #e74c3c; }
-#CardSaldo { border-left: 10px solid #1e90ff; color: #1e90ff; }
-
-
-form {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
   margin-bottom: 20px;
 }
 
-input, select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: none;
-  color: #eaeaea;
+.card {
+  background: #333;
+
+  border-radius: 10px;
+
+  padding: 12px;
+
+  min-height: 80px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
 }
 
-button {
-  grid-column: span 5;
-  padding: 10px;
-  border: none;
-  background: #333;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
+.card h3 {
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 5px;
 }
+
+.card span {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+#CardEntrada {
+  border-left: 6px solid #2ecc71;
+  color: #2ecc71;
+}
+
+#CardSaida {
+  border-left: 6px solid #e74c3c;
+  color: #e74c3c;
+}
+
+#CardSaldo {
+  border-left: 6px solid #1e90ff;
+  color: #1e90ff;
+}
+
+/* =========================
+   BOTÃO ADICIONAR
+========================= */
+
+.area-adicionar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
 #btnAdicionar {
-  width: 20%;
   background: #3a2727;
+
+  border: none;
+
+  color: white;
+
+  padding: 12px 24px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  min-width: 220px;
 }
+
 #btnAdicionar:hover {
   background: #0056b3;
 }
-button:hover {
-  background: #0056b3;
+
+/* =========================
+   TABELA
+========================= */
+
+.table-container {
+  overflow-x: auto;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   background: #161616;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  border-radius: 10px;
-  overflow: hidden; 
-}
-
-th, td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
 }
 
 th {
@@ -144,339 +149,19 @@ th {
   color: white;
 }
 
-tr:hover {
-  background: #3a2727;
-}
-
-/* botão hambúrguer agora dentro do menu */
-.hamburger {
-  font-size: 20px;
-  background: #3a2727;
-  color: white;
-
-  border: none;
-  padding: 10px 14px;
-  cursor: pointer;
-  border-radius: 6px;
-  margin-right: 10px;
-
-  top: 10px !important;
-  left: 10px !important;
-}
-
-/* sidebar */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -300px;
-
-  width: 240px;
-  height: 100%;
-
-  background: #111;
-  color: white;
-
-  padding: 20px;
-
-  transition: 0.3s ease;
-  z-index: 1000;
-
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-/* abre menu */
-.sidebar.active {
-  left: 0;
-}
-
-/* título do menu */
-.menu-header {
-  margin-bottom: 10px;
-}
-
-/* header do menu */
-.menu-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  margin-bottom: 20px;
-}
-/* título */
-.menu-header h3 {
-  margin: 0;
-  font-size: 22px;
-  color: white;
-}
-
-/* links */
-.sidebar button {
-  color: white;
-  text-decoration: none;
-  padding: 10px 10px;
-  border-radius: 6px;
-  border: none;
+th,
+td {
+  padding: 12px;
   text-align: left;
-  cursor: pointer;
-
-  
-}
-#btnMenu{
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 2000;
+  border-bottom: 1px solid #333;
 }
 
-#btnMenuin {
-  background: #3a2727;
-  color: white;
-  border: none;
-  padding: 8px 10px;
-  cursor: pointer;
-  border-radius: 6px;
-}
-#btnMenuin:hover {
-  background: #0056b3;
-}
-
-.sidebar button:hover {
-  background: #0056b3;
-}
-
-#confirmarSenha{
-  width: 75%;
-}
-#togglePassword {
-  width: 15%;
-  background: none;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: -16%;
-  margin-left: auto;
-}
-#modalCadUser{
-  display:none;
-  position:fixed;
+tr:hover {
+  background: #222;
 }
 
 /* =========================
-   RESPONSIVO MOBILE
-========================= */
-@media (max-width: 768px) {
-
-  body {
-    padding: 5px;
-  }
-
-  .container {
-    padding: 12px;
-    margin-top: 50px;
-  }
-
-  h1 {
-    font-size: 22px;
-  }
-
-  /* Cards em coluna */
-  .cards {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .card {
-    min-height: 65px;
-  }
-
-  .card span {
-    font-size: 18px;
-  }
-
-  /* Formulário */
-  form {
-    grid-template-columns: 1fr;
-  }
-
-  form button {
-    grid-column: auto;
-    width: 100%;
-  }
-
-  input,
-  select,
-  button {
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  /* Tabela com scroll horizontal */
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  th,
-  td {
-    min-width: 120px;
-  }
-
-  /* Paginação */
-  #prevBtn,
-  #nextBtn {
-    width: auto;
-    padding: 10px;
-  }
-
-  #pageInfo {
-    font-size: 14px;
-  }
-
-  /* Modal */
-  #modalCadUser > div,
-  #modalEdit > div {
-    width: 90% !important;
-    max-width: 350px;
-  }
-
-  /* Campo senha */
-  #confirmarSenha {
-    width: 100%;
-  }
-
-  #togglePassword {
-    width: auto;
-    margin-top: 0;
-    margin-left: 0;
-    align-self: flex-end;
-  }
-
-
-  /* Sidebar */
-  .sidebar {
-    width: 220px;
-  }
-
-  .acoes-tabela {
-    gap: 4px;
-  }
-
-  .btn-acao {
-    width: 30px !important;
-    height: 30px !important;
-
-    font-size: 14px;
-  }
-
-}
-
-/* =========================
-   TELAS MUITO PEQUENAS
-========================= */
-@media (max-width: 480px) {
-
-  h1 {
-    font-size: 18px;
-  }
-
-  .card h3 {
-    font-size: 12px;
-  }
-
-  .card span {
-    font-size: 16px;
-  }
-
-  th,
-  td {
-    padding: 8px;
-    font-size: 12px;
-  }
-
-  .btn-acao {
-    width: 28px !important;
-    height: 28px !important;
-
-    font-size: 12px;
-  }
-
-}
-/* =========================
-   MENU RESPONSIVO
-========================= */
-
-@media (max-width: 768px) {
-
-  #btnMenu {
-    top: 8px;
-    left: 8px;
-  }
-
-  .hamburger {
-    font-size: 16px;
-    padding: 8px 10px;
-    width: auto;
-    height: auto;
-  }
-
-  #btnMenuin {
-    padding: 8px 10px;
-    font-size: 16px;
-  }
-
-  .sidebar {
-    width: 240px;
-    padding: 15px;
-  }
-
-  .menu-header h3 {
-    font-size: 18px;
-  }
-
-  .sidebar button {
-    width: 100%;
-    font-size: 14px;
-    padding: 12px;
-  }
-
-  .container {
-    margin-top: 45px;
-  }
-}
-
-@media (max-width: 480px) {
-
-  #btnMenu {
-    top: 5px;
-    left: 5px;
-  }
-
-  .hamburger {
-    font-size: 14px;
-    padding: 6px 8px;
-  }
-
-  #btnMenuin {
-    font-size: 14px;
-    padding: 6px 8px;
-  }
-
-  .sidebar {
-    width: 85%;
-    max-width: 220px;
-  }
-
-  .menu-header h3 {
-    font-size: 16px;
-  }
-}
-
-/* =========================
-   BOTÕES DA TABELA
+   BOTÕES AÇÕES
 ========================= */
 
 .acoes-tabela {
@@ -486,37 +171,332 @@ tr:hover {
 }
 
 .btn-acao {
-  width: 36px !important;
-  height: 36px !important;
+  width: 36px;
+  height: 36px;
 
-  padding: 0 !important;
+  border: none;
+  border-radius: 6px;
 
   display: flex;
   justify-content: center;
   align-items: center;
 
-  border: none;
-  border-radius: 6px;
-
   cursor: pointer;
-
-  font-size: 16px;
-
-  grid-column: unset !important;
 }
 
 .btn-delete {
   background: #e74c3c;
 }
 
-.btn-edit {
-  background: #1e90ff;
-}
-
 .btn-delete:hover {
   background: #c0392b;
 }
 
+.btn-edit {
+  background: #1e90ff;
+}
+
 .btn-edit:hover {
   background: #0066cc;
+}
+
+/* =========================
+   PAGINAÇÃO
+========================= */
+
+.paginacao {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.paginacao button {
+  background: #333;
+  color: white;
+  border: none;
+
+  padding: 10px 15px;
+
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.paginacao button:hover {
+  background: #0056b3;
+}
+
+/* =========================
+   MENU
+========================= */
+
+#btnMenu {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2000;
+}
+
+.hamburger {
+  background: #3a2727;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 6px;
+
+  padding: 10px 12px;
+
+  cursor: pointer;
+
+  font-size: 18px;
+}
+
+.sidebar {
+  position: fixed;
+
+  top: 0;
+  left: -280px;
+
+  width: 250px;
+  height: 100vh;
+
+  background: #111;
+
+  padding: 20px;
+
+  transition: .3s;
+
+  z-index: 999;
+}
+
+.sidebar.active {
+  left: 0;
+}
+
+.menu-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+.menu-header h3 {
+  color: white;
+}
+
+.sidebar button {
+  width: 100%;
+
+  margin-bottom: 10px;
+
+  background: #333;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 6px;
+
+  padding: 12px;
+
+  cursor: pointer;
+}
+
+.sidebar button:hover {
+  background: #0056b3;
+}
+
+/* =========================
+   MODAIS
+========================= */
+
+#modalNovoRegistro,
+#modalEdit,
+#modalCadUser {
+  display: none;
+
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(0,0,0,.65);
+
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+}
+
+.modal-content,
+.modal-registro-content {
+  background: #1e1e1e;
+
+  width: 420px;
+  max-width: 95%;
+
+  border-radius: 12px;
+
+  padding: 20px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  color: white;
+}
+
+.modal-header,
+.modal-registro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3,
+.modal-registro-header h3 {
+  margin: 0;
+}
+
+.btn-fechar-modal {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.btn-fechar-modal:hover {
+  color: #ff4444;
+}
+
+.modal-content input,
+.modal-content select,
+.modal-registro-content input,
+.modal-registro-content select {
+  width: 100%;
+
+  padding: 10px;
+
+  border-radius: 6px;
+
+  border: 1px solid #555;
+
+  background: #111;
+
+  color: white;
+}
+
+.modal-acoes {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-acoes button {
+  flex: 1;
+
+  border: none;
+
+  border-radius: 6px;
+
+  padding: 10px;
+
+  cursor: pointer;
+}
+
+#msgNovoRegistro {
+  color: #2ecc71;
+  text-align: center;
+  display: none;
+}
+
+/* =========================
+   SENHA
+========================= */
+
+#togglePassword {
+  width: fit-content;
+  align-self: flex-end;
+}
+
+/* =========================
+   RESPONSIVO TABLET
+========================= */
+
+@media (max-width: 768px) {
+
+  .container {
+    padding: 15px;
+    margin-top: 50px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  #btnAdicionar {
+    width: 100%;
+  }
+
+  .sidebar {
+    width: 220px;
+  }
+
+  .modal-acoes {
+    flex-direction: column;
+  }
+
+  .btn-acao {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* =========================
+   RESPONSIVO CELULAR
+========================= */
+
+@media (max-width: 480px) {
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .card h3 {
+    font-size: 12px;
+  }
+
+  .card span {
+    font-size: 18px;
+  }
+
+  th,
+  td {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .btn-acao {
+    width: 28px;
+    height: 28px;
+  }
+
+  .hamburger {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .sidebar {
+    width: 85%;
+    max-width: 220px;
+  }
+
+  .modal-content,
+  .modal-registro-content {
+    padding: 15px;
+  }
 }

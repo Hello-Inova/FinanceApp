@@ -24,7 +24,9 @@ async function carregar() {
   try {
     const res = await fetch(`${API_URL}/lancamentos`);
     dadosGlobais = await res.json();
+
     paginaAtual = 1;
+
     renderizarTabela();
   } catch (err) {
     console.error(err);
@@ -32,34 +34,90 @@ async function carregar() {
 }
 
 // =========================
-// SALVAR
+// MODAL NOVO REGISTRO
 // =========================
-document.getElementById("form")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
+function abrirModalNovoRegistro() {
+
+  document.getElementById("modalNovoRegistro").style.display = "flex";
+
+  document.getElementById("msgNovoRegistro").style.display = "none";
+}
+
+function limparCamposNovoRegistro() {
+
+  novoData.value = "";
+  novoTipo.value = "Entrada";
+  novoDescricao.value = "";
+  novoValor.value = "";
+  novoObs.value = "";
+}
+
+function fecharModalNovoRegistro() {
+
+  limparCamposNovoRegistro();
+
+  document.getElementById("msgNovoRegistro").style.display = "none";
+
+  document.getElementById("modalNovoRegistro").style.display = "none";
+}
+
+async function salvarNovoRegistro() {
 
   const item = {
-    data: data.value,
-    tipo: tipo.value,
-    descricao: descricao.value,
-    valor: Number(valor.value),
-    obs: obs.value
+    data: novoData.value,
+    tipo: novoTipo.value,
+    descricao: novoDescricao.value,
+    valor: Number(novoValor.value),
+    obs: novoObs.value
   };
 
   await fetch(`${API_URL}/lancamentos`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify(item)
   });
 
-  e.target.reset();
-  carregar();
-});
+  fecharModalNovoRegistro();
+
+  await carregar();
+}
+
+async function registrarOutro() {
+
+  const item = {
+    data: novoData.value,
+    tipo: novoTipo.value,
+    descricao: novoDescricao.value,
+    valor: Number(novoValor.value),
+    obs: novoObs.value
+  };
+
+  await fetch(`${API_URL}/lancamentos`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(item)
+  });
+
+  document.getElementById("msgNovoRegistro").style.display = "block";
+
+  limparCamposNovoRegistro();
+
+  await carregar();
+}
 
 // =========================
 // DELETE
 // =========================
 async function deletar(id) {
-  await fetch(`${API_URL}/lancamentos/${id}`, { method: "DELETE" });
+
+  await fetch(`${API_URL}/lancamentos/${id}`, {
+    method: "DELETE"
+  });
+
   carregar();
 }
 
@@ -67,7 +125,11 @@ async function deletar(id) {
 // EDIT
 // =========================
 function editar(id) {
+
   const item = dadosGlobais.find(d => d.id === id);
+
+  if (!item) return;
+
   editId = id;
 
   editData.value = item.data;
@@ -80,9 +142,12 @@ function editar(id) {
 }
 
 async function salvarEdicao() {
+
   await fetch(`${API_URL}/lancamentos/${editId}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
       data: editData.value,
       tipo: editTipo.value,
@@ -93,6 +158,7 @@ async function salvarEdicao() {
   });
 
   fecharModal();
+
   carregar();
 }
 
@@ -104,12 +170,18 @@ function fecharModal() {
 // TABELA
 // =========================
 function renderizarTabela() {
+
   tabela.innerHTML = "";
 
   const inicio = (paginaAtual - 1) * itensPorPagina;
-  const pagina = dadosGlobais.slice(inicio, inicio + itensPorPagina);
+
+  const pagina = dadosGlobais.slice(
+    inicio,
+    inicio + itensPorPagina
+  );
 
   pagina.forEach(item => {
+
     const row = tabela.insertRow();
 
     row.insertCell(0).innerText = item.data;
@@ -120,20 +192,25 @@ function renderizarTabela() {
 
     row.insertCell(5).innerHTML = `
       <div class="acoes-tabela">
-        <button class="btn-acao btn-delete"
+
+        <button
+          class="btn-acao btn-delete"
           onclick="deletar('${item.id}')">
           🗑️
         </button>
 
-        <button class="btn-acao btn-edit"
+        <button
+          class="btn-acao btn-edit"
           onclick="editar('${item.id}')">
           ✏️
         </button>
+
       </div>
     `;
   });
 
   calcularTotais();
+
   atualizarPaginacao();
 }
 
@@ -141,42 +218,67 @@ function renderizarTabela() {
 // TOTAIS
 // =========================
 function calcularTotais() {
+
   entradas = 0;
   saidas = 0;
 
   dadosGlobais.forEach(i => {
-    const v = Number(i.valor || 0);
-    i.tipo === "Entrada" ? entradas += v : saidas += v;
+
+    const valor = Number(i.valor || 0);
+
+    if (i.tipo === "Entrada") {
+      entradas += valor;
+    } else {
+      saidas += valor;
+    }
   });
 
   totalEntradas.innerText = formatarMoeda(entradas);
+
   totalSaidas.innerText = formatarMoeda(saidas);
-  saldo.innerText = formatarMoeda(entradas - saidas);
+
+  saldo.innerText = formatarMoeda(
+    entradas - saidas
+  );
 }
 
 // =========================
 // PAGINAÇÃO
 // =========================
 function atualizarPaginacao() {
-  const total = Math.ceil(dadosGlobais.length / itensPorPagina);
 
-  pageInfo.innerText = `Página ${paginaAtual} de ${total}`;
+  const totalPaginas =
+    Math.ceil(dadosGlobais.length / itensPorPagina);
+
+  pageInfo.innerText =
+    `Página ${paginaAtual} de ${totalPaginas || 1}`;
 
   prevBtn.disabled = paginaAtual === 1;
-  nextBtn.disabled = paginaAtual === total;
+
+  nextBtn.disabled =
+    paginaAtual === totalPaginas ||
+    totalPaginas === 0;
 }
 
 prevBtn.onclick = () => {
+
   if (paginaAtual > 1) {
+
     paginaAtual--;
+
     renderizarTabela();
   }
 };
 
 nextBtn.onclick = () => {
-  const total = Math.ceil(dadosGlobais.length / itensPorPagina);
-  if (paginaAtual < total) {
+
+  const totalPaginas =
+    Math.ceil(dadosGlobais.length / itensPorPagina);
+
+  if (paginaAtual < totalPaginas) {
+
     paginaAtual++;
+
     renderizarTabela();
   }
 };
@@ -185,6 +287,7 @@ nextBtn.onclick = () => {
 // MENU
 // =========================
 function toggleMenu() {
+
   sidebar.classList.toggle("active");
 }
 
@@ -192,30 +295,45 @@ function toggleMenu() {
 // CADASTRO USUÁRIO
 // =========================
 function abrirModalCadUser() {
+
   modalCadUser.style.display = "flex";
 }
 
 function fecharModalCadUser() {
+
   modalCadUser.style.display = "none";
 }
 
 function togglePassword() {
-  const show = senha.type === "password";
 
-  senha.type = show ? "text" : "password";
-  confirmarSenha.type = show ? "text" : "password";
+  const mostrar = senha.type === "password";
+
+  senha.type =
+    mostrar ? "text" : "password";
+
+  confirmarSenha.type =
+    mostrar ? "text" : "password";
 }
 
-// cadastro funcionando
 async function cadastrarUsuario() {
+
   if (senha.value !== confirmarSenha.value) {
+
     erroSenha.style.display = "block";
+
     return;
   }
 
+  erroSenha.style.display = "none";
+
   await fetch(`${API_URL}/usuarios`, {
+
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+
+    headers: {
+      "Content-Type": "application/json"
+    },
+
     body: JSON.stringify({
       nome: nome.value,
       email: email.value,
@@ -224,6 +342,11 @@ async function cadastrarUsuario() {
   });
 
   cadastroSucesso.style.display = "block";
+
+  nome.value = "";
+  email.value = "";
+  senha.value = "";
+  confirmarSenha.value = "";
 }
 
 // =========================
@@ -231,12 +354,22 @@ async function cadastrarUsuario() {
 // =========================
 window.deletar = deletar;
 window.editar = editar;
+
 window.toggleMenu = toggleMenu;
+
 window.salvarEdicao = salvarEdicao;
+
 window.abrirModalCadUser = abrirModalCadUser;
 window.fecharModalCadUser = fecharModalCadUser;
+
 window.togglePassword = togglePassword;
 window.cadastrarUsuario = cadastrarUsuario;
+
+window.abrirModalNovoRegistro = abrirModalNovoRegistro;
+window.fecharModalNovoRegistro = fecharModalNovoRegistro;
+
+window.salvarNovoRegistro = salvarNovoRegistro;
+window.registrarOutro = registrarOutro;
 
 // =========================
 // INIT

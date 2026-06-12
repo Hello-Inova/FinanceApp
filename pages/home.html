@@ -9,7 +9,9 @@
 
 <script defer src="{{ url_for('static', filename='js/menu.js') }}"></script>
 <script defer src="{{ url_for('static', filename='js/home.js') }}"></script>
-<link rel="icon" type="image/png"href="{{ url_for('static', filename='img/favicon.png') }}">
+
+<link rel="icon" type="image/png"
+href="{{ url_for('static', filename='img/favicon.png') }}">
 
 </head>
 <body>
@@ -38,21 +40,15 @@
     </div>
   </div>
 
-  <!-- FORMULÁRIO -->
-  <form id="form">
-    <input type="date" id="data" required>
-
-    <select id="tipo" required>
-      <option value="Saída">Saída</option>
-      <option value="Entrada">Entrada</option>
-    </select>
-
-    <input type="text" id="descricao" placeholder="Descrição" required>
-    <input type="number" id="valor" placeholder="Valor" required>
-    <input type="text" id="obs" placeholder="Observação">
-
-    <button type="submit">Adicionar</button>
-  </form>
+  <!-- BOTÃO ADICIONAR -->
+  <div style="display:flex;justify-content:center;margin-bottom:20px;">
+    <button
+      id="btnAdicionar"
+      type="button"
+      onclick="abrirModalNovoRegistro()">
+      ➕ Adicionar
+    </button>
+  </div>
 
   <!-- TABELA -->
   <table>
@@ -79,12 +75,147 @@
 
 </div>
 
+<!-- ===================================== -->
+<!-- MODAL NOVO REGISTRO -->
+<!-- ===================================== -->
+
+<div
+  id="modalNovoRegistro"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+  ">
+
+  <div
+    style="
+      background:#1e1e1e;
+      width:400px;
+      max-width:90%;
+      padding:24px;
+      border-radius:12px;
+      color:white;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      position:relative;
+    ">
+
+    <!-- FECHAR -->
+    <button
+      type="button"
+      onclick="fecharModalNovoRegistro()"
+      style="
+        position:absolute;
+        right:10px;
+        top:10px;
+        background:none;
+        border:none;
+        color:#ff4f7a;
+        font-size:28px;
+        cursor:pointer;
+        width:auto;
+        padding:0;
+      ">
+      ✕
+    </button>
+
+    <h2 style="text-align:center;margin:0;">
+      Novo Registro
+    </h2>
+
+    <span
+      id="msgNovoRegistro"
+      style="
+        display:none;
+        color:#2ecc71;
+        text-align:center;
+        font-weight:bold;
+      ">
+      Registro salvo com sucesso!
+    </span>
+
+    <input
+      type="date"
+      id="novoData">
+
+    <select id="novoTipo">
+      <option value="Entrada">Entrada</option>
+      <option value="Saída">Saída</option>
+    </select>
+
+    <input
+      type="text"
+      id="novoDescricao"
+      placeholder="Descrição">
+
+    <input
+      type="number"
+      id="novoValor"
+      placeholder="Valor">
+
+    <input
+      type="text"
+      id="novoObs"
+      placeholder="Observação">
+
+    <button
+      type="button"
+      onclick="salvarNovoRegistro()">
+      Salvar
+    </button>
+
+    <button
+      type="button"
+      onclick="registrarOutro()">
+      Registrar outro
+    </button>
+
+    <button
+      type="button"
+      onclick="fecharModalNovoRegistro()">
+      Cancelar
+    </button>
+
+  </div>
+
+</div>
+
+<!-- ===================================== -->
 <!-- MODAL EDIT -->
-<div id="modalEdit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;">
-  <div style="background:#1e1e1e;padding:20px;border-radius:10px;width:300px;color:white;display:flex;flex-direction:column;gap:10px;">
+<!-- ===================================== -->
+
+<div
+  id="modalEdit"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    justify-content:center;
+    align-items:center;
+  ">
+
+  <div
+    style="
+      background:#1e1e1e;
+      padding:20px;
+      border-radius:10px;
+      width:300px;
+      color:white;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    ">
+
     <h3>Editar lançamento</h3>
 
     <input id="editData" type="date">
+
     <select id="editTipo">
       <option value="Entrada">Entrada</option>
       <option value="Saída">Saída</option>
@@ -94,29 +225,99 @@
     <input id="editValor" type="number">
     <input id="editObs">
 
-    <button type="button" onclick="salvarEdicao()">Salvar</button>
-    <button type="button" onclick="fecharModal()">Cancelar</button>
+    <button
+      type="button"
+      onclick="salvarEdicao()">
+      Salvar
+    </button>
+
+    <button
+      type="button"
+      onclick="fecharModal()">
+      Cancelar
+    </button>
+
   </div>
 </div>
 
+<!-- ===================================== -->
 <!-- MODAL CAD USER -->
-<div id="modalCadUser" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;">
-  <div style="background:#1e1e1e;padding:20px;border-radius:10px;width:300px;color:white;display:flex;flex-direction:column;gap:10px;">
+<!-- ===================================== -->
+
+<div
+  id="modalCadUser"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    justify-content:center;
+    align-items:center;
+  ">
+
+  <div
+    style="
+      background:#1e1e1e;
+      padding:20px;
+      border-radius:10px;
+      width:300px;
+      color:white;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    ">
 
     <h3>Cadastrar Usuário</h3>
 
     <input id="nome" placeholder="Nome">
+
     <input id="email" placeholder="Email">
-    <input id="senha" type="password" placeholder="Senha">
-    <input id="confirmarSenha" type="password" placeholder="Confirmar Senha">
 
-    <button type="button" onclick="togglePassword()">👁️</button>
+    <input
+      id="senha"
+      type="password"
+      placeholder="Senha">
 
-    <span id="erroSenha" style="display:none;color:red;">Senhas diferentes</span>
-    <span id="cadastroSucesso" style="display:none;color:green;">Sucesso</span>
+    <input
+      id="confirmarSenha"
+      type="password"
+      placeholder="Confirmar Senha">
 
-    <button type="button" onclick="cadastrarUsuario()">Cadastrar</button>
-    <button type="button" onclick="fecharModalCadUser()">Cancelar</button>
+    <button
+      type="button"
+      onclick="togglePassword()">
+      👁️
+    </button>
+
+    <span
+      id="erroSenha"
+      style="
+        display:none;
+        color:red;
+      ">
+      Senhas diferentes
+    </span>
+
+    <span
+      id="cadastroSucesso"
+      style="
+        display:none;
+        color:green;
+      ">
+      Sucesso
+    </span>
+
+    <button
+      type="button"
+      onclick="cadastrarUsuario()">
+      Cadastrar
+    </button>
+
+    <button
+      type="button"
+      onclick="fecharModalCadUser()">
+      Cancelar
+    </button>
 
   </div>
 </div>
