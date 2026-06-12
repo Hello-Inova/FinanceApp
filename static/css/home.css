@@ -224,18 +224,19 @@ tr:hover {
   
 }
 #btnMenu{
-  top: 20px !important;
-  left: 20px !important;
   position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2000;
 }
+
 #btnMenuin {
   background: #3a2727;
   color: white;
   border: none;
-  padding: 10px 14px;
+  padding: 8px 10px;
   cursor: pointer;
   border-radius: 6px;
-  
 }
 #btnMenuin:hover {
   background: #0056b3;
@@ -354,11 +355,6 @@ tr:hover {
     align-self: flex-end;
   }
 
-  /* Botão menu */
-  #btnMenu {
-    top: 10px !important;
-    left: 10px !important;
-  }
 
   /* Sidebar */
   .sidebar {
@@ -390,4 +386,73 @@ tr:hover {
     font-size: 12px;
   }
 
+}
+/* =========================
+   MENU RESPONSIVO
+========================= */
+
+@media (max-width: 768px) {
+
+  #btnMenu {
+    top: 8px;
+    left: 8px;
+  }
+
+  .hamburger {
+    font-size: 16px;
+    padding: 8px 10px;
+    width: auto;
+    height: auto;
+  }
+
+  #btnMenuin {
+    padding: 8px 10px;
+    font-size: 16px;
+  }
+
+  .sidebar {
+    width: 240px;
+    padding: 15px;
+  }
+
+  .menu-header h3 {
+    font-size: 18px;
+  }
+
+  .sidebar button {
+    width: 100%;
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .container {
+    margin-top: 45px;
+  }
+}
+
+@media (max-width: 480px) {
+
+  #btnMenu {
+    top: 5px;
+    left: 5px;
+  }
+
+  .hamburger {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+
+  #btnMenuin {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+
+  .sidebar {
+    width: 85%;
+    max-width: 220px;
+  }
+
+  .menu-header h3 {
+    font-size: 16px;
+  }
 }
