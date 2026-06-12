@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <title>Dashboard Financeiro</title>
 
-<link rel="stylesheet"href="{{ url_for('static', filename='css/home.css') }}">
-<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+
+<script defer src="{{ url_for('static', filename='js/menu.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/home.js') }}"></script>
 
 </head>
 <body>
@@ -20,17 +22,17 @@
   <div class="cards">
     <div class="card" id="CardEntrada">
       <h3>Entradas</h3>
-      <span class="entrada" id="totalEntradas">R$ 0,00</span>
+      <span id="totalEntradas">R$ 0,00</span>
     </div>
 
     <div class="card" id="CardSaida">
       <h3>Saídas</h3>
-      <span class="saida" id="totalSaidas">R$ 0,00</span>
+      <span id="totalSaidas">R$ 0,00</span>
     </div>
 
     <div class="card" id="CardSaldo">
       <h3>Saldo</h3>
-      <span class="saldo" id="saldo">R$ 0,00</span>
+      <span id="saldo">R$ 0,00</span>
     </div>
   </div>
 
@@ -46,12 +48,11 @@
     <input type="text" id="descricao" placeholder="Descrição" required>
     <input type="number" id="valor" placeholder="Valor" required>
     <input type="text" id="obs" placeholder="Observação">
-    <!-- <input type="text" id="pesquisar" placeholder="Pesquisar..."> -->
 
-    <button type="submit" id="btnAdicionar">Adicionar</button>
+    <button type="submit">Adicionar</button>
   </form>
 
-  <!-- GRID -->
+  <!-- TABELA -->
   <table>
     <thead>
       <tr>
@@ -68,103 +69,55 @@
   </table>
 
   <!-- PAGINAÇÃO -->
-  <div style="margin-top: 8px; display: flex; gap: 8px; justify-content: center; align-items: center;">
+  <div style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:10px;">
     <button id="prevBtn">⬅ Anterior</button>
     <span id="pageInfo"></span>
     <button id="nextBtn">Próximo ➡</button>
   </div>
 
-  </div>
-
-  <div id="modalEdit"
-      style="
-        display:none;
-        position:fixed;
-        top:0;
-        left:0;
-        width:100%;
-        height:100%;
-        background:rgba(0,0,0,0.6);
-        z-index:9999;
-        justify-content:center;
-        align-items:center;
-      ">
-
-    <div style="
-      background:#1e1e1e;
-      padding:20px;
-      border-radius:10px;
-      width:300px;
-      color:white;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    ">
-      
-      <h3>Editar lançamento</h3>
-
-      <input id="editData" type="date">
-      <select id="editTipo">
-        <option value="Entrada">Entrada</option>
-        <option value="Saída">Saída</option>
-      </select>
-
-      <input id="editDescricao" placeholder="Descrição">
-      <input id="editValor" type="number" placeholder="Valor">
-      <input id="editObs" placeholder="Observação">
-
-      <button onclick="salvarEdicao()">Salvar</button>
-      <button onclick="fecharModal()">Cancelar</button>
-
-    </div>
-  </div>
-
-  <div id="modalCadUser"
-      style="
-        position:fixed;
-        top:0;
-        left:0;
-        width:100%;
-        height:100%;
-        background:rgba(0,0,0,0.6);
-        z-index:9999;
-        justify-content:center;
-        align-items:center;
-      ">
-
-    <div style="
-      background:#1e1e1e;
-      padding:20px;
-      border-radius:10px;
-      width:300px;
-      color:white;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    ">
-      
-      <h3>Cadastrar Usuário</h3>
-
-      <input type="text" id="nome" placeholder="Nome" required>
-      <input type="text" id="email" placeholder="Email" required>
-      <input type="password" id="senha" placeholder="Senha" required>
-      <input type="password" id="confirmarSenha" placeholder="Confirmar Senha" required>
-      <button type="button" id="togglePassword" onclick="togglePassword()">👁️</button>
-
-
-      <div id="msgCamposVazios" style="display:none; color:red; margin-bottom:10px;">Preencha os campos vazios!</div>
-      <span id="erroSenha" style="color: red; display: none;">As Senhas não são iguais.</span>  
-      <span id="cadastroSucesso" style="color: green; display: none;">Usuário cadastrado com sucesso!</span>
-
-      <button onclick="cadastrarUsuario()">Cadastrar</button>
-      <button onclick="fecharModalCadUser()">Cancelar</button>
-
-
-    </div>
-  </div>
-
 </div>
 
-<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+<!-- MODAL EDIT -->
+<div id="modalEdit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;">
+  <div style="background:#1e1e1e;padding:20px;border-radius:10px;width:300px;color:white;display:flex;flex-direction:column;gap:10px;">
+    <h3>Editar lançamento</h3>
+
+    <input id="editData" type="date">
+    <select id="editTipo">
+      <option value="Entrada">Entrada</option>
+      <option value="Saída">Saída</option>
+    </select>
+
+    <input id="editDescricao">
+    <input id="editValor" type="number">
+    <input id="editObs">
+
+    <button type="button" onclick="salvarEdicao()">Salvar</button>
+    <button type="button" onclick="fecharModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL CAD USER -->
+<div id="modalCadUser" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;">
+  <div style="background:#1e1e1e;padding:20px;border-radius:10px;width:300px;color:white;display:flex;flex-direction:column;gap:10px;">
+
+    <h3>Cadastrar Usuário</h3>
+
+    <input id="nome" placeholder="Nome">
+    <input id="email" placeholder="Email">
+    <input id="senha" type="password" placeholder="Senha">
+    <input id="confirmarSenha" type="password" placeholder="Confirmar Senha">
+
+    <button type="button" onclick="togglePassword()">👁️</button>
+
+    <span id="erroSenha" style="display:none;color:red;">Senhas diferentes</span>
+    <span id="cadastroSucesso" style="display:none;color:green;">Sucesso</span>
+
+    <button type="button" onclick="cadastrarUsuario()">Cadastrar</button>
+    <button type="button" onclick="fecharModalCadUser()">Cancelar</button>
+
+  </div>
+</div>
+
 </body>
 </html>

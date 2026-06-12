@@ -17,12 +17,25 @@ LANCA_FILE = "banco.json"
 
 
 # =========================
-# GARANTE ARQUIVOS
+# UTIL: GARANTE ARQUIVO JSON
 # =========================
 def garantir_arquivo(file):
     if not os.path.exists(file):
         with open(file, "w", encoding="utf-8") as f:
             json.dump([], f)
+
+
+def ler_json(file):
+    try:
+        with open(file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return []
+
+
+def salvar_json(file, data):
+    with open(file, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
 
 garantir_arquivo(USUARIOS_FILE)
@@ -58,26 +71,15 @@ def financas():
 # =========================
 # USUÁRIOS
 # =========================
-def ler_usuarios():
-    try:
-        with open(USUARIOS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return []
-
-
-def salvar_usuarios(dados):
-    with open(USUARIOS_FILE, "w", encoding="utf-8") as f:
-        json.dump(dados, f, indent=4, ensure_ascii=False)
-
-
 @app.route("/usuarios", methods=["POST"])
 def usuarios():
     data = request.get_json()
-    usuarios = ler_usuarios()
+
+    usuarios = ler_json(USUARIOS_FILE)
     usuarios.append(data)
-    salvar_usuarios(usuarios)
-    return jsonify({"success": True})
+    salvar_json(USUARIOS_FILE, usuarios)
+
+    return jsonify({"status": "ok"}), 201
 
 
 @app.route("/login", methods=["POST"])
@@ -87,34 +89,21 @@ def login():
     email = dados.get("email")
     senha = dados.get("password")
 
-    usuarios = ler_usuarios()
+    usuarios = ler_json(USUARIOS_FILE)
 
     for u in usuarios:
         if u.get("email") == email and u.get("senha") == senha:
             return jsonify({"success": True})
 
-    return jsonify({"success": False})
+    return jsonify({"success": False}), 401
 
 
 # =========================
 # LANÇAMENTOS
 # =========================
-def ler_lancamentos():
-    try:
-        with open(LANCA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return []
-
-
-def salvar_lancamentos(dados):
-    with open(LANCA_FILE, "w", encoding="utf-8") as f:
-        json.dump(dados, f, indent=4, ensure_ascii=False)
-
-
 @app.route("/lancamentos", methods=["GET"])
 def get_lancamentos():
-    return jsonify(ler_lancamentos())
+    return jsonify(ler_json(LANCA_FILE))
 
 
 @app.route("/lancamentos", methods=["POST"])
@@ -124,26 +113,30 @@ def add_lancamento():
     if not novo:
         return jsonify({"status": "erro"}), 400
 
-    dados = ler_lancamentos()
+    dados = ler_json(LANCA_FILE)
+
     novo["id"] = str(uuid.uuid4())
-
     dados.append(novo)
-    salvar_lancamentos(dados)
 
-    return jsonify({"status": "ok"})
+    salvar_json(LANCA_FILE, dados)
+
+    return jsonify({"status": "ok"}), 201
 
 
 @app.route("/lancamentos/<id>", methods=["DELETE"])
 def deletar(id):
-    dados = ler_lancamentos()
+    dados = ler_json(LANCA_FILE)
+
     novos = [d for d in dados if d.get("id") != id]
-    salvar_lancamentos(novos)
+
+    salvar_json(LANCA_FILE, novos)
+
     return jsonify({"status": "ok"})
 
 
 @app.route("/lancamentos/<id>", methods=["PUT"])
 def editar(id):
-    dados = ler_lancamentos()
+    dados = ler_json(LANCA_FILE)
     atualizado = request.get_json()
 
     for d in dados:
@@ -151,7 +144,8 @@ def editar(id):
             d.update(atualizado)
             break
 
-    salvar_lancamentos(dados)
+    salvar_json(LANCA_FILE, dados)
+
     return jsonify({"status": "ok"})
 
 
@@ -160,10 +154,7 @@ def editar(id):
 # =========================
 @app.route("/api/financas")
 def api_financas():
-    path = os.path.join(os.path.dirname(__file__), "banco.json")
-
-    with open(path, "r", encoding="utf-8") as f:
-        return jsonify(json.load(f))
+    return jsonify(ler_json("banco.json"))
 
 
 # =========================
