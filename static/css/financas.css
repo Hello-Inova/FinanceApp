@@ -256,7 +256,7 @@ input, select {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
-  background: none;
+  background: #333;
   color: #eaeaea;
 }
 button:hover {
