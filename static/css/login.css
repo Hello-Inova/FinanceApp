@@ -79,6 +79,16 @@
   position: relative;
   width: 100%;
 }
+#password{
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  transition: 0.3s;
+  background: #161616;
+  color: #eaeaea;
+}
 .senha-wrapper {
   position: relative;
   width: 100%;
