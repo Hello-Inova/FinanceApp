@@ -869,4 +869,5 @@ tr:hover {
   border: none;
   color: #888;
   cursor: pointer;
+  width: fit-content;
 }
