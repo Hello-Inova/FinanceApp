@@ -465,7 +465,9 @@ tr:hover {
 #btnCancelarNovoRegistro,
 #btnRegistrarOutro,
 #btnSalvarEdicao,
-#btnCancelarEdicao {
+#btnCancelarEdicao,
+#btnCadastrarUser,
+#btnCancelarCadastro {
 
   flex: 1;
 
@@ -491,7 +493,9 @@ tr:hover {
    SALVAR
 ======================================== */
 
-#btnSalvarNovoRegistro, #btnSalvarEdicao {
+#btnSalvarNovoRegistro, 
+#btnSalvarEdicao, 
+#btnCadastrarUser {
   background: linear-gradient(
     135deg,
     #2ecc71,
@@ -501,14 +505,18 @@ tr:hover {
   color: white;
 }
 
-#btnSalvarNovoRegistro:hover, #btnSalvarEdicao:hover {
+#btnSalvarNovoRegistro:hover, 
+#btnSalvarEdicao:hover, 
+#btnCadastrarUser:hover {
   transform: translateY(-2px);
 
   box-shadow:
     0 8px 18px rgba(46,204,113,.35);
 }
 
-#btnSalvarNovoRegistro:active, #btnSalvarEdicao:active {
+#btnSalvarNovoRegistro:active, 
+#btnSalvarEdicao:active, 
+#btnCadastrarUser:active {
   transform: scale(.98);
 }
 
@@ -541,7 +549,9 @@ tr:hover {
    CANCELAR
 ======================================== */
 
-#btnCancelarNovoRegistro, #btnCancelarEdicao {
+#btnCancelarNovoRegistro, 
+#btnCancelarEdicao, 
+#btnCancelarCadastro {
   background: linear-gradient(
     135deg,
     #555,
@@ -551,14 +561,18 @@ tr:hover {
   color: white;
 }
 
-#btnCancelarNovoRegistro:hover, #btnCancelarEdicao:hover {
+#btnCancelarNovoRegistro:hover, 
+#btnCancelarEdicao:hover, 
+#btnCancelarCadastro:hover {
   transform: translateY(-2px);
 
   box-shadow:
     0 8px 18px rgba(120,120,120,.25);
 }
 
-#btnCancelarNovoRegistro:active, #btnCancelarEdicao:active {
+#btnCancelarNovoRegistro:active, 
+#btnCancelarEdicao:active, 
+#btnCancelarCadastro:active {
   transform: scale(.98);
 }
 
@@ -576,7 +590,9 @@ tr:hover {
   #btnCancelarNovoRegistro,
   #btnRegistrarOutro,
   #btnSalvarEdicao,
-  #btnCancelarEdicao {
+  #btnCancelarEdicao,
+  #btnCadastrarUser,
+  #btnCancelarCadastro {
     width: 100%;
   }
 }
