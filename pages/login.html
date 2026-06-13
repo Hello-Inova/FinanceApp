@@ -20,9 +20,31 @@
       </div>
 
       <div class="input-group">
+
         <label for="password">Senha</label>
-        <input type="password" id="password" placeholder="Digite sua senha" required><br><br>
-        <span id="error-message" style="color: red; display: none;">Usuario ou Senha incorretos</span>
+
+        <div class="senha-wrapper">
+
+          <input
+            type="password"
+            id="password"
+            placeholder="Digite sua senha"
+            required>
+
+          <button
+            type="button"
+            id="btnEye"
+            onclick="togglePassword()">
+            👁️
+          </button>
+
+        </div>
+
+        <span
+          id="error-message"
+          style="display:none;color:red;">
+          Usuário ou senha incorretos
+        </span>
 
       </div>
 
