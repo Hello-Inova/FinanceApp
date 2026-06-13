@@ -20,22 +20,21 @@
       </div>
 
       <div class="senha-wrapper">
+          <input
+              type="password"
+              id="password"
+              placeholder="Digite sua senha"
+              required>
 
-        <input
-          type="password"
-          id="password"
-          placeholder="Digite sua senha"
-          required>
-
-        <button
-          type="button"
-          id="btnEye"
-          onclick="togglePassword()">
-          👁️
-        </button>
-
+          <button
+              type="button"
+              id="btnEye"
+              onclick="togglePassword()">
+              👁️
+          </button>
       </div>
 
+      <span id="error-message" style="color: red; display: none;">Usuario ou Senha incorretos</span>
       <button type="submit">Entrar</button>
     </form>
 

@@ -79,6 +79,10 @@
   position: relative;
   width: 100%;
 }
+.senha-wrapper {
+  position: relative;
+  width: 100%;
+}
 
 .senha-wrapper input {
   width: 100%;
