@@ -304,7 +304,18 @@ function abrirModalCadUser() {
 
 function fecharModalCadUser() {
 
+  const modalCadUser = document.getElementById("modalCadUser");
+
   modalCadUser.style.display = "none";
+
+  document.getElementById("nome").value = "";
+  document.getElementById("email").value = "";
+  document.getElementById("senha").value = "";
+  document.getElementById("confirmarSenha").value = "";
+
+  // esconde mensagens do modal
+  document.getElementById("erroSenha").style.display = "none";
+  document.getElementById("cadastroSucesso").style.display = "none";
 }
 
 function togglePassword() {
