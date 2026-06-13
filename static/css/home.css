@@ -407,9 +407,10 @@ tr:hover {
    MODAL NOVO REGISTRO
 ======================================== */
 
-#modalNovoRegistro {
+#modalNovoRegistro, #modalEdit {
   backdrop-filter: blur(4px);
 }
+
 
 /* Área dos botões */
 
