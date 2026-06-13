@@ -504,6 +504,33 @@ async function cadastrarUsuario() {
   }
 }
 
+function configurarValidacaoCadastro() {
+
+  const campos = [
+    document.getElementById("nome"),
+    document.getElementById("email"),
+    document.getElementById("senha"),
+    document.getElementById("confirmarSenha")
+  ];
+
+  campos.forEach(campo => {
+
+    if (!campo) return;
+
+    campo.addEventListener("input", () => {
+
+      // volta a borda para o padrão
+      campo.style.border = "1px solid #444";
+
+      const mensagemErro =
+        document.getElementById("mensagemErro");
+
+      mensagemErro.style.display = "none";
+      mensagemErro.textContent = "";
+    });
+  });
+}
+
 function configurarValidacaoCampos() {
 
   ["novoData", "novoTipo", "novoDescricao", "novoValor"]
@@ -554,5 +581,6 @@ window.onload = () => {
   carregar();
 
   configurarValidacaoCampos();
+  configurarValidacaoCadastro();
 
 };
