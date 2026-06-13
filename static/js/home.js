@@ -160,6 +160,7 @@ async function salvarEdicao() {
     })
   });
 
+  fecharModalEdit();
 
   carregar();
 }
