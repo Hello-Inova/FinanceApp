@@ -59,6 +59,8 @@ function fecharModalNovoRegistro() {
   document.getElementById("msgNovoRegistro").style.display = "none";
 
   document.getElementById("modalNovoRegistro").style.display = "none";
+
+  document.getElementById("erroCamposNull").style.display = "none";
 }
 function fecharModalEdit() {
   document.getElementById("modalEdit").style.display = "none";
@@ -489,6 +491,25 @@ async function cadastrarUsuario() {
   }
 }
 
+function configurarValidacaoCampos() {
+
+  ["novoData", "novoTipo", "novoDescricao", "novoValor"]
+  .forEach(id => {
+
+    const campo = document.getElementById(id);
+
+    if (!campo) return;
+
+    campo.addEventListener("input", () => {
+
+      campo.style.border = "1px solid #444";
+
+      document.getElementById("erroCamposNull").style.display = "none";
+    });
+
+  });
+}
+
 // =========================
 // EXPORT GLOBAL
 // =========================
@@ -515,4 +536,10 @@ window.registrarOutro = registrarOutro;
 // =========================
 // INIT
 // =========================
-window.onload = carregar;
+window.onload = () => {
+
+  carregar();
+
+  configurarValidacaoCampos();
+
+};
