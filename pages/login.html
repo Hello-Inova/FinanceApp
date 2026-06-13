@@ -19,32 +19,20 @@
         <input type="email" id="email" placeholder="Digite seu e-mail" required>
       </div>
 
-      <div class="input-group">
+      <div class="senha-wrapper">
 
-        <label for="password">Senha</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Digite sua senha"
+          required>
 
-        <div class="senha-wrapper">
-
-          <input
-            type="password"
-            id="password"
-            placeholder="Digite sua senha"
-            required>
-
-          <button
-            type="button"
-            id="btnEye"
-            onclick="togglePassword()">
-            👁️
-          </button>
-
-        </div>
-
-        <span
-          id="error-message"
-          style="display:none;color:red;">
-          Usuário ou senha incorretos
-        </span>
+        <button
+          type="button"
+          id="btnEye"
+          onclick="togglePassword()">
+          👁️
+        </button>
 
       </div>
 

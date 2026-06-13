@@ -75,23 +75,35 @@
       font-size: 12px;
       color: #777;
     }
-    .senha-wrapper{
-  position:relative;
+    .senha-wrapper {
+  position: relative;
+  width: 100%;
 }
 
-.senha-wrapper input{
-  width:100%;
-  padding-right:50px;
+.senha-wrapper input {
+  width: 100%;
+  padding-right: 55px;
 }
 
-#btnEye{
-  position:absolute;
-  right:10px;
-  top:50%;
-  transform:translateY(-50%);
+#btnEye {
+  position: absolute;
 
-  background:none;
-  border:none;
+  right: 12px;
+  top: 50%;
 
-  cursor:pointer;
+  transform: translateY(-50%);
+
+  background: transparent;
+  border: none;
+
+  width: auto !important;
+  min-width: auto !important;
+
+  padding: 0;
+
+  cursor: pointer;
+
+  font-size: 18px;
+
+  z-index: 2;
 }
