@@ -131,12 +131,50 @@ async function salvarNovoRegistro() {
 
 async function registrarOutro() {
 
+  const valData = document.getElementById("novoData");
+  const valTipo = document.getElementById("novoTipo");
+  const valDescricao = document.getElementById("novoDescricao");
+  const valValor = document.getElementById("novoValor");
+
+  const erroCamposNull =
+    document.getElementById("erroCamposNull");
+
+  const campos = [
+    valData,
+    valTipo,
+    valDescricao,
+    valValor
+  ];
+
+  let possuiErro = false;
+
+  campos.forEach(campo => {
+
+    if (!campo.value.trim()) {
+
+      campo.style.border = "1px solid #e74c3c";
+      possuiErro = true;
+
+    } else {
+
+      campo.style.border = "1px solid #444";
+    }
+  });
+
+  if (possuiErro) {
+
+    erroCamposNull.style.display = "block";
+    return;
+  }
+
+  erroCamposNull.style.display = "none";
+
   const item = {
-    data: novoData.value,
-    tipo: novoTipo.value,
-    descricao: novoDescricao.value,
-    valor: Number(novoValor.value),
-    obs: novoObs.value
+    data: valData.value,
+    tipo: valTipo.value,
+    descricao: valDescricao.value,
+    valor: Number(valValor.value),
+    obs: document.getElementById("novoObs").value
   };
 
   await fetch(`${API_URL}/lancamentos`, {
