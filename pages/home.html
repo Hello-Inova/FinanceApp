@@ -167,6 +167,17 @@ href="{{ url_for('static', filename='img/favicon.png') }}">
       type="text"
       id="novoObs"
       placeholder="Observação">
+    
+    <span
+      id="erroCamposNull"
+      style="
+        display:none;
+        color:#e74c3c;
+        font-weight:bold;
+        text-align:center;
+      ">
+      Preencha os campos Obrigatorios em vermelho!
+    </span>
 
     <button
       type="button" id="btnSalvarNovoRegistro"
@@ -376,7 +387,7 @@ href="{{ url_for('static', filename='img/favicon.png') }}">
     </button>
 
   </div>
-</div>
+</div> 
 
 </body>
 </html>

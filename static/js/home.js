@@ -66,12 +66,54 @@ function fecharModalEdit() {
 
 async function salvarNovoRegistro() {
 
+  const valData = document.getElementById("novoData");
+  const valTipo = document.getElementById("novoTipo");
+  const valDescricao = document.getElementById("novoDescricao");
+  const valValor = document.getElementById("novoValor");
+
+  const erroCamposNull =
+    document.getElementById("erroCamposNull");
+
+  // Reset visual
+  [valData, valTipo, valDescricao, valValor].forEach(campo => {
+    campo.style.border = "1px solid #444";
+  });
+
+  erroCamposNull.style.display = "none";
+
+  let possuiErro = false;
+
+  if (!valData.value.trim()) {
+    valData.style.border = "2px solid #e74c3c";
+    possuiErro = true;
+  }
+
+  if (!valTipo.value.trim()) {
+    valTipo.style.border = "2px solid #e74c3c";
+    possuiErro = true;
+  }
+
+  if (!valDescricao.value.trim()) {
+    valDescricao.style.border = "2px solid #e74c3c";
+    possuiErro = true;
+  }
+
+  if (!valValor.value.trim()) {
+    valValor.style.border = "2px solid #e74c3c";
+    possuiErro = true;
+  }
+
+  if (possuiErro) {
+    erroCamposNull.style.display = "block";
+    return;
+  }
+
   const item = {
-    data: novoData.value,
-    tipo: novoTipo.value,
-    descricao: novoDescricao.value,
-    valor: Number(novoValor.value),
-    obs: novoObs.value
+    data: valData.value,
+    tipo: valTipo.value,
+    descricao: valDescricao.value,
+    valor: Number(valValor.value),
+    obs: document.getElementById("novoObs").value
   };
 
   await fetch(`${API_URL}/lancamentos`, {
@@ -336,7 +378,7 @@ function togglePassword() {
     mostrar ? "text" : "password";
 }
 
-async function cadastrarUsuario() {
+async function cadastrarUsuario() { 
   // 1. Captura dos elementos (ajuste os IDs se forem diferentes no seu HTML)
   const inputNome = document.getElementById('nome');
   const inputEmail = document.getElementById('email');
