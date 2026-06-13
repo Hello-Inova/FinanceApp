@@ -860,3 +860,13 @@ tr:hover {
 
   margin-bottom: 8px;
 }
+
+#confirmarSenha {
+  width: 80%;
+}
+#btnEye{
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
