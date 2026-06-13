@@ -30,3 +30,11 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     errorMessage.style.display = "block";
   }
 });
+function togglePassword() {
+
+  const mostrar = senha.type === "password";
+
+  senha.type =
+    mostrar ? "text" : "password";
+
+}
