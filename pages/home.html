@@ -327,16 +327,21 @@ href="{{ url_for('static', filename='img/favicon.png') }}">
       type="password"
       placeholder="Senha">
 
+  <div class="senha-wrapper">
+
     <input
       id="confirmarSenha"
       type="password"
       placeholder="Confirmar Senha">
 
     <button
-      type="button" id="btnEye"
+      type="button"
+      id="btnEye"
       onclick="togglePassword()">
       👁️
     </button>
+
+  </div>
 
     <span
       id="erroSenha"

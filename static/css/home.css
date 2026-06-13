@@ -861,13 +861,39 @@ tr:hover {
   margin-bottom: 8px;
 }
 
-#confirmarSenha {
-  width: 80%;
-}
-#btnEye{
+/*#btnEye{
   background: transparent;
   border: none;
   color: #888;
   cursor: pointer;
   width: fit-content;
+}*/
+.senha-wrapper{
+  position:relative;
+  width:100%;
+}
+
+.senha-wrapper input{
+  width:100%;
+  padding-right:50px;
+}
+
+#btnEye{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+
+  background:none;
+  border:none;
+
+  width:auto !important;
+
+  color:#aaa;
+
+  cursor:pointer;
+}
+
+#btnEye:hover{
+  color:white;
 }
