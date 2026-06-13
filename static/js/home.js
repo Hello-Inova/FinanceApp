@@ -319,37 +319,76 @@ function togglePassword() {
 }
 
 async function cadastrarUsuario() {
+  // 1. Captura dos elementos (ajuste os IDs se forem diferentes no seu HTML)
+  const inputNome = document.getElementById('nome');
+  const inputEmail = document.getElementById('email');
+  const inputSenha = document.getElementById('senha');
+  const inputConfirmarSenha = document.getElementById('confirmarSenha');
+  const mensagemErro = document.getElementById('mensagemErro'); // Tag para a frase vermelha "Preencha todos..."
 
-  if (senha.value !== confirmarSenha.value) {
+  const campos = [inputNome, inputEmail, inputSenha, inputConfirmarSenha];
+  let temCampoVazio = false;
 
-    erroSenha.style.display = "block";
-
-    return;
+  // 2. Reset visual das validações anteriores
+  campos.forEach(input => {
+    if (input) input.style.border = "1px solid #444"; // Cor padrão da sua borda
+  });
+  if (mensagemErro) {
+    mensagemErro.textContent = "";
+    mensagemErro.style.display = "none";
   }
-
   erroSenha.style.display = "none";
+  cadastroSucesso.style.display = "none";
 
-  await fetch(`${API_URL}/usuarios`, {
-
-    method: "POST",
-
-    headers: {
-      "Content-Type": "application/json"
-    },
-
-    body: JSON.stringify({
-      nome: nome.value,
-      email: email.value,
-      senha: senha.value
-    })
+  // 3. Validação: Verifica se existem campos vazios
+  campos.forEach(input => {
+    if (!input || input.value.trim() === "") {
+      temCampoVazio = true;
+      if (input) input.style.border = "2px solid #ff4d4d"; // Borda vermelha
+    }
   });
 
-  cadastroSucesso.style.display = "block";
+  // Se houver algum campo vazio, exibe o aviso e INTERROMPE a execução aqui
+  if (temCampoVazio) {
+    if (mensagemErro) {
+      mensagemErro.style.color = "#ff4d4d";
+      mensagemErro.textContent = "Preencha todos os campos!";
+      mensagemErro.style.display = "block";
+    }
+    return; // O 'return' impede o código de continuar para o fetch
+  }
 
-  nome.value = "";
-  email.value = "";
-  senha.value = "";
-  confirmarSenha.value = "";
+  // 4. Validação: Verifica se as senhas são iguais (sua lógica original)
+  if (inputSenha.value !== inputConfirmarSenha.value) {
+    erroSenha.style.display = "block";
+    return; // Interrompe se as senhas não baterem
+  }
+
+  // 5. Se passou por todas as validações, envia os dados para a API
+  try {
+    await fetch(`${API_URL}/usuarios`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        nome: inputNome.value,
+        email: inputEmail.value,
+        senha: inputSenha.value
+      })
+    });
+
+    // 6. Sucesso e Limpeza dos campos
+    cadastroSucesso.style.display = "block";
+    
+    inputNome.value = "";
+    inputEmail.value = "";
+    inputSenha.value = "";
+    inputConfirmarSenha.value = "";
+
+  } catch (error) {
+    console.error("Erro ao conectar com a API:", error);
+  }
 }
 
 // =========================
