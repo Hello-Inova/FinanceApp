@@ -306,16 +306,23 @@ function fecharModalCadUser() {
 
   const modalCadUser = document.getElementById("modalCadUser");
 
+  const nome = document.getElementById("nome");
+  const email = document.getElementById("email");
+  const senha = document.getElementById("senha");
+  const confirmarSenha = document.getElementById("confirmarSenha");
+
+  [nome, email, senha, confirmarSenha].forEach(input => {
+    if (!input) return;
+
+    input.value = "";
+    input.style.border = "1px solid #444";
+  });
+
   modalCadUser.style.display = "none";
 
-  document.getElementById("nome").value = "";
-  document.getElementById("email").value = "";
-  document.getElementById("senha").value = "";
-  document.getElementById("confirmarSenha").value = "";
-
-  // esconde mensagens do modal
-  document.getElementById("erroSenha").style.display = "none";
-  document.getElementById("cadastroSucesso").style.display = "none";
+  document.getElementById("erroSenha")?.style.setProperty("display", "none");
+  document.getElementById("cadastroSucesso")?.style.setProperty("display", "none");
+  document.getElementById("mensagemErro")?.style.setProperty("display", "none");
 }
 
 function togglePassword() {
