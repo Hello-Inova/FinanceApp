@@ -32,9 +32,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 });
 function togglePassword() {
 
+  const senha = document.getElementById("password");
+
   const mostrar = senha.type === "password";
 
-  senha.type =
-    mostrar ? "text" : "password";
-
+  senha.type = mostrar ? "text" : "password";
 }
