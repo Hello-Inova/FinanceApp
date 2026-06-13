@@ -50,6 +50,18 @@ function limparCamposNovoRegistro() {
   novoDescricao.value = "";
   novoValor.value = "";
   novoObs.value = "";
+
+  [
+    novoData,
+    novoTipo,
+    novoDescricao,
+    novoValor
+  ].forEach(campo => {
+    campo.style.border = "1px solid #444";
+  });
+
+  erroCamposNull.style.display = "none";
+  msgNovoRegistro.style.display = "none";
 }
 
 function fecharModalNovoRegistro() {
@@ -61,6 +73,7 @@ function fecharModalNovoRegistro() {
   document.getElementById("modalNovoRegistro").style.display = "none";
 
   document.getElementById("erroCamposNull").style.display = "none";
+
 }
 function fecharModalEdit() {
   document.getElementById("modalEdit").style.display = "none";
