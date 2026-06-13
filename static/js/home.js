@@ -60,6 +60,9 @@ function fecharModalNovoRegistro() {
 
   document.getElementById("modalNovoRegistro").style.display = "none";
 }
+function fecharModalEdit() {
+  document.getElementById("modalEdit").style.display = "none";
+}
 
 async function salvarNovoRegistro() {
 
@@ -157,7 +160,6 @@ async function salvarEdicao() {
     })
   });
 
-  fecharModal();
 
   carregar();
 }
@@ -367,6 +369,7 @@ window.cadastrarUsuario = cadastrarUsuario;
 
 window.abrirModalNovoRegistro = abrirModalNovoRegistro;
 window.fecharModalNovoRegistro = fecharModalNovoRegistro;
+window.fecharModalEdit = fecharModalEdit;
 
 window.salvarNovoRegistro = salvarNovoRegistro;
 window.registrarOutro = registrarOutro;
