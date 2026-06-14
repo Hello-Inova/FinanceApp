@@ -1,8 +1,15 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
-import json
-import uuid
-import os
+
+from database import (
+    criar_tabelas,
+    criar_usuario,
+    buscar_usuario,
+    listar_lancamentos,
+    criar_lancamento,
+    atualizar_lancamento,
+    excluir_lancamento
+)
 
 app = Flask(
     __name__,
@@ -12,39 +19,10 @@ app = Flask(
 
 CORS(app)
 
-USUARIOS_FILE = "usuarios.json"
-LANCA_FILE = "banco.json"
-
-
-# =========================
-# UTIL: GARANTE ARQUIVO JSON
-# =========================
-def garantir_arquivo(file):
-    if not os.path.exists(file):
-        with open(file, "w", encoding="utf-8") as f:
-            json.dump([], f)
-
-
-def ler_json(file):
-    try:
-        with open(file, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return []
-
-
-def salvar_json(file, data):
-    with open(file, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-
-
-garantir_arquivo(USUARIOS_FILE)
-garantir_arquivo(LANCA_FILE)
-
-
 # =========================
 # COMPONENTES
 # =========================
+
 @app.route("/components/<path:filename>")
 def components(filename):
     return send_from_directory("components", filename)
@@ -53,6 +31,7 @@ def components(filename):
 # =========================
 # PÁGINAS
 # =========================
+
 @app.route("/")
 def index():
     return render_template("login.html")
@@ -71,94 +50,167 @@ def financas():
 # =========================
 # USUÁRIOS
 # =========================
+
 @app.route("/usuarios", methods=["POST"])
 def usuarios():
+
     data = request.get_json()
 
-    usuarios = ler_json(USUARIOS_FILE)
-    usuarios.append(data)
-    salvar_json(USUARIOS_FILE, usuarios)
+    try:
 
-    return jsonify({"status": "ok"}), 201
+        criar_usuario(
+            data.get("nome"),
+            data.get("email"),
+            data.get("senha")
+        )
+
+        return jsonify({
+            "status": "ok"
+        }), 201
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
 
 
 @app.route("/login", methods=["POST"])
 def login():
+
     dados = request.get_json()
 
-    email = dados.get("email")
-    senha = dados.get("password")
+    usuario = buscar_usuario(
+        dados.get("email"),
+        dados.get("password")
+    )
 
-    usuarios = ler_json(USUARIOS_FILE)
+    if usuario:
 
-    for u in usuarios:
-        if u.get("email") == email and u.get("senha") == senha:
-            return jsonify({"success": True})
+        return jsonify({
+            "success": True
+        })
 
-    return jsonify({"success": False}), 401
+    return jsonify({
+        "success": False
+    }), 401
 
 
 # =========================
 # LANÇAMENTOS
 # =========================
+
 @app.route("/lancamentos", methods=["GET"])
 def get_lancamentos():
-    return jsonify(ler_json(LANCA_FILE))
+
+    return jsonify(
+        listar_lancamentos()
+    )
 
 
 @app.route("/lancamentos", methods=["POST"])
 def add_lancamento():
+
     novo = request.get_json()
 
     if not novo:
-        return jsonify({"status": "erro"}), 400
 
-    dados = ler_json(LANCA_FILE)
+        return jsonify({
+            "status": "erro"
+        }), 400
 
-    novo["id"] = str(uuid.uuid4())
-    dados.append(novo)
+    try:
 
-    salvar_json(LANCA_FILE, dados)
+        criar_lancamento(
+            novo.get("data"),
+            novo.get("tipo"),
+            novo.get("descricao"),
+            novo.get("valor"),
+            novo.get("obs")
+        )
 
-    return jsonify({"status": "ok"}), 201
+        return jsonify({
+            "status": "ok"
+        }), 201
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
 
 
-@app.route("/lancamentos/<id>", methods=["DELETE"])
-def deletar(id):
-    dados = ler_json(LANCA_FILE)
-
-    novos = [d for d in dados if d.get("id") != id]
-
-    salvar_json(LANCA_FILE, novos)
-
-    return jsonify({"status": "ok"})
-
-
-@app.route("/lancamentos/<id>", methods=["PUT"])
+@app.route("/lancamentos/<int:id>", methods=["PUT"])
 def editar(id):
-    dados = ler_json(LANCA_FILE)
+
     atualizado = request.get_json()
 
-    for d in dados:
-        if d.get("id") == id:
-            d.update(atualizado)
-            break
+    try:
 
-    salvar_json(LANCA_FILE, dados)
+        atualizar_lancamento(
+            id,
+            atualizado.get("data"),
+            atualizado.get("tipo"),
+            atualizado.get("descricao"),
+            atualizado.get("valor"),
+            atualizado.get("obs")
+        )
 
-    return jsonify({"status": "ok"})
+        return jsonify({
+            "status": "ok"
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
+
+
+@app.route("/lancamentos/<int:id>", methods=["DELETE"])
+def deletar(id):
+
+    try:
+
+        excluir_lancamento(id)
+
+        return jsonify({
+            "status": "ok"
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
 
 
 # =========================
 # FINANÇAS API
 # =========================
+
 @app.route("/api/financas")
 def api_financas():
-    return jsonify(ler_json("banco.json"))
+
+    return jsonify(
+        listar_lancamentos()
+    )
 
 
 # =========================
 # RUN
 # =========================
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+
+    criar_tabelas()
+
+    app.run(
+        host="0.0.0.0",
+        port=10000,
+        debug=True
+    )

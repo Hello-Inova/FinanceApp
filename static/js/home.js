@@ -293,13 +293,13 @@ function renderizarTabela() {
 
         <button
           class="btn-acao btn-delete"
-          onclick="deletar('${item.id}')">
+          onclick="deletar(${item.id})">
           🗑️
         </button>
 
         <button
           class="btn-acao btn-edit"
-          onclick="editar('${item.id}')">
+          onclick="editar(${item.id})">
           ✏️
         </button>
 
