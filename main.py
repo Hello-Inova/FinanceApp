@@ -22,7 +22,7 @@ from flask import (
     session,
     redirect
 )
-
+import os
 
 
 app = Flask(
@@ -31,7 +31,10 @@ app = Flask(
     static_folder="static"
 )
 
-app.secret_key = "finance_app_2026_super_secret"
+app.secret_key = os.getenv(
+    "SECRET_KEY",
+    "dev_secret"
+)
 
 CORS(app)
 
@@ -102,16 +105,12 @@ def usuarios():
 
     data = request.get_json()
 
-    senha_hash = generate_password_hash(
-        data.get("senha")
-    )
-
     try:
 
         criar_usuario(
             data.get("nome"),
             data.get("email"),
-            senha_hash
+            data.get("senha")
         )
 
         return jsonify({
@@ -120,11 +119,12 @@ def usuarios():
 
     except Exception as e:
 
+        print("ERRO CADASTRO:", e)
+
         return jsonify({
             "status": "erro",
             "mensagem": str(e)
         }), 400
-
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -159,18 +159,25 @@ def login():
 @app.route("/lancamentos", methods=["GET"])
 def get_lancamentos():
 
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+
     return jsonify(
-        listar_lancamentos()
+        listar_lancamentos(
+            session["usuario_id"]
+        )
     )
 
 
 @app.route("/lancamentos", methods=["POST"])
 def add_lancamento():
 
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+
     novo = request.get_json()
 
     if not novo:
-
         return jsonify({
             "status": "erro"
         }), 400
@@ -178,6 +185,7 @@ def add_lancamento():
     try:
 
         criar_lancamento(
+            session["usuario_id"],
             novo.get("data"),
             novo.get("tipo"),
             novo.get("descricao"),
@@ -196,53 +204,38 @@ def add_lancamento():
             "mensagem": str(e)
         }), 400
 
-
 @app.route("/lancamentos/<int:id>", methods=["PUT"])
 def editar(id):
 
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+
     atualizado = request.get_json()
 
-    try:
+    atualizar_lancamento(
+        session["usuario_id"],
+        id,
+        atualizado.get("data"),
+        atualizado.get("tipo"),
+        atualizado.get("descricao"),
+        atualizado.get("valor"),
+        atualizado.get("obs")
+    )
 
-        atualizar_lancamento(
-            id,
-            atualizado.get("data"),
-            atualizado.get("tipo"),
-            atualizado.get("descricao"),
-            atualizado.get("valor"),
-            atualizado.get("obs")
-        )
-
-        return jsonify({
-            "status": "ok"
-        })
-
-    except Exception as e:
-
-        return jsonify({
-            "status": "erro",
-            "mensagem": str(e)
-        }), 400
-
+    return jsonify({"status": "ok"})
 
 @app.route("/lancamentos/<int:id>", methods=["DELETE"])
 def deletar(id):
 
-    try:
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
 
-        excluir_lancamento(id)
+    excluir_lancamento(
+        session["usuario_id"],
+        id
+    )
 
-        return jsonify({
-            "status": "ok"
-        })
-
-    except Exception as e:
-
-        return jsonify({
-            "status": "erro",
-            "mensagem": str(e)
-        }), 400
-
+    return jsonify({"status": "ok"})
 
 # =========================
 # FINANÇAS API
@@ -251,8 +244,13 @@ def deletar(id):
 @app.route("/api/financas")
 def api_financas():
 
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+
     return jsonify(
-        listar_lancamentos()
+        listar_lancamentos(
+            session["usuario_id"]
+        )
     )
 
 
