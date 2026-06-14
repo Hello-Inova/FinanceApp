@@ -2,6 +2,10 @@ import sqlite3
 
 DB_NAME = "financeiro.db"
 
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
 
 # =========================
 # CONEXÃO
@@ -50,6 +54,9 @@ def criar_tabelas():
 # =========================
 
 def criar_usuario(nome, email, senha):
+
+    senha_hash = generate_password_hash(senha)
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -57,13 +64,18 @@ def criar_usuario(nome, email, senha):
         INSERT INTO usuarios
         (nome, email, senha)
         VALUES (?, ?, ?)
-    """, (nome, email, senha))
+    """, (
+        nome,
+        email,
+        senha_hash
+    ))
 
     conn.commit()
     conn.close()
 
 
 def buscar_usuario(email, senha):
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -71,14 +83,22 @@ def buscar_usuario(email, senha):
         SELECT *
         FROM usuarios
         WHERE email = ?
-        AND senha = ?
-    """, (email, senha))
+    """, (email,))
 
     usuario = cursor.fetchone()
 
     conn.close()
 
-    return usuario
+    if not usuario:
+        return None
+
+    if check_password_hash(
+        usuario["senha"],
+        senha
+    ):
+        return usuario
+
+    return None
 
 
 # =========================
@@ -169,3 +189,4 @@ def excluir_lancamento(id):
 
     conn.commit()
     conn.close()
+
