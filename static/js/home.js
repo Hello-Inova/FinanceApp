@@ -7,6 +7,21 @@ let dadosGlobais = [];
 let paginaAtual = 1;
 const itensPorPagina = 4;
 
+async function verificarLogin() {
+
+  const res = await fetch("/session");
+
+  const dados = await res.json();
+
+  if (!dados.logado) {
+
+    window.location.href = "/";
+
+    return;
+  }
+}
+
+
 // =========================
 // UTIL
 // =========================
@@ -550,6 +565,13 @@ function configurarValidacaoCampos() {
   });
 }
 
+async function logout() {
+
+  await fetch("/logout");
+
+  window.location.href = "/";
+}
+
 // =========================
 // EXPORT GLOBAL
 // =========================
@@ -573,14 +595,14 @@ window.fecharModalEdit = fecharModalEdit;
 window.salvarNovoRegistro = salvarNovoRegistro;
 window.registrarOutro = registrarOutro;
 
+window.logout = logout;
+
 // =========================
 // INIT
 // =========================
-window.onload = () => {
+window.onload = async () => {
 
-  carregar();
+  await verificarLogin();
 
-  configurarValidacaoCampos();
-  configurarValidacaoCadastro();
-
+  await carregar();
 };

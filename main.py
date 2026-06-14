@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
+
 from flask_cors import CORS
 
 from database import (
@@ -10,12 +10,25 @@ from database import (
     atualizar_lancamento,
     excluir_lancamento
 )
+from flask import (
+    Flask,
+    request,
+    jsonify,
+    render_template,
+    send_from_directory,
+    session,
+    redirect
+)
+
+
 
 app = Flask(
     __name__,
     template_folder="pages",
     static_folder="static"
 )
+
+app.secret_key = "finance_app_2026_super_secret"
 
 CORS(app)
 
@@ -39,12 +52,42 @@ def index():
 
 @app.route("/home")
 def home():
+
+    if "usuario_id" not in session:
+        return redirect("/")
+
     return render_template("home.html")
 
 
 @app.route("/financas")
 def financas():
+
+    if "usuario_id" not in session:
+        return redirect("/")
+
     return render_template("financas.html")
+
+@app.route("/logout")
+def logout():
+
+    session.clear()
+
+    return redirect("/")
+
+@app.route("/session")
+def verificar_sessao():
+
+    print("SESSION:", session)
+
+    if "usuario_id" in session:
+        return jsonify({
+            "logado": True,
+            "nome": session["usuario_nome"]
+        })
+
+    return jsonify({
+        "logado": False
+    })
 
 
 # =========================
@@ -87,6 +130,11 @@ def login():
     )
 
     if usuario:
+
+        session["usuario_id"] = usuario["id"]
+        session["usuario_nome"] = usuario["nome"]
+
+        print(session)
 
         return jsonify({
             "success": True
