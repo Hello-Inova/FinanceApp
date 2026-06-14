@@ -1,4 +1,7 @@
-
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
 from flask_cors import CORS
 
 from database import (
@@ -99,12 +102,16 @@ def usuarios():
 
     data = request.get_json()
 
+    senha_hash = generate_password_hash(
+        data.get("senha")
+    )
+
     try:
 
         criar_usuario(
             data.get("nome"),
             data.get("email"),
-            data.get("senha")
+            senha_hash
         )
 
         return jsonify({
