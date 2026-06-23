@@ -138,24 +138,34 @@ select, button {
 
 /* botão hambúrguer agora dentro do menu */
 .hamburger {
-  font-size: 20px;
   background: #3a2727;
+
   color: white;
 
   border: none;
-  padding: 10px 14px;
-  cursor: pointer;
-  border-radius: 6px;
-  margin-right: 10px;
 
-  top: 10px !important;
-  left: 10px !important;
+  border-radius: 6px;
+
+  padding: 10px 12px;
+
+  cursor: pointer;
+
+  font-size: 18px;
 }
+
 #btnMenu {
-top: 20px !important;
-left: 20px !important;
-position: fixed;
+  position: fixed;
+
+  top: 12px;
+  left: 12px;
+
+  width: auto !important;
+
+  padding: 10px 14px;
+
+  background: #3a2727;
 }
+
 #btnMenu:hover {
   background: #0056b3;
 }
@@ -163,23 +173,20 @@ position: fixed;
 /* sidebar */
 .sidebar {
   position: fixed;
-  top: 0;
-  left: -300px;
 
-  width: 240px;
-  height: 100%;
+  top: 0;
+  left: -280px;
+
+  width: 250px;
+  height: 100vh;
 
   background: #111;
-  color: white;
 
   padding: 20px;
 
-  transition: 0.3s ease;
-  z-index: 1000;
+  transition: .3s;
 
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  z-index: 999;
 }
 
 /* abre menu */
@@ -200,6 +207,7 @@ position: fixed;
 
   margin-bottom: 20px;
 }
+
 /* título */
 .menu-header h3 {
   margin: 0;
@@ -209,14 +217,21 @@ position: fixed;
 
 /* links */
 .sidebar button {
-  color: white;
-  text-decoration: none;
-  padding: 10px 10px;
-  border-radius: 6px;
-  border: none;
-  text-align: left;
-  cursor: pointer;
+  width: 100%;
 
+  margin-bottom: 10px;
+
+  background: #333;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 6px;
+
+  padding: 12px;
+
+  cursor: pointer;
   
 }
 #btnMenuin {
@@ -226,6 +241,7 @@ position: fixed;
   padding: 10px 14px;
   cursor: pointer;
   border-radius: 6px;
+  width: 18%;
 }
 #btnMenuin:hover {
   background: #0056b3;

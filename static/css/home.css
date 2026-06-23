@@ -233,11 +233,11 @@ tr:hover {
 /* =========================
    MENU
 ========================= */
-
+ 
 #btnMenu {
   position: fixed;
   top: 30px;;
-  left: 30x;
+  left: 30px;
   z-index: 2000;
 }
 
@@ -288,6 +288,8 @@ tr:hover {
 }
 
 .menu-header h3 {
+  margin: 0;
+  font-size: 22px;
   color: white;
 }
 
@@ -820,7 +822,9 @@ tr:hover {
 
   background: #3a2727;
 
-  z-index: 9999;
+}
+#btnMenu:hover {
+  background: #0056b3;
 }
 
 #btnMenuin {
@@ -829,6 +833,9 @@ tr:hover {
   padding: 10px 14px;
 
   background: #3a2727;
+}
+#btnMenuin:hover {
+  background: #0056b3;
 }
 
 .sidebar {
