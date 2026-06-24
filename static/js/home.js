@@ -6,6 +6,8 @@ let editId = null;
 let dadosGlobais = [];
 let paginaAtual = 1;
 let filtroAtual = "Todos";
+let colunaOrdenacao = null;
+let ordemOrdenacao = "asc";
 
 const itensPorPagina = 4;
 
@@ -337,6 +339,9 @@ function renderizarTabela() {
       item => item.tipo === "Saída"
     );
   }
+
+  dadosFiltrados =
+    aplicarOrdenacao(dadosFiltrados);
 
   const inicio =
     (paginaAtual - 1) * itensPorPagina;
@@ -701,6 +706,80 @@ function atualizarCardsAtivos() {
     }
 }
 
+function ordenarTabela(coluna) {
+
+    if (colunaOrdenacao === coluna) {
+
+        ordemOrdenacao =
+            ordemOrdenacao === "asc"
+                ? "desc"
+                : "asc";
+
+    } else {
+
+        colunaOrdenacao = coluna;
+
+        ordemOrdenacao = "asc";
+    }
+
+    renderizarTabela();
+}
+
+function aplicarOrdenacao(dados) {
+
+    if (!colunaOrdenacao)
+        return dados;
+
+    return [...dados].sort((a, b) => {
+
+        let valorA;
+        let valorB;
+
+        switch (colunaOrdenacao) {
+
+            case "data":
+
+                valorA = new Date(a.data);
+                valorB = new Date(b.data);
+
+                break;
+
+            case "descricao":
+
+                valorA = (a.descricao || "").toLowerCase();
+                valorB = (b.descricao || "").toLowerCase();
+
+                break;
+
+            case "valor":
+
+                valorA = Number(a.valor);
+                valorB = Number(b.valor);
+
+                break;
+
+            case "obs":
+
+                valorA = (a.obs || "").toLowerCase();
+                valorB = (b.obs || "").toLowerCase();
+
+                break;
+
+            default:
+
+                return 0;
+        }
+
+        if (valorA < valorB)
+            return ordemOrdenacao === "asc" ? -1 : 1;
+
+        if (valorA > valorB)
+            return ordemOrdenacao === "asc" ? 1 : -1;
+
+        return 0;
+    });
+}
+
 async function logout() {
 
   await fetch("/logout");
@@ -736,6 +815,8 @@ window.logout = logout;
 window.filtrarEntradas = filtrarEntradas;
 window.filtrarSaidas = filtrarSaidas;
 window.mostrarTodos = mostrarTodos;
+
+window.ordenarTabela = ordenarTabela;
 
 // =========================
 // INIT

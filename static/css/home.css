@@ -969,3 +969,18 @@ tr:hover {
         0 8px 20px rgba(0,0,0,.15);
 
 }
+.sortable {
+
+    cursor: pointer;
+
+    user-select: none;
+
+    transition: .2s;
+}
+
+.sortable:hover {
+
+    color: #3b82f6;
+
+    transform: translateY(-1px);
+}
