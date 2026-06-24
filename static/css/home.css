@@ -59,21 +59,34 @@ h1 {
 
 .card {
   background: #333;
-
   border-radius: 10px;
-
   padding: 12px;
-
   min-height: 80px;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
   text-align: center;
+  cursor: pointer;
+  transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+}
+.card:hover {
+
+    transform: translateY(-5px) scale(1.03);
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.20);
+
 }
 
+.card:active {
+
+    transform: translateY(-2px) scale(0.98);
+
+}
 .card h3 {
   color: #ccc;
   font-size: 14px;
@@ -88,16 +101,21 @@ h1 {
 #CardEntrada {
   border-left: 6px solid #2ecc71;
   color: #2ecc71;
+  cursor: pointer;
 }
 
 #CardSaida {
   border-left: 6px solid #e74c3c;
   color: #e74c3c;
+  cursor: pointer;
+
 }
 
 #CardSaldo {
   border-left: 6px solid #1e90ff;
   color: #1e90ff;
+  cursor: pointer;
+
 }
 
 /* =========================

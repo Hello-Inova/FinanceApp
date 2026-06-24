@@ -5,6 +5,8 @@ let saidas = 0;
 let editId = null;
 let dadosGlobais = [];
 let paginaAtual = 1;
+let filtroAtual = "Todos";
+
 const itensPorPagina = 4;
 
 async function verificarLogin() {
@@ -279,29 +281,85 @@ function fecharModal() {
   modalEdit.style.display = "none";
 }
 
+function filtrarEntradas() {
+
+  filtroAtual = "Entrada";
+
+  paginaAtual = 1;
+
+  renderizarTabela();
+}
+
+function filtrarSaidas() {
+
+  filtroAtual = "Saída";
+
+  paginaAtual = 1;
+
+  renderizarTabela();
+}
+
+function mostrarTodos() {
+
+  filtroAtual = "Todos";
+
+  paginaAtual = 1;
+
+  renderizarTabela();
+}
+
 // =========================
 // TABELA
 // =========================
+
 function renderizarTabela() {
 
   tabela.innerHTML = "";
 
-  const inicio = (paginaAtual - 1) * itensPorPagina;
+  let dadosFiltrados = [...dadosGlobais];
 
-  const pagina = dadosGlobais.slice(
-    inicio,
-    inicio + itensPorPagina
-  );
+  if (filtroAtual === "Entrada") {
+
+    dadosFiltrados = dadosFiltrados.filter(
+      item => item.tipo === "Entrada"
+    );
+  }
+
+  if (filtroAtual === "Saída") {
+
+    dadosFiltrados = dadosFiltrados.filter(
+      item => item.tipo === "Saída"
+    );
+  }
+
+  const inicio =
+    (paginaAtual - 1) * itensPorPagina;
+
+  const pagina =
+    dadosFiltrados.slice(
+      inicio,
+      inicio + itensPorPagina
+    );
 
   pagina.forEach(item => {
 
     const row = tabela.insertRow();
 
-    row.insertCell(0).innerText = item.data;
-    row.insertCell(1).innerText = item.tipo;
-    row.insertCell(2).innerText = item.descricao;
-    row.insertCell(3).innerText = formatarMoeda(item.valor);
-    row.insertCell(4).innerText = item.obs;
+    row.insertCell(0).innerText =
+      new Date(item.data)
+        .toLocaleDateString("pt-BR");
+
+    row.insertCell(1).innerText =
+      item.tipo;
+
+    row.insertCell(2).innerText =
+      item.descricao;
+
+    row.insertCell(3).innerText =
+      formatarMoeda(item.valor);
+
+    row.insertCell(4).innerText =
+      item.obs || "-";
 
     row.insertCell(5).innerHTML = `
       <div class="acoes-tabela">
@@ -326,6 +384,7 @@ function renderizarTabela() {
 
   atualizarPaginacao();
 }
+
 
 // =========================
 // TOTAIS
@@ -360,13 +419,35 @@ function calcularTotais() {
 // =========================
 function atualizarPaginacao() {
 
+  let dadosFiltrados = [...dadosGlobais];
+
+  if (filtroAtual === "Entrada") {
+
+    dadosFiltrados =
+      dadosFiltrados.filter(
+        item => item.tipo === "Entrada"
+      );
+  }
+
+  if (filtroAtual === "Saída") {
+
+    dadosFiltrados =
+      dadosFiltrados.filter(
+        item => item.tipo === "Saída"
+      );
+  }
+
   const totalPaginas =
-    Math.ceil(dadosGlobais.length / itensPorPagina);
+    Math.ceil(
+      dadosFiltrados.length /
+      itensPorPagina
+    );
 
   pageInfo.innerText =
     `Página ${paginaAtual} de ${totalPaginas || 1}`;
 
-  prevBtn.disabled = paginaAtual === 1;
+  prevBtn.disabled =
+    paginaAtual === 1;
 
   nextBtn.disabled =
     paginaAtual === totalPaginas ||
@@ -385,8 +466,27 @@ prevBtn.onclick = () => {
 
 nextBtn.onclick = () => {
 
+  let dadosFiltrados = [...dadosGlobais];
+
+  if (filtroAtual === "Entrada") {
+    dadosFiltrados =
+      dadosFiltrados.filter(
+        item => item.tipo === "Entrada"
+      );
+  }
+
+  if (filtroAtual === "Saída") {
+    dadosFiltrados =
+      dadosFiltrados.filter(
+        item => item.tipo === "Saída"
+      );
+  }
+
   const totalPaginas =
-    Math.ceil(dadosGlobais.length / itensPorPagina);
+    Math.ceil(
+      dadosFiltrados.length /
+      itensPorPagina
+    );
 
   if (paginaAtual < totalPaginas) {
 
@@ -596,6 +696,10 @@ window.salvarNovoRegistro = salvarNovoRegistro;
 window.registrarOutro = registrarOutro;
 
 window.logout = logout;
+
+window.filtrarEntradas = filtrarEntradas;
+window.filtrarSaidas = filtrarSaidas;
+window.mostrarTodos = mostrarTodos;
 
 // =========================
 // INIT

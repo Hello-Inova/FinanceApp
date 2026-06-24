@@ -24,17 +24,17 @@ href="{{ url_for('static', filename='img/favicon.png') }}">
 
   <!-- CARDS -->
   <div class="cards">
-    <div class="card" id="CardEntrada">
+    <div class="card" id="CardEntrada" onclick="filtrarEntradas()">
       <h3>Entradas</h3>
       <span id="totalEntradas">R$ 0,00</span>
     </div>
 
-    <div class="card" id="CardSaida">
+    <div class="card" id="CardSaida" onclick="filtrarSaidas()">
       <h3>Saídas</h3>
       <span id="totalSaidas">R$ 0,00</span>
     </div>
 
-    <div class="card" id="CardSaldo">
+    <div class="card" id="CardSaldo" onclick="mostrarTodos()">
       <h3>Saldo</h3>
       <span id="saldo">R$ 0,00</span>
     </div>
