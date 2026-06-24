@@ -9,7 +9,7 @@ let filtroAtual = "Todos";
 let colunaOrdenacao = null;
 let ordemOrdenacao = "asc";
 
-const itensPorPagina = 4;
+const itensPorPagina = 5;
 
 async function verificarLogin() {
 
@@ -24,6 +24,7 @@ async function verificarLogin() {
     return;
   }
 }
+
 
 
 // =========================
@@ -722,7 +723,49 @@ function ordenarTabela(coluna) {
         ordemOrdenacao = "asc";
     }
 
+    atualizarIconesOrdenacao();
+
     renderizarTabela();
+}
+function atualizarIconesOrdenacao() {
+
+    const icones = {
+        data: document.getElementById("icon-data"),
+        descricao: document.getElementById("icon-descricao"),
+        valor: document.getElementById("icon-valor"),
+        obs: document.getElementById("icon-obs")
+    };
+
+    Object.values(icones).forEach(icon => {
+
+        if (!icon) return;
+
+        icon.innerHTML = "⇅";
+
+        icon.classList.remove(
+            "sort-asc",
+            "sort-desc"
+        );
+    });
+
+    if (!colunaOrdenacao) return;
+
+    const icon = icones[colunaOrdenacao];
+
+    if (!icon) return;
+
+    if (ordemOrdenacao === "asc") {
+
+        icon.innerHTML = "▲";
+
+        icon.classList.add("sort-asc");
+
+    } else {
+
+        icon.innerHTML = "▼";
+
+        icon.classList.add("sort-desc");
+    }
 }
 
 function aplicarOrdenacao(dados) {
@@ -826,4 +869,8 @@ window.onload = async () => {
   await verificarLogin();
 
   await carregar();
+
+  atualizarCardsAtivos();
+
+  atualizarIconesOrdenacao();
 };

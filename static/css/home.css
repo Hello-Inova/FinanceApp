@@ -984,3 +984,55 @@ tr:hover {
 
     transform: translateY(-1px);
 }
+/* =========================
+   ORDENAÇÃO
+========================= */
+
+.sortable {
+
+    cursor: pointer;
+
+    user-select: none;
+
+    transition: .2s;
+}
+
+.sortable:hover {
+
+    color: #6366f1;
+}
+
+.sort-icon {
+
+    margin-left: 6px;
+
+    font-size: 14px;
+
+    color: #94a3b8;
+
+    transition: .25s;
+}
+
+/* Crescente */
+
+.sort-asc {
+
+    color: #22c55e;
+
+    text-shadow:
+        0 0 10px rgba(34,197,94,.4);
+
+    font-weight: bold;
+}
+
+/* Decrescente */
+
+.sort-desc {
+
+    color: #ef4444;
+
+    text-shadow:
+        0 0 10px rgba(239,68,68,.4);
+
+    font-weight: bold;
+}

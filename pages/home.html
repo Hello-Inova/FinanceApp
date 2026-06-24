@@ -56,11 +56,23 @@ href="{{ url_for('static', filename='img/favicon.png') }}">
     <table>
       <thead>
         <tr>
-          <th onclick="ordenarTabela('data')" class="sortable">Data</th>
+          <th onclick="ordenarTabela('data')" class="sortable">
+            Data
+            <span id="icon-data" class="sort-icon">⇅</span>
+        </th>
           <th>Tipo</th>
-          <th onclick="ordenarTabela('descricao')" class="sortable">Descrição</th>
-          <th onclick="ordenarTabela('valor')" class="sortable">Valor</th>
-          <th onclick="ordenarTabela('obs')" class="sortable">Observação</th>
+          <th onclick="ordenarTabela('descricao')" class="sortable">
+            Descrição
+            <span id="icon-descricao" class="sort-icon">⇅</span>
+          </th>
+          <th onclick="ordenarTabela('valor')" class="sortable">
+            Valor
+            <span id="icon-valor" class="sort-icon">⇅</span>
+          </th>
+          <th onclick="ordenarTabela('obs')" class="sortable">
+            Observação
+            <span id="icon-obs" class="sort-icon">⇅</span>
+          </th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -152,7 +164,7 @@ href="{{ url_for('static', filename='img/favicon.png') }}">
       <option value="Entrada">Entrada</option>
       <option value="Saída">Saída</option>
     </select>
-
+ 
     <input
       type="text"
       id="novoDescricao"
