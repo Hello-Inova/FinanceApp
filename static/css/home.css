@@ -922,3 +922,50 @@ tr:hover {
 #btnEye:hover{
   color:white;
 }
+/* CARD SELECIONADO */
+
+.card.ativo {
+
+    transform: scale(1.05);
+
+    border: 2px solid transparent;
+
+    transition: all .25s ease;
+
+}
+
+/* ENTRADAS */
+
+#CardEntrada.ativo {
+
+    border-color: #22c55e;
+
+    box-shadow:
+        0 0 20px rgba(34,197,94,.35),
+        0 8px 20px rgba(0,0,0,.15);
+
+}
+
+/* SAÍDAS */
+
+#CardSaida.ativo {
+
+    border-color: #ef4444;
+
+    box-shadow:
+        0 0 20px rgba(239,68,68,.35),
+        0 8px 20px rgba(0,0,0,.15);
+
+}
+
+/* SALDO */
+
+#CardSaldo.ativo {
+
+    border-color: #3b82f6;
+
+    box-shadow:
+        0 0 20px rgba(59,130,246,.35),
+        0 8px 20px rgba(0,0,0,.15);
+
+}

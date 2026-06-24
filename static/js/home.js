@@ -283,29 +283,35 @@ function fecharModal() {
 
 function filtrarEntradas() {
 
-  filtroAtual = "Entrada";
+    filtroAtual = "Entrada";
 
-  paginaAtual = 1;
+    paginaAtual = 1;
 
-  renderizarTabela();
+    atualizarCardsAtivos();
+
+    renderizarTabela();
 }
 
 function filtrarSaidas() {
 
-  filtroAtual = "Saída";
+    filtroAtual = "Saída";
 
-  paginaAtual = 1;
+    paginaAtual = 1;
 
-  renderizarTabela();
+    atualizarCardsAtivos();
+
+    renderizarTabela();
 }
 
 function mostrarTodos() {
 
-  filtroAtual = "Todos";
+    filtroAtual = "Todos";
 
-  paginaAtual = 1;
+    paginaAtual = 1;
 
-  renderizarTabela();
+    atualizarCardsAtivos();
+
+    renderizarTabela();
 }
 
 // =========================
@@ -663,6 +669,36 @@ function configurarValidacaoCampos() {
     });
 
   });
+}
+
+function atualizarCardsAtivos() {
+
+    document
+        .querySelectorAll(".card")
+        .forEach(card =>
+            card.classList.remove("ativo")
+        );
+
+    if (filtroAtual === "Entrada") {
+
+        document
+            .getElementById("CardEntrada")
+            .classList.add("ativo");
+    }
+
+    else if (filtroAtual === "Saída") {
+
+        document
+            .getElementById("CardSaida")
+            .classList.add("ativo");
+    }
+
+    else {
+
+        document
+            .getElementById("CardSaldo")
+            .classList.add("ativo");
+    }
 }
 
 async function logout() {
