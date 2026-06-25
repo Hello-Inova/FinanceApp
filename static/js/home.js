@@ -6,6 +6,7 @@ let editId = null;
 let dadosGlobais = [];
 let paginaAtual = 1;
 let filtroAtual = "Todos";
+let filtroMesAtual = "";
 let colunaOrdenacao = null;
 let ordemOrdenacao = "asc";
 
@@ -25,7 +26,64 @@ async function verificarLogin() {
   }
 }
 
+function carregarFiltroMes() {
 
+    const select =
+        document.getElementById("filtroMes");
+
+    if (!select) return;
+
+    select.innerHTML =
+        '<option value="">Todos os meses</option>';
+
+    const meses = new Set();
+
+    dadosGlobais.forEach(item => {
+
+        if (!item.data) return;
+
+        const data =
+            new Date(item.data);
+
+        const chave =
+            `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+
+        meses.add(chave);
+    });
+
+    [...meses]
+        .sort()
+        .forEach(chave => {
+
+            const [ano, mes] =
+                chave.split("-");
+
+            const nomesMeses = [
+                "Janeiro",
+                "Fevereiro",
+                "Março",
+                "Abril",
+                "Maio",
+                "Junho",
+                "Julho",
+                "Agosto",
+                "Setembro",
+                "Outubro",
+                "Novembro",
+                "Dezembro"
+            ];
+
+            const option =
+                document.createElement("option");
+
+            option.value = chave;
+
+            option.textContent =
+                `${nomesMeses[Number(mes) - 1]}/${ano}`;
+
+            select.appendChild(option);
+        });
+}
 
 // =========================
 // UTIL
@@ -35,6 +93,16 @@ function formatarMoeda(valor) {
     style: "currency",
     currency: "BRL"
   });
+}
+
+function filtrarPorMes() {
+
+    filtroMesAtual =
+        document.getElementById("filtroMes").value;
+
+    paginaAtual = 1;
+
+    renderizarTabela();
 }
 
 // =========================
@@ -47,6 +115,7 @@ async function carregar() {
 
     paginaAtual = 1;
 
+    carregarFiltroMes();
     renderizarTabela();
   } catch (err) {
     console.error(err);
@@ -326,6 +395,21 @@ function renderizarTabela() {
   tabela.innerHTML = "";
 
   let dadosFiltrados = [...dadosGlobais];
+
+  if (filtroMesAtual) {
+
+    dadosFiltrados =
+        dadosFiltrados.filter(item => {
+
+            const data =
+                new Date(item.data);
+
+            const chave =
+                `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+
+            return chave === filtroMesAtual;
+        });
+  }
 
   if (filtroAtual === "Entrada") {
 
@@ -860,6 +944,8 @@ window.filtrarSaidas = filtrarSaidas;
 window.mostrarTodos = mostrarTodos;
 
 window.ordenarTabela = ordenarTabela;
+
+window.filtrarPorMes = filtrarPorMes;
 
 // =========================
 // INIT
