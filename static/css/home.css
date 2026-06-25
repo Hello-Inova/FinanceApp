@@ -128,25 +128,75 @@ h1 {
   margin-bottom: 20px;
 }
 
-#btnAdicionar {
-  background: #3a2727;
-
-  border: none;
-
-  color: white;
-
-  padding: 12px 24px;
-
-  border-radius: 8px;
-
+#btnAdicionar,
+#btnFiltrar {
+  padding: 13px 24px;
+  width: 32.5%;
   cursor: pointer;
+}
+#toolbar #btnAdicionar, #toolbar #btnFiltrar, #top-bar #btnBuscar{
+    background: #3a2727;
 
-  min-width: 220px;
+}
+#filtroMes{
+  width: 70%;
+  cursor: pointer;
 }
 
-#btnAdicionar:hover {
-  background: #0056b3;
+.filtros {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 33.5%;
+    
 }
+
+
+#iptPesquisa:focus,#filtroMes:focus {  
+  border-color: #9055ff;     /* Borda roxa combinando com a identidade do seu gráfico */
+  box-shadow: 0 0 0 3px rgba(144, 85, 255, 0.2); /* Sombra suave ao redor */
+}
+
+#iptPesquisa,#filtroMes {  
+  background-color: #1a1a1a; /* Fundo escuro sutil para destacar do fundo do modal */
+  border: 1px solid #444;    /* Borda suave */
+  border-radius: 6px;        /* Cantos arredondados modernos */
+  color: #ffffff;            /* Texto branco bem legível */
+  font-size: 14px;
+  padding: 10px 14px;        /* Espaçamento interno para o texto não ficar colado */
+  width: 90.3%;               /* Faz os campos ocuparem toda a largura disponível */
+  box-sizing: border-box;    /* Garante que o padding não quebre a largura */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Transição suave para o foco */
+  outline: none;
+}
+/* Efeito ao clicar/focar no campo */
+#iptPesquisa:focus,#filtroMes:focus {  
+  border-color: #9055ff;     /* Borda roxa combinando com a identidade do seu gráfico */
+  box-shadow: 0 0 0 3px rgba(144, 85, 255, 0.2); /* Sombra suave ao redor */
+}
+
+/* Ajuste específico para o texto placeholder (dentro do input) */
+#iptPesquisa::placeholder {
+  color: #777;               /* Cor cinza discreta para o texto de instrução */
+}
+
+#btnBuscar{
+  width: 9%;
+  cursor: pointer;
+  background-color: #3a2727;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+
+
 
 /* =========================
    TABELA
@@ -515,7 +565,10 @@ tr:hover {
 
 #btnSalvarNovoRegistro, 
 #btnSalvarEdicao, 
-#btnCadastrarUser {
+#btnCadastrarUser,
+#btnAdicionar,
+#btnFiltrar,
+#btnBuscar {
   background: linear-gradient(
     135deg,
     #2ecc71,
@@ -527,7 +580,10 @@ tr:hover {
 
 #btnSalvarNovoRegistro:hover, 
 #btnSalvarEdicao:hover, 
-#btnCadastrarUser:hover {
+#btnCadastrarUser:hover,
+#btnAdicionar:hover,
+#btnFiltrar:hover,
+#btnBuscar:hover{
   transform: translateY(-2px);
 
   box-shadow:
@@ -536,7 +592,10 @@ tr:hover {
 
 #btnSalvarNovoRegistro:active, 
 #btnSalvarEdicao:active, 
-#btnCadastrarUser:active {
+#btnCadastrarUser:active,
+#btnAdicionar:active,
+#btnFiltrar:active,
+#btnBuscar:active{
   transform: scale(.98);
 }
 
@@ -724,13 +783,30 @@ tr:hover {
     grid-template-columns: 1fr;
   }
 
-  #btnAdicionar {
-    width: 100%;
+  #btnAdicionar{
+    width: 30%;
+  }
+  .filtros{
+    width: 70%;
+  }
+  #filtroMes{
+    width: 90%;
+  }
+  #btnFiltrar{
+    width: 25%;
+  }
+
+  #btnBuscar{
+    width: 16.7%;
+  }
+  #iptPesquisa{
+    width: 82%;
   }
 
   .sidebar {
     width: 220px;
   }
+  
 
   .modal-acoes {
     flex-direction: column;
@@ -1035,4 +1111,29 @@ tr:hover {
         0 0 10px rgba(239,68,68,.4);
 
     font-weight: bold;
+}
+/* FILTRO COMPACTO */
+.top-bar {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.05);
+    background: #333;
+    color: #eaeaea;
+    font-size: 12px;
+}
+select{
+  padding: 6px 70px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.05);
+  background: #333;
+  color: #eaeaea;
+  font-size: 12px;
 }

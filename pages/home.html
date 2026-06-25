@@ -38,17 +38,38 @@ href="{{ url_for('static', filename='img/favicon.png') }}">
       <h3>Saldo</h3>
       <span id="saldo">R$ 0,00</span>
     </div>
+ 
   </div>
 
-  <!-- BOTÃO ADICIONAR -->
-  <div style="display:flex;justify-content:center;margin-bottom:20px;">
+
+<div class="toolbar" id="toolbar">
     <button
-      id="btnAdicionar"
-      type="button"
-      onclick="abrirModalNovoRegistro()">
-      ➕ Adicionar
+        id="btnAdicionar"
+        type="button"
+        onclick="abrirModalNovoRegistro()">
+        ➕ Adicionar
     </button>
-  </div>
+
+    <div class="filtros">
+        <select id="filtroMes"></select>
+
+        <button id="btnFiltrar">
+            Filtrar
+        </button>
+
+    </div>
+</div>
+<div  class="top-bar" id="top-bar" style="display:flex;justify-content:right;margin-bottom:20px;">
+          <input
+            type="search"
+            name="pesquisa"
+            id="iptPesquisa"
+            placeholder="🔍 Buscar por Data, Descrição,Valor ou Observação">
+
+        <button id="btnBuscar">
+            🔍
+        </button>
+</div>
 
   <!-- TABELA -->
    <div class="tabela-container">
