@@ -360,7 +360,16 @@ href="{{ url_for('static', filename='img/favicon.png') }}">
 
     <h3>Cadastrar Usuário</h3>
 
-    <select name="" id="slTipoPerfil">Perfil de Usuário</select>
+    <select id="perfil" class="input">
+      <label for="perfil">Perfil do Usuário</label>
+        <option value="Padrão" selected>
+            Padrão
+        </option>
+
+        <option value="Administrativo">
+            Administrativo
+        </option>        
+    </select>
 
 
     <input id="nome" placeholder="Nome">

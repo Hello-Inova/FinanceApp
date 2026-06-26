@@ -110,7 +110,8 @@ def usuarios():
         criar_usuario(
             data.get("nome"),
             data.get("email"),
-            data.get("senha")
+            data.get("senha"),
+            data.get("perfil")
         )
 
         return jsonify({

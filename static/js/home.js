@@ -408,7 +408,7 @@ function renderizarTabela() {
   tabela.innerHTML = "";
 
   let dadosFiltrados = [...dadosGlobais];
-  
+
   if (filtroPesquisa) {
 
       dadosFiltrados = dadosFiltrados.filter(item => {
@@ -682,77 +682,140 @@ function togglePassword() {
     mostrar ? "text" : "password";
 }
 
-async function cadastrarUsuario() { 
-  // 1. Captura dos elementos (ajuste os IDs se forem diferentes no seu HTML)
-  const inputNome = document.getElementById('nome');
-  const inputEmail = document.getElementById('email');
-  const inputSenha = document.getElementById('senha');
-  const inputConfirmarSenha = document.getElementById('confirmarSenha');
-  const mensagemErro = document.getElementById('mensagemErro'); // Tag para a frase vermelha "Preencha todos..."
+async function cadastrarUsuario() {
 
-  const campos = [inputNome, inputEmail, inputSenha, inputConfirmarSenha];
+  // Captura dos elementos
+  const inputNome = document.getElementById("nome");
+  const inputEmail = document.getElementById("email");
+  const inputSenha = document.getElementById("senha");
+  const inputConfirmarSenha = document.getElementById("confirmarSenha");
+  const inputPerfil = document.getElementById("perfil");
+
+  const mensagemErro = document.getElementById("mensagemErro");
+
+  const campos = [
+    inputNome,
+    inputEmail,
+    inputSenha,
+    inputConfirmarSenha,
+    inputPerfil
+  ];
+
   let temCampoVazio = false;
 
-  // 2. Reset visual das validações anteriores
+  // Reset visual
   campos.forEach(input => {
-    if (input) input.style.border = "1px solid #444"; // Cor padrão da sua borda
+    if (input)
+      input.style.border = "1px solid #444";
   });
+
   if (mensagemErro) {
     mensagemErro.textContent = "";
     mensagemErro.style.display = "none";
   }
+
   erroSenha.style.display = "none";
   cadastroSucesso.style.display = "none";
 
-  // 3. Validação: Verifica se existem campos vazios
+  // Validação de campos obrigatórios
   campos.forEach(input => {
+
     if (!input || input.value.trim() === "") {
+
       temCampoVazio = true;
-      if (input) input.style.border = "2px solid #ff4d4d"; // Borda vermelha
+
+      if (input)
+        input.style.border = "2px solid #ff4d4d";
     }
+
   });
 
-  // Se houver algum campo vazio, exibe o aviso e INTERROMPE a execução aqui
   if (temCampoVazio) {
+
     if (mensagemErro) {
+
       mensagemErro.style.color = "#ff4d4d";
       mensagemErro.textContent = "Preencha todos os campos!";
       mensagemErro.style.display = "block";
+
     }
-    return; // O 'return' impede o código de continuar para o fetch
+
+    return;
   }
 
-  // 4. Validação: Verifica se as senhas são iguais (sua lógica original)
+  // Validação da senha
   if (inputSenha.value !== inputConfirmarSenha.value) {
+
     erroSenha.style.display = "block";
-    return; // Interrompe se as senhas não baterem
+
+    return;
   }
 
-  // 5. Se passou por todas as validações, envia os dados para a API
+  // Cadastro
   try {
-    await fetch(`${API_URL}/usuarios`, {
+
+    const resposta = await fetch(`${API_URL}/usuarios`, {
+
       method: "POST",
+
       headers: {
         "Content-Type": "application/json"
       },
+
       body: JSON.stringify({
-        nome: inputNome.value,
-        email: inputEmail.value,
-        senha: inputSenha.value
+
+        nome: inputNome.value.trim(),
+
+        email: inputEmail.value.trim(),
+
+        senha: inputSenha.value,
+
+        perfil: inputPerfil.value
+
       })
+
     });
 
-    // 6. Sucesso e Limpeza dos campos
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+
+      if (mensagemErro) {
+
+        mensagemErro.style.display = "block";
+        mensagemErro.style.color = "#ff4d4d";
+        mensagemErro.textContent =
+          dados.mensagem || "Erro ao cadastrar usuário.";
+
+      }
+
+      return;
+    }
+
     cadastroSucesso.style.display = "block";
-    
+
+    // Limpa os campos
     inputNome.value = "";
     inputEmail.value = "";
     inputSenha.value = "";
     inputConfirmarSenha.value = "";
+    inputPerfil.value = "Padrão";
 
   } catch (error) {
-    console.error("Erro ao conectar com a API:", error);
+
+    console.error(error);
+
+    if (mensagemErro) {
+
+      mensagemErro.style.display = "block";
+      mensagemErro.style.color = "#ff4d4d";
+      mensagemErro.textContent =
+        "Erro ao conectar com o servidor.";
+
+    }
+
   }
+
 }
 
 function configurarValidacaoCadastro() {

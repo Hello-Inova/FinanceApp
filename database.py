@@ -60,7 +60,7 @@ def criar_tabelas():
 # USUÁRIOS
 # =========================
 
-def criar_usuario(nome, email, senha):
+def criar_usuario(nome, email, senha, perfil):
 
     senha_hash = generate_password_hash(senha)
 
@@ -69,12 +69,13 @@ def criar_usuario(nome, email, senha):
 
     cursor.execute("""
         INSERT INTO usuarios
-        (nome, email, senha)
-        VALUES (?, ?, ?)
+        (nome, email, senha, perfil)
+        VALUES (?, ?, ?, ?)
     """, (
         nome,
         email,
-        senha_hash
+        senha_hash,
+        perfil
     ))
 
     conn.commit()
