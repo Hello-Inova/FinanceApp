@@ -164,7 +164,7 @@ h1 {
   color: #ffffff;            /* Texto branco bem legível */
   font-size: 14px;
   padding: 10px 14px;        /* Espaçamento interno para o texto não ficar colado */
-  width: 85%;               /* Faz os campos ocuparem toda a largura disponível */
+  width: 90%;               /* Faz os campos ocuparem toda a largura disponível */
   box-sizing: border-box;    /* Garante que o padding não quebre a largura */
   transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Transição suave para o foco */
   outline: none;

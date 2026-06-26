@@ -17,9 +17,18 @@
       <button onclick="toggleMenu(event)" class="hamburger" id="btnMenuin">☰</button>      <h3>Menu</h3>
     </div>
 
-    <button id="btnDashboard" onclick="location.href='/home'">📊 Dashboard</button>
+    <hr style="margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+    <button id="btnAdmin" onclick="location.href='/Admin'" >🖊️ Administrativo</button>
     <button id="btnCadUser" onclick="abrirModalCadUser()">🧑‍💻 Cadastro de Usuário</button>
-    <button id="btnFinancas" onclick="location.href='/financas'">📈 Dashboard Financeiro</button>
+    <hr style="margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+
+    <button id="btnDashboard" onclick="location.href='/home'">💰 Finanças</button>
+    <button id="btnMetas" onclick="location.href='/metas'">🎯 Metas</button>
+    <button id="btnFinancas" onclick="location.href='/financas'">📈 Gráfico Financeiro</button>
+    <button id="btnAgenda" onclick="location.href='/agenda'">📅 Agenda</button>
+    <!--<button id="btnManutencao" onclick="location.href='/manutenção'">🚗 Manutenção</button>-->
+    <button id="btnCompras" onclick="location.href='/compras'">🛒 Compras</button>
+    <!--<button id="btnMedicamentos" onclick="location.href='/medicamentos'">💊 Medicamentos</button>-->
     <button onclick="logout()">🚪 Sair</button>
 
 
