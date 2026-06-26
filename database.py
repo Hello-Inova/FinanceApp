@@ -84,37 +84,29 @@ def criar_usuario(nome, email, senha, perfil):
 
 def buscar_usuario(email, senha):
 
-    print("EMAIL RECEBIDO:", email)
-
     conn = conectar()
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT *
+        SELECT id, nome, email, senha, perfil
         FROM usuarios
         WHERE email = ?
     """, (email,))
 
     usuario = cursor.fetchone()
 
-    print("USUARIO ENCONTRADO:", usuario)
-
     conn.close()
 
-    if not usuario:
-        print("USUARIO NÃO ENCONTRADO")
-        return None
+    if usuario and check_password_hash(usuario["senha"], senha):
 
-    if check_password_hash(
-        usuario["senha"],
-        senha
-    ):
-        print("SENHA CORRETA")
-        return usuario
+        return {
+            "id": usuario["id"],
+            "nome": usuario["nome"],
+            "email": usuario["email"],
+            "perfil": usuario["perfil"]
+        }
 
-    print("SENHA INCORRETA")
     return None
-
 # =========================
 # LANÇAMENTOS
 # =========================

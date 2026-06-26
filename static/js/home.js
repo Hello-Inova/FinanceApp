@@ -19,11 +19,26 @@ async function verificarLogin() {
 
   const dados = await res.json();
 
-  if (!dados.logado) {
+  if (!dados.logado){
 
-    window.location.href = "/";
+      window.location.href="/";
 
-    return;
+      return;
+
+  }
+
+  if(dados.perfil === "Administrativo"){
+
+      document.getElementById("btnAdmin").style.display="block";
+
+      document.getElementById("btnCadUser").style.display="block";
+
+  }else{
+
+      document.getElementById("btnAdmin").style.display="none";
+
+      document.getElementById("btnCadUser").style.display="none";
+
   }
 }
 

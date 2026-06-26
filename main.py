@@ -88,7 +88,8 @@ def verificar_sessao():
     if "usuario_id" in session:
         return jsonify({
             "logado": True,
-            "nome": session["usuario_nome"]
+            "nome": session["usuario_nome"],
+            "perfil": session["usuario_perfil"]
         })
 
     return jsonify({
@@ -104,6 +105,18 @@ def verificar_sessao():
 def usuarios():
 
     data = request.get_json()
+
+    if "usuario_id" not in session:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Não autenticado"
+        }), 401
+
+    if not usuario_admin():
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Acesso negado"
+        }), 403
 
     try:
 
@@ -141,6 +154,7 @@ def login():
 
         session["usuario_id"] = usuario["id"]
         session["usuario_nome"] = usuario["nome"]
+        session["usuario_perfil"] = usuario["perfil"]
 
         print(session)
 
@@ -152,6 +166,12 @@ def login():
         "success": False
     }), 401
 
+def usuario_admin():
+
+    return (
+        session.get("usuario_perfil")
+        == "Administrativo"
+    )
 
 # =========================
 # LANÇAMENTOS
