@@ -408,20 +408,31 @@ function renderizarTabela() {
   tabela.innerHTML = "";
 
   let dadosFiltrados = [...dadosGlobais];
-
+  
   if (filtroPesquisa) {
 
-    dadosFiltrados = dadosFiltrados.filter(item => {
+      dadosFiltrados = dadosFiltrados.filter(item => {
 
-        return (
-            String(item.data).toLowerCase().includes(filtroPesquisa) ||
-            String(item.tipo).toLowerCase().includes(filtroPesquisa) ||
-            String(item.descricao).toLowerCase().includes(filtroPesquisa) ||
-            String(item.valor).toLowerCase().includes(filtroPesquisa) ||
-            String(item.obs || "").toLowerCase().includes(filtroPesquisa)
-        );
+          const dataFormatada = new Date(item.data)
+              .toLocaleDateString("pt-BR");
 
-    });
+          return (
+
+              dataFormatada.toLowerCase().includes(filtroPesquisa) ||
+
+              item.tipo.toLowerCase().includes(filtroPesquisa) ||
+
+              item.descricao.toLowerCase().includes(filtroPesquisa) ||
+
+              formatarMoeda(item.valor).toLowerCase().includes(filtroPesquisa) ||
+
+              String(item.valor).includes(filtroPesquisa) ||
+
+              (item.obs || "").toLowerCase().includes(filtroPesquisa)
+
+          );
+
+      });
 
   }
 
