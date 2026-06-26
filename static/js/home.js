@@ -9,6 +9,7 @@ let filtroAtual = "Todos";
 let filtroMesAtual = "";
 let colunaOrdenacao = null;
 let ordemOrdenacao = "asc";
+let filtroPesquisa = "";
 
 const itensPorPagina = 5;
 
@@ -99,6 +100,18 @@ function filtrarPorMes() {
 
     filtroMesAtual =
         document.getElementById("filtroMes").value;
+
+    paginaAtual = 1;
+
+    renderizarTabela();
+}
+function pesquisar() {
+
+    filtroPesquisa = document
+        .getElementById("iptPesquisa")
+        .value
+        .trim()
+        .toLowerCase();
 
     paginaAtual = 1;
 
@@ -395,6 +408,22 @@ function renderizarTabela() {
   tabela.innerHTML = "";
 
   let dadosFiltrados = [...dadosGlobais];
+
+  if (filtroPesquisa) {
+
+    dadosFiltrados = dadosFiltrados.filter(item => {
+
+        return (
+            String(item.data).toLowerCase().includes(filtroPesquisa) ||
+            String(item.tipo).toLowerCase().includes(filtroPesquisa) ||
+            String(item.descricao).toLowerCase().includes(filtroPesquisa) ||
+            String(item.valor).toLowerCase().includes(filtroPesquisa) ||
+            String(item.obs || "").toLowerCase().includes(filtroPesquisa)
+        );
+
+    });
+
+  }
 
   if (filtroMesAtual) {
 
@@ -944,13 +973,25 @@ window.filtrarSaidas = filtrarSaidas;
 window.mostrarTodos = mostrarTodos;
 
 window.ordenarTabela = ordenarTabela;
-
+window.pesquisar = pesquisar;
 window.filtrarPorMes = filtrarPorMes;
 
 // =========================
 // INIT
 // =========================
 window.onload = async () => {
+
+  document
+    .getElementById("iptPesquisa")
+    .addEventListener("keydown", function(e){
+
+        if(e.key === "Enter"){
+
+            pesquisar();
+
+        }
+
+    });
 
   await verificarLogin();
 
