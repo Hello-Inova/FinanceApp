@@ -1116,3 +1116,86 @@ tbody tr:hover {
     right: 12px;
   }
 }
+/* =========================
+   PAGINAÇÃO RESPONSIVA
+========================= */
+
+.paginacao {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+#prevBtn,
+#nextBtn {
+  width: auto;
+  min-width: 130px;
+}
+
+#pageInfo {
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* CELULAR */
+@media (max-width: 600px) {
+  .paginacao {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+
+  #pageInfo {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  #prevBtn,
+  #nextBtn {
+    width: 100%;
+    min-width: 0;
+    padding: 14px 12px;
+    font-size: 15px;
+  }
+
+  #prevBtn {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #nextBtn {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+/* CELULAR MUITO PEQUENO */
+@media (max-width: 380px) {
+  .paginacao {
+    grid-template-columns: 1fr;
+  }
+
+  #pageInfo,
+  #prevBtn,
+  #nextBtn {
+    grid-column: 1;
+  }
+
+  #pageInfo {
+    grid-row: 1;
+  }
+
+  #prevBtn {
+    grid-row: 2;
+  }
+
+  #nextBtn {
+    grid-row: 3;
+  }
+}

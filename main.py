@@ -51,6 +51,14 @@ CORS(app)
 # COMPONENTES
 # =========================
 
+@app.route("/compras")
+def compras():
+
+    if "usuario_id" not in session:
+        return redirect("/")
+
+    return render_template("compras.html")
+    
 @app.route("/components/<path:filename>")
 def components(filename):
     return send_from_directory("components", filename)

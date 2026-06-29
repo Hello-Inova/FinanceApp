@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de Compras</title>
+  <link rel="stylesheet" href="/static/css/compras.css">
+  <link rel="icon" type="image/png"href="{{ url_for('static', filename='img/favicon.png') }}">
+
+</head>
+<body>
+
+    <div id="menu-container"></div>
+
+    <button id="btnMenu" onclick="toggleMenu()">☰</button>
+
+    <div id="menuOverlay" onclick="fecharMenu()"></div>
+
+    <div id="menu-container"></div>
+
+<div class="container">
+
+  <header>
+    <div>
+      <h1>Lista de Compras</h1>
+      <p>Organize compras por categoria e acompanhe o total.</p>
+    </div>
+
+    <button onclick="window.location.href='/home'">
+      ⬅ Voltar
+    </button>
+  </header>
+
+  <section class="cards">
+    <div class="card">
+      <span>Total previsto</span>
+      <strong id="totalGeral">R$ 0,00</strong>
+    </div>
+
+    <div class="card">
+      <span>Itens</span>
+      <strong id="totalItens">0</strong>
+    </div>
+
+    <div class="card">
+      <span>Comprados</span>
+      <strong id="totalComprados">0</strong>
+    </div>
+  </section>
+
+  <section class="form-card">
+    <h2>Novo item</h2>
+
+    <div class="form-grid">
+      <input id="itemNome" placeholder="Nome do item">
+
+      <select id="itemCategoria">
+        <option value="Mercado">Mercado</option>
+        <option value="Uso pessoal">Uso pessoal</option>
+        <option value="Casa">Casa</option>
+        <option value="Farmácia">Farmácia</option>
+        <option value="Outros">Outros</option>
+      </select>
+
+      <input id="itemQtd" type="number" placeholder="Qtd" min="1" value="1">
+
+      <input id="itemValor" type="number" placeholder="Valor unitário" step="0.01">
+
+      <button onclick="adicionarItem()">Adicionar</button>
+    </div>
+
+    <span id="mensagemErro"></span>
+  </section>
+
+  <section id="listaCategorias" class="categorias"></section>
+
+</div>
+<script src="/static/js/menu.js"></script>
+<script src="/static/js/compras.js"></script>
+</body>
+</html>

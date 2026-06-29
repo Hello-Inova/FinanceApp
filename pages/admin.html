@@ -2,8 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Administração</title>
+
   <link rel="stylesheet" href="/static/css/admin.css">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 
 <body>
@@ -20,10 +24,8 @@
   <main class="admin-main">
 
     <header class="admin-header">
-      <div>
-        <h1>Painel Administrativo</h1>
-        <p>Gerencie usuários, permissões e configurações do sistema.</p>
-      </div>
+      <h1>Painel Administrativo</h1>
+      <p>Gerencie usuários, permissões e configurações do sistema.</p>
     </header>
 
     <section class="admin-card">
@@ -34,9 +36,7 @@
           <p>Pesquisar, editar, inativar ou excluir usuários.</p>
         </div>
 
-        <button
-          class="btn-primary"
-          onclick="abrirModalNovoUsuario()">
+        <button class="btn-primary" onclick="abrirModalNovoUsuario()">
           ➕ Novo usuário
         </button>
       </div>
@@ -47,15 +47,11 @@
           id="iptPesquisaUsuario"
           placeholder="Pesquisar por nome, e-mail ou perfil...">
 
-        <button
-          onclick="buscarUsuario()"
-          class="btn-secondary">
+        <button onclick="buscarUsuario()" class="btn-secondary">
           Buscar
         </button>
 
-        <button
-          onclick="limparBusca()"
-          class="btn-clear">
+        <button onclick="limparBusca()" class="btn-clear">
           Limpar
         </button>
       </div>
@@ -84,10 +80,7 @@
   <div class="modal" id="modalEditarUsuario">
     <div class="modal-content">
 
-      <button
-        type="button"
-        class="btn-fechar-modal"
-        onclick="fecharModalEditar()">
+      <button type="button" class="btn-fechar-modal" onclick="fecharModalEditar()">
         ✕
       </button>
 
@@ -124,17 +117,8 @@
       </div>
 
       <div class="modal-actions">
-        <button
-          class="btn-clear"
-          onclick="fecharModalEditar()">
-          Cancelar
-        </button>
-
-        <button
-          class="btn-primary"
-          onclick="salvarUsuario()">
-          Salvar
-        </button>
+        <button class="btn-clear" onclick="fecharModalEditar()">Cancelar</button>
+        <button class="btn-primary" onclick="salvarUsuario()">Salvar</button>
       </div>
 
     </div>
@@ -145,25 +129,17 @@
 
     <div class="modal-admin">
 
-      <button
-        type="button"
-        class="btn-fechar-modal"
-        onclick="fecharModalNovoUsuario()">
+      <button type="button" class="btn-fechar-modal" onclick="fecharModalNovoUsuario()">
         ✕
       </button>
 
       <h2>👤 Novo Usuário</h2>
 
       <label for="novoNome">Nome</label>
-      <input
-        id="novoNome"
-        placeholder="Nome">
+      <input id="novoNome" placeholder="Nome">
 
       <label for="novoEmail">E-mail</label>
-      <input
-        id="novoEmail"
-        type="email"
-        placeholder="Email">
+      <input id="novoEmail" type="email" placeholder="Email">
 
       <label for="novoPerfil">Perfil</label>
       <select id="novoPerfil">
@@ -174,10 +150,7 @@
       <label for="novoSenha">Senha</label>
 
       <div class="senha-admin-wrapper">
-        <input
-          id="novoSenha"
-          type="password"
-          placeholder="Senha">
+        <input id="novoSenha" type="password" placeholder="Senha">
 
         <button
           type="button"
@@ -190,10 +163,7 @@
       <label for="novoConfirmarSenha">Confirmar senha</label>
 
       <div class="senha-admin-wrapper">
-        <input
-          id="novoConfirmarSenha"
-          type="password"
-          placeholder="Confirmar senha">
+        <input id="novoConfirmarSenha" type="password" placeholder="Confirmar senha">
 
         <button
           type="button"
@@ -206,21 +176,13 @@
       <span id="erroNovoUsuario" class="erro-msg"></span>
 
       <div class="modal-acoes">
-
-        <button
-          type="button"
-          class="btn-success"
-          onclick="salvarNovoUsuario()">
+        <button type="button" class="btn-success" onclick="salvarNovoUsuario()">
           💾 Salvar
         </button>
 
-        <button
-          type="button"
-          class="btn-secondary"
-          onclick="fecharModalNovoUsuario()">
+        <button type="button" class="btn-secondary" onclick="fecharModalNovoUsuario()">
           Cancelar
         </button>
-
       </div>
 
     </div>

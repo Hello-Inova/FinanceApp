@@ -2,8 +2,11 @@ const API_URL = window.location.origin;
 
 let usuariosGlobais = [];
 
-async function carregarUsuarios() {
+// =========================
+// CARREGAR USUÁRIOS
+// =========================
 
+async function carregarUsuarios() {
   const res = await fetch(`${API_URL}/admin/usuarios`);
 
   if (res.status === 403) {
@@ -12,282 +15,55 @@ async function carregarUsuarios() {
     return;
   }
 
+  if (!res.ok) {
+    alert("Erro ao carregar usuários.");
+    return;
+  }
+
   usuariosGlobais = await res.json();
 
   renderizarUsuarios(usuariosGlobais);
 }
 
-function abrirModalNovoUsuario() {
-  limparModalNovoUsuario();
-
-  document
-    .getElementById("modalNovoUsuario")
-    .style.display = "flex";
-}
-
-function fecharModalNovoUsuario() {
-  limparModalNovoUsuario();
-
-  document
-    .getElementById("modalNovoUsuario")
-    .style.display = "none";
-}
-
-async function salvarNovoUsuario() {
-
-    const nome =
-        document.getElementById("novoNome");
-
-    const email =
-        document.getElementById("novoEmail");
-
-    const perfil =
-        document.getElementById("novoPerfil");
-
-    const senha =
-        document.getElementById("novoSenha");
-
-    const confirmar =
-        document.getElementById("novoConfirmarSenha");
-
-    const erro =
-        document.getElementById("erroNovoUsuario");
-
-    const regexEmail =
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-
-    erro.style.display = "none";
-    erro.innerHTML = "";
-
-
-    [
-        nome,
-        email,
-        perfil,
-        senha,
-        confirmar
-
-    ].forEach(campo => {
-
-        campo.classList.remove("campo-erro");
-
-    });
-
-
-    let possuiErro = false;
-
-
-    [
-        nome,
-        email,
-        perfil,
-        senha,
-        confirmar
-
-    ].forEach(campo => {
-
-        if (!campo.value.trim()) {
-
-            campo.classList.add("campo-erro");
-
-            possuiErro = true;
-
-        }
-
-    });
-
-
-    if (possuiErro) {
-
-        erro.innerHTML =
-            "⚠️ Preencha todos os campos obrigatórios.";
-
-        erro.style.display = "block";
-
-        return;
-
-    }
-
-
-    if (!regexEmail.test(email.value.trim())) {
-
-        email.classList.add("campo-erro");
-
-        erro.innerHTML =
-            "⚠️ Informe um endereço de e-mail válido.";
-
-        erro.style.display = "block";
-
-        return;
-
-    }
-
-
-    if (senha.value != confirmar.value) {
-
-        senha.classList.add("campo-erro");
-        confirmar.classList.add("campo-erro");
-
-        erro.innerHTML =
-            "⚠️ As senhas informadas são diferentes.";
-
-        erro.style.display = "block";
-
-        return;
-
-    }
-
-
-    const resposta =
-        await fetch("/usuarios", {
-
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-
-                nome: nome.value.trim(),
-
-                email: email.value.trim(),
-
-                senha: senha.value,
-
-                perfil: perfil.value
-
-            })
-
-        });
-
-
-    const dados =
-        await resposta.json();
-
-
-    if (!resposta.ok) {
-
-        erro.innerHTML =
-            "⚠️ " +
-            (dados.mensagem || "Erro ao cadastrar usuário.");
-
-        erro.style.display = "block";
-
-        return;
-
-    }
-
-
-    limparModalNovoUsuario();
-
-    fecharModalNovoUsuario();
-
-    await carregarUsuarios();
-
-}
-
-
-function configurarValidacaoNovoUsuario() {
-
-    const regexEmail =
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    [
-
-        "novoNome",
-
-        "novoEmail",
-
-        "novoPerfil",
-
-        "novoSenha",
-
-        "novoConfirmarSenha"
-
-    ].forEach(id => {
-
-        const campo =
-            document.getElementById(id);
-
-        if (!campo) return;
-
-        campo.addEventListener("input", () => {
-
-            campo.classList.remove("campo-erro");
-
-            const erro =
-                document.getElementById("erroNovoUsuario");
-
-            erro.style.display = "none";
-            erro.innerHTML = "";
-
-        });
-
-        campo.addEventListener("change", () => {
-
-            campo.classList.remove("campo-erro");
-
-        });
-
-    });
-
-
-    const email =
-        document.getElementById("novoEmail");
-
-    if (email) {
-
-        email.addEventListener("blur", () => {
-
-            const erro =
-                document.getElementById("erroNovoUsuario");
-
-            if (
-                email.value.trim() !== "" &&
-                !regexEmail.test(email.value.trim())
-            ) {
-
-                email.classList.add("campo-erro");
-
-                erro.innerHTML =
-                    "⚠️ E-mail inválido.";
-
-                erro.style.display = "block";
-
-            }
-
-        });
-
-    }
-
-}
+// =========================
+// RENDERIZAR TABELA
+// =========================
 
 function renderizarUsuarios(lista) {
+  const tabelaUsuarios = document.getElementById("tabelaUsuarios");
 
   tabelaUsuarios.innerHTML = "";
 
   lista.forEach(usuario => {
-
     const row = tabelaUsuarios.insertRow();
 
-    row.insertCell(0).innerText = usuario.nome;
-    row.insertCell(1).innerText = usuario.email;
+    const cellNome = row.insertCell(0);
+    cellNome.setAttribute("data-label", "Nome");
+    cellNome.innerText = usuario.nome;
 
-    row.insertCell(2).innerHTML = `
+    const cellEmail = row.insertCell(1);
+    cellEmail.setAttribute("data-label", "E-mail");
+    cellEmail.innerText = usuario.email;
+
+    const cellPerfil = row.insertCell(2);
+    cellPerfil.setAttribute("data-label", "Perfil");
+    cellPerfil.innerHTML = `
       <span class="badge ${usuario.perfil === "Administrativo" ? "badge-admin" : "badge-padrao"}">
         ${usuario.perfil}
       </span>
     `;
 
-    row.insertCell(3).innerHTML = `
+    const cellStatus = row.insertCell(3);
+    cellStatus.setAttribute("data-label", "Status");
+    cellStatus.innerHTML = `
       <span class="badge ${usuario.ativo ? "badge-ativo" : "badge-inativo"}">
         ${usuario.ativo ? "Ativo" : "Inativo"}
       </span>
     `;
 
-    row.insertCell(4).innerHTML = `
+    const cellAcoes = row.insertCell(4);
+    cellAcoes.setAttribute("data-label", "Ações");
+    cellAcoes.innerHTML = `
       <div class="acoes">
         <button class="btn-secondary" onclick="abrirModalEditar(${usuario.id})">
           Editar
@@ -305,8 +81,11 @@ function renderizarUsuarios(lista) {
   });
 }
 
-function buscarUsuario() {
+// =========================
+// BUSCA
+// =========================
 
+function buscarUsuario() {
   const termo = document
     .getElementById("iptPesquisaUsuario")
     .value
@@ -329,8 +108,226 @@ function limparBusca() {
   renderizarUsuarios(usuariosGlobais);
 }
 
-function abrirModalEditar(id) {
+// =========================
+// MODAL NOVO USUÁRIO
+// =========================
 
+function abrirModalNovoUsuario() {
+  limparModalNovoUsuario();
+
+  document
+    .getElementById("modalNovoUsuario")
+    .style.display = "flex";
+}
+
+function fecharModalNovoUsuario() {
+  limparModalNovoUsuario();
+
+  document
+    .getElementById("modalNovoUsuario")
+    .style.display = "none";
+}
+
+function limparModalNovoUsuario() {
+  const campos = [
+    "novoNome",
+    "novoEmail",
+    "novoPerfil",
+    "novoSenha",
+    "novoConfirmarSenha"
+  ];
+
+  campos.forEach(id => {
+    const campo = document.getElementById(id);
+
+    if (!campo) return;
+
+    campo.classList.remove("campo-erro");
+
+    if (id === "novoPerfil") {
+      campo.value = "Padrão";
+    } else {
+      campo.value = "";
+    }
+
+    if (id.includes("Senha")) {
+      campo.type = "password";
+    }
+  });
+
+  document.querySelectorAll(".btn-eye-admin").forEach(btn => {
+    btn.innerText = "👁️";
+  });
+
+  const erro = document.getElementById("erroNovoUsuario");
+
+  if (erro) {
+    erro.style.display = "none";
+    erro.textContent = "";
+  }
+}
+
+async function salvarNovoUsuario() {
+  const nome = document.getElementById("novoNome");
+  const email = document.getElementById("novoEmail");
+  const perfil = document.getElementById("novoPerfil");
+  const senha = document.getElementById("novoSenha");
+  const confirmar = document.getElementById("novoConfirmarSenha");
+  const erro = document.getElementById("erroNovoUsuario");
+
+  const regexEmail =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  erro.style.display = "none";
+  erro.innerHTML = "";
+
+  [
+    nome,
+    email,
+    perfil,
+    senha,
+    confirmar
+  ].forEach(campo => {
+    campo.classList.remove("campo-erro");
+  });
+
+  let possuiErro = false;
+
+  [
+    nome,
+    email,
+    perfil,
+    senha,
+    confirmar
+  ].forEach(campo => {
+    if (!campo.value.trim()) {
+      campo.classList.add("campo-erro");
+      possuiErro = true;
+    }
+  });
+
+  if (possuiErro) {
+    erro.innerHTML =
+      "⚠️ Preencha todos os campos obrigatórios.";
+
+    erro.style.display = "block";
+
+    return;
+  }
+
+  if (!regexEmail.test(email.value.trim())) {
+    email.classList.add("campo-erro");
+
+    erro.innerHTML =
+      "⚠️ Informe um endereço de e-mail válido.";
+
+    erro.style.display = "block";
+
+    return;
+  }
+
+  if (senha.value !== confirmar.value) {
+    senha.classList.add("campo-erro");
+    confirmar.classList.add("campo-erro");
+
+    erro.innerHTML =
+      "⚠️ As senhas informadas são diferentes.";
+
+    erro.style.display = "block";
+
+    return;
+  }
+
+  const resposta = await fetch("/usuarios", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      nome: nome.value.trim(),
+      email: email.value.trim(),
+      senha: senha.value,
+      perfil: perfil.value
+    })
+  });
+
+  const dados = await resposta.json();
+
+  if (!resposta.ok) {
+    erro.innerHTML =
+      "⚠️ " +
+      (dados.mensagem || "Erro ao cadastrar usuário.");
+
+    erro.style.display = "block";
+
+    return;
+  }
+
+  limparModalNovoUsuario();
+  fecharModalNovoUsuario();
+
+  await carregarUsuarios();
+}
+
+// =========================
+// VALIDAÇÕES NOVO USUÁRIO
+// =========================
+
+function configurarValidacaoNovoUsuario() {
+  const regexEmail =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  [
+    "novoNome",
+    "novoEmail",
+    "novoPerfil",
+    "novoSenha",
+    "novoConfirmarSenha"
+  ].forEach(id => {
+    const campo = document.getElementById(id);
+
+    if (!campo) return;
+
+    campo.addEventListener("input", () => {
+      campo.classList.remove("campo-erro");
+
+      const erro = document.getElementById("erroNovoUsuario");
+
+      erro.style.display = "none";
+      erro.innerHTML = "";
+    });
+
+    campo.addEventListener("change", () => {
+      campo.classList.remove("campo-erro");
+    });
+  });
+
+  const email = document.getElementById("novoEmail");
+
+  if (email) {
+    email.addEventListener("blur", () => {
+      const erro = document.getElementById("erroNovoUsuario");
+
+      if (
+        email.value.trim() !== "" &&
+        !regexEmail.test(email.value.trim())
+      ) {
+        email.classList.add("campo-erro");
+
+        erro.innerHTML =
+          "⚠️ E-mail inválido.";
+
+        erro.style.display = "block";
+      }
+    });
+  }
+}
+
+// =========================
+// MODAL EDITAR USUÁRIO
+// =========================
+
+function abrirModalEditar(id) {
   const usuario = usuariosGlobais.find(u => u.id === id);
 
   if (!usuario) return;
@@ -341,15 +338,19 @@ function abrirModalEditar(id) {
   editPerfil.value = usuario.perfil;
   editSenha.value = "";
 
+  editSenha.type = "password";
+
   modalEditarUsuario.style.display = "flex";
 }
 
 function fecharModalEditar() {
+  editSenha.value = "";
+  editSenha.type = "password";
+
   modalEditarUsuario.style.display = "none";
 }
 
 async function salvarUsuario() {
-
   const id = editUserId.value;
 
   await fetch(`${API_URL}/admin/usuarios/${id}/dados`, {
@@ -381,8 +382,11 @@ async function salvarUsuario() {
   await carregarUsuarios();
 }
 
-async function alterarStatus(id, ativoAtual) {
+// =========================
+// AÇÕES
+// =========================
 
+async function alterarStatus(id, ativoAtual) {
   const novoStatus = ativoAtual ? 0 : 1;
 
   await fetch(`${API_URL}/admin/usuarios/${id}/status`, {
@@ -399,7 +403,6 @@ async function alterarStatus(id, ativoAtual) {
 }
 
 async function deletarUsuario(id) {
-
   const confirmar = confirm(
     "Tem certeza que deseja excluir este usuário? Essa ação não poderá ser desfeita."
   );
@@ -413,16 +416,14 @@ async function deletarUsuario(id) {
   await carregarUsuarios();
 }
 
-window.onload = async ()=>{
-
-    await carregarUsuarios();
-
-    configurarValidacaoNovoUsuario();
-
-}
+// =========================
+// SENHA
+// =========================
 
 function toggleSenhaAdmin(idInput, botao) {
   const input = document.getElementById(idInput);
+
+  if (!input) return;
 
   if (input.type === "password") {
     input.type = "text";
@@ -432,41 +433,33 @@ function toggleSenhaAdmin(idInput, botao) {
     botao.innerHTML = "👁️";
   }
 }
-function limparModalNovoUsuario() {
-  const campos = [
-    "novoNome",
-    "novoEmail",
-    "novoPerfil",
-    "novoSenha",
-    "novoConfirmarSenha"
-  ];
 
-  campos.forEach(id => {
-    const campo = document.getElementById(id);
+// =========================
+// EXPORT GLOBAL
+// =========================
 
-    if (!campo) return;
+window.abrirModalNovoUsuario = abrirModalNovoUsuario;
+window.fecharModalNovoUsuario = fecharModalNovoUsuario;
+window.salvarNovoUsuario = salvarNovoUsuario;
 
-    campo.classList.remove("campo-erro");
+window.abrirModalEditar = abrirModalEditar;
+window.fecharModalEditar = fecharModalEditar;
+window.salvarUsuario = salvarUsuario;
 
-    if (id === "novoPerfil") {
-      campo.value = "Padrão";
-    } else {
-      campo.value = "";
-    }
+window.alterarStatus = alterarStatus;
+window.deletarUsuario = deletarUsuario;
 
-    if (campo.type === "text" && id.includes("Senha")) {
-      campo.type = "password";
-    }
-  });
+window.buscarUsuario = buscarUsuario;
+window.limparBusca = limparBusca;
 
-  document.querySelectorAll(".btn-eye-admin").forEach(btn => {
-    btn.innerText = "👁️";
-  });
+window.toggleSenhaAdmin = toggleSenhaAdmin;
 
-  const erro = document.getElementById("erroNovoUsuario");
+// =========================
+// INIT
+// =========================
 
-  if (erro) {
-    erro.style.display = "none";
-    erro.textContent = "";
-  }
-}
+window.onload = async () => {
+  await carregarUsuarios();
+
+  configurarValidacaoNovoUsuario();
+};
