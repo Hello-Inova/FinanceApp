@@ -196,7 +196,6 @@ button:active {
 }
 
 #btnAdicionar,
-#btnFiltrar,
 #btnBuscar {
   min-width: 120px;
 }
