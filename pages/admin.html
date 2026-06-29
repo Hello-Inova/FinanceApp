@@ -5,6 +5,7 @@
   <title>Administração</title>
   <link rel="stylesheet" href="/static/css/admin.css">
 </head>
+
 <body>
 
   <aside class="admin-sidebar">
@@ -33,8 +34,10 @@
           <p>Pesquisar, editar, inativar ou excluir usuários.</p>
         </div>
 
-        <button class="btn-primary" onclick="window.location.href='/home'">
-          + Novo usuário
+        <button
+          class="btn-primary"
+          onclick="abrirModalNovoUsuario()">
+          ➕ Novo usuário
         </button>
       </div>
 
@@ -42,14 +45,17 @@
         <input
           type="text"
           id="iptPesquisaUsuario"
-          placeholder="Pesquisar por nome, e-mail ou perfil..."
-        >
+          placeholder="Pesquisar por nome, e-mail ou perfil...">
 
-        <button onclick="buscarUsuario()" class="btn-secondary">
+        <button
+          onclick="buscarUsuario()"
+          class="btn-secondary">
           Buscar
         </button>
 
-        <button onclick="limparBusca()" class="btn-clear">
+        <button
+          onclick="limparBusca()"
+          class="btn-clear">
           Limpar
         </button>
       </div>
@@ -78,31 +84,147 @@
   <div class="modal" id="modalEditarUsuario">
     <div class="modal-content">
 
-      <h2>Editar Usuário</h2>
+      <button
+        type="button"
+        class="btn-fechar-modal"
+        onclick="fecharModalEditar()">
+        ✕
+      </button>
+
+      <h2>✏️ Editar Usuário</h2>
 
       <input type="hidden" id="editUserId">
 
-      <label>Nome</label>
+      <label for="editNome">Nome</label>
       <input type="text" id="editNome">
 
-      <label>E-mail</label>
+      <label for="editEmail">E-mail</label>
       <input type="email" id="editEmail">
 
-      <label>Perfil</label>
+      <label for="editPerfil">Perfil</label>
       <select id="editPerfil">
         <option value="Padrão">Padrão</option>
         <option value="Administrativo">Administrativo</option>
       </select>
 
-      <label>Nova senha</label>
-      <input type="password" id="editSenha" placeholder="Deixe vazio para não alterar">
+      <label for="editSenha">Nova senha</label>
+
+      <div class="senha-admin-wrapper">
+        <input
+          type="password"
+          id="editSenha"
+          placeholder="Deixe vazio para não alterar">
+
+        <button
+          type="button"
+          class="btn-eye-admin"
+          onclick="toggleSenhaAdmin('editSenha', this)">
+          👁️
+        </button>
+      </div>
 
       <div class="modal-actions">
-        <button class="btn-clear" onclick="fecharModalEditar()">Cancelar</button>
-        <button class="btn-primary" onclick="salvarUsuario()">Salvar</button>
+        <button
+          class="btn-clear"
+          onclick="fecharModalEditar()">
+          Cancelar
+        </button>
+
+        <button
+          class="btn-primary"
+          onclick="salvarUsuario()">
+          Salvar
+        </button>
       </div>
 
     </div>
+  </div>
+
+  <!-- MODAL NOVO USUÁRIO -->
+  <div id="modalNovoUsuario" class="modal">
+
+    <div class="modal-admin">
+
+      <button
+        type="button"
+        class="btn-fechar-modal"
+        onclick="fecharModalNovoUsuario()">
+        ✕
+      </button>
+
+      <h2>👤 Novo Usuário</h2>
+
+      <label for="novoNome">Nome</label>
+      <input
+        id="novoNome"
+        placeholder="Nome">
+
+      <label for="novoEmail">E-mail</label>
+      <input
+        id="novoEmail"
+        type="email"
+        placeholder="Email">
+
+      <label for="novoPerfil">Perfil</label>
+      <select id="novoPerfil">
+        <option value="Padrão">Padrão</option>
+        <option value="Administrativo">Administrativo</option>
+      </select>
+
+      <label for="novoSenha">Senha</label>
+
+      <div class="senha-admin-wrapper">
+        <input
+          id="novoSenha"
+          type="password"
+          placeholder="Senha">
+
+        <button
+          type="button"
+          class="btn-eye-admin"
+          onclick="toggleSenhaAdmin('novoSenha', this)">
+          👁️
+        </button>
+      </div>
+
+      <label for="novoConfirmarSenha">Confirmar senha</label>
+
+      <div class="senha-admin-wrapper">
+        <input
+          id="novoConfirmarSenha"
+          type="password"
+          placeholder="Confirmar senha">
+
+        <button
+          type="button"
+          class="btn-eye-admin"
+          onclick="toggleSenhaAdmin('novoConfirmarSenha', this)">
+          👁️
+        </button>
+      </div>
+
+      <span id="erroNovoUsuario" class="erro-msg"></span>
+
+      <div class="modal-acoes">
+
+        <button
+          type="button"
+          class="btn-success"
+          onclick="salvarNovoUsuario()">
+          💾 Salvar
+        </button>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          onclick="fecharModalNovoUsuario()">
+          Cancelar
+        </button>
+
+      </div>
+
+    </div>
+
   </div>
 
   <script src="/static/js/admin.js"></script>

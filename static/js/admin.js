@@ -17,6 +17,253 @@ async function carregarUsuarios() {
   renderizarUsuarios(usuariosGlobais);
 }
 
+function abrirModalNovoUsuario() {
+  limparModalNovoUsuario();
+
+  document
+    .getElementById("modalNovoUsuario")
+    .style.display = "flex";
+}
+
+function fecharModalNovoUsuario() {
+  limparModalNovoUsuario();
+
+  document
+    .getElementById("modalNovoUsuario")
+    .style.display = "none";
+}
+
+async function salvarNovoUsuario() {
+
+    const nome =
+        document.getElementById("novoNome");
+
+    const email =
+        document.getElementById("novoEmail");
+
+    const perfil =
+        document.getElementById("novoPerfil");
+
+    const senha =
+        document.getElementById("novoSenha");
+
+    const confirmar =
+        document.getElementById("novoConfirmarSenha");
+
+    const erro =
+        document.getElementById("erroNovoUsuario");
+
+    const regexEmail =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+    erro.style.display = "none";
+    erro.innerHTML = "";
+
+
+    [
+        nome,
+        email,
+        perfil,
+        senha,
+        confirmar
+
+    ].forEach(campo => {
+
+        campo.classList.remove("campo-erro");
+
+    });
+
+
+    let possuiErro = false;
+
+
+    [
+        nome,
+        email,
+        perfil,
+        senha,
+        confirmar
+
+    ].forEach(campo => {
+
+        if (!campo.value.trim()) {
+
+            campo.classList.add("campo-erro");
+
+            possuiErro = true;
+
+        }
+
+    });
+
+
+    if (possuiErro) {
+
+        erro.innerHTML =
+            "⚠️ Preencha todos os campos obrigatórios.";
+
+        erro.style.display = "block";
+
+        return;
+
+    }
+
+
+    if (!regexEmail.test(email.value.trim())) {
+
+        email.classList.add("campo-erro");
+
+        erro.innerHTML =
+            "⚠️ Informe um endereço de e-mail válido.";
+
+        erro.style.display = "block";
+
+        return;
+
+    }
+
+
+    if (senha.value != confirmar.value) {
+
+        senha.classList.add("campo-erro");
+        confirmar.classList.add("campo-erro");
+
+        erro.innerHTML =
+            "⚠️ As senhas informadas são diferentes.";
+
+        erro.style.display = "block";
+
+        return;
+
+    }
+
+
+    const resposta =
+        await fetch("/usuarios", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+
+                nome: nome.value.trim(),
+
+                email: email.value.trim(),
+
+                senha: senha.value,
+
+                perfil: perfil.value
+
+            })
+
+        });
+
+
+    const dados =
+        await resposta.json();
+
+
+    if (!resposta.ok) {
+
+        erro.innerHTML =
+            "⚠️ " +
+            (dados.mensagem || "Erro ao cadastrar usuário.");
+
+        erro.style.display = "block";
+
+        return;
+
+    }
+
+
+    limparModalNovoUsuario();
+
+    fecharModalNovoUsuario();
+
+    await carregarUsuarios();
+
+}
+
+
+function configurarValidacaoNovoUsuario() {
+
+    const regexEmail =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    [
+
+        "novoNome",
+
+        "novoEmail",
+
+        "novoPerfil",
+
+        "novoSenha",
+
+        "novoConfirmarSenha"
+
+    ].forEach(id => {
+
+        const campo =
+            document.getElementById(id);
+
+        if (!campo) return;
+
+        campo.addEventListener("input", () => {
+
+            campo.classList.remove("campo-erro");
+
+            const erro =
+                document.getElementById("erroNovoUsuario");
+
+            erro.style.display = "none";
+            erro.innerHTML = "";
+
+        });
+
+        campo.addEventListener("change", () => {
+
+            campo.classList.remove("campo-erro");
+
+        });
+
+    });
+
+
+    const email =
+        document.getElementById("novoEmail");
+
+    if (email) {
+
+        email.addEventListener("blur", () => {
+
+            const erro =
+                document.getElementById("erroNovoUsuario");
+
+            if (
+                email.value.trim() !== "" &&
+                !regexEmail.test(email.value.trim())
+            ) {
+
+                email.classList.add("campo-erro");
+
+                erro.innerHTML =
+                    "⚠️ E-mail inválido.";
+
+                erro.style.display = "block";
+
+            }
+
+        });
+
+    }
+
+}
+
 function renderizarUsuarios(lista) {
 
   tabelaUsuarios.innerHTML = "";
@@ -166,4 +413,60 @@ async function deletarUsuario(id) {
   await carregarUsuarios();
 }
 
-window.onload = carregarUsuarios;
+window.onload = async ()=>{
+
+    await carregarUsuarios();
+
+    configurarValidacaoNovoUsuario();
+
+}
+
+function toggleSenhaAdmin(idInput, botao) {
+  const input = document.getElementById(idInput);
+
+  if (input.type === "password") {
+    input.type = "text";
+    botao.innerHTML = "🙈";
+  } else {
+    input.type = "password";
+    botao.innerHTML = "👁️";
+  }
+}
+function limparModalNovoUsuario() {
+  const campos = [
+    "novoNome",
+    "novoEmail",
+    "novoPerfil",
+    "novoSenha",
+    "novoConfirmarSenha"
+  ];
+
+  campos.forEach(id => {
+    const campo = document.getElementById(id);
+
+    if (!campo) return;
+
+    campo.classList.remove("campo-erro");
+
+    if (id === "novoPerfil") {
+      campo.value = "Padrão";
+    } else {
+      campo.value = "";
+    }
+
+    if (campo.type === "text" && id.includes("Senha")) {
+      campo.type = "password";
+    }
+  });
+
+  document.querySelectorAll(".btn-eye-admin").forEach(btn => {
+    btn.innerText = "👁️";
+  });
+
+  const erro = document.getElementById("erroNovoUsuario");
+
+  if (erro) {
+    erro.style.display = "none";
+    erro.textContent = "";
+  }
+}
