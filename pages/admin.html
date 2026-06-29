@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Administração</title>
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+
+  <aside class="admin-sidebar">
+    <h2>Admin</h2>
+
+    <button class="menu-item active">👤 Usuários</button>
+    <button class="menu-item disabled">⚙️ Configurações</button>
+    <button class="menu-item disabled">📊 Relatórios</button>
+    <button class="menu-item" onclick="window.location.href='/home'">⬅ Voltar</button>
+  </aside>
+
+  <main class="admin-main">
+
+    <header class="admin-header">
+      <div>
+        <h1>Painel Administrativo</h1>
+        <p>Gerencie usuários, permissões e configurações do sistema.</p>
+      </div>
+    </header>
+
+    <section class="admin-card">
+
+      <div class="section-header">
+        <div>
+          <h2>Gestão de Usuários</h2>
+          <p>Pesquisar, editar, inativar ou excluir usuários.</p>
+        </div>
+
+        <button class="btn-primary" onclick="window.location.href='/home'">
+          + Novo usuário
+        </button>
+      </div>
+
+      <div class="toolbar">
+        <input
+          type="text"
+          id="iptPesquisaUsuario"
+          placeholder="Pesquisar por nome, e-mail ou perfil..."
+        >
+
+        <button onclick="buscarUsuario()" class="btn-secondary">
+          Buscar
+        </button>
+
+        <button onclick="limparBusca()" class="btn-clear">
+          Limpar
+        </button>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Perfil</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+
+          <tbody id="tabelaUsuarios"></tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL EDITAR USUÁRIO -->
+  <div class="modal" id="modalEditarUsuario">
+    <div class="modal-content">
+
+      <h2>Editar Usuário</h2>
+
+      <input type="hidden" id="editUserId">
+
+      <label>Nome</label>
+      <input type="text" id="editNome">
+
+      <label>E-mail</label>
+      <input type="email" id="editEmail">
+
+      <label>Perfil</label>
+      <select id="editPerfil">
+        <option value="Padrão">Padrão</option>
+        <option value="Administrativo">Administrativo</option>
+      </select>
+
+      <label>Nova senha</label>
+      <input type="password" id="editSenha" placeholder="Deixe vazio para não alterar">
+
+      <div class="modal-actions">
+        <button class="btn-clear" onclick="fecharModalEditar()">Cancelar</button>
+        <button class="btn-primary" onclick="salvarUsuario()">Salvar</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>

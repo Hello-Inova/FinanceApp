@@ -1,5 +1,5 @@
 /* =========================
-   RESET
+   RESET / BASE
 ========================= */
 
 * {
@@ -14,10 +14,12 @@ body {
 }
 
 body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
-  color: #eaeaea;
-  padding: 10px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(59,130,246,.14), transparent 35%),
+    linear-gradient(135deg, #020617, #0f172a);
+  color: #e5e7eb;
+  padding: 24px;
 }
 
 /* =========================
@@ -25,24 +27,21 @@ body {
 ========================= */
 
 .container {
-  max-width: 1100px;
+  width: 100%;
+  max-width: 1150px;
   margin: 0 auto;
-
-  background: #161616;
-
-  border-radius: 12px;
-
-  padding: 20px;
-
-  border: 1px solid rgba(255,255,255,0.05);
-
-  box-shadow: 0 10px 30px rgba(0,0,0,.6);
+  padding: 26px;
+  background: rgba(15, 23, 42, .94);
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 20px;
+  box-shadow: 0 30px 65px rgba(0,0,0,.42);
 }
 
 h1 {
   text-align: center;
-  color: #00bfff;
-  margin-bottom: 20px;
+  color: #f8fafc;
+  font-size: clamp(24px, 4vw, 36px);
+  margin-bottom: 26px;
 }
 
 /* =========================
@@ -52,152 +51,155 @@ h1 {
 .cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 24px;
 }
 
 .card {
-  background: #333;
-  border-radius: 10px;
-  padding: 12px;
-  min-height: 80px;
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-left: 6px solid transparent;
+  border-radius: 18px;
+  padding: 20px;
+  min-height: 105px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  text-align: center;
   cursor: pointer;
-  transition:
-      transform 0.25s ease,
-      box-shadow 0.25s ease,
-      border-color 0.25s ease;
+  transition: .25s ease;
+  box-shadow: 0 12px 28px rgba(0,0,0,.22);
 }
+
 .card:hover {
-
-    transform: translateY(-5px) scale(1.03);
-
-    box-shadow:
-        0 10px 25px rgba(0, 0, 0, 0.20);
-
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 42px rgba(0,0,0,.34);
 }
 
 .card:active {
-
-    transform: translateY(-2px) scale(0.98);
-
+  transform: scale(.98);
 }
+
 .card h3 {
-  color: #ccc;
-  font-size: 14px;
-  margin-bottom: 5px;
+  color: #cbd5e1;
+  font-size: 15px;
+  margin-bottom: 8px;
 }
 
 .card span {
-  font-size: 22px;
-  font-weight: bold;
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 800;
 }
 
 #CardEntrada {
-  border-left: 6px solid #2ecc71;
-  color: #2ecc71;
-  cursor: pointer;
+  border-left-color: #22c55e;
+  color: #22c55e;
 }
 
 #CardSaida {
-  border-left: 6px solid #e74c3c;
-  color: #e74c3c;
-  cursor: pointer;
-
+  border-left-color: #ef4444;
+  color: #ef4444;
 }
 
 #CardSaldo {
-  border-left: 6px solid #1e90ff;
-  color: #1e90ff;
-  cursor: pointer;
+  border-left-color: #3b82f6;
+  color: #3b82f6;
+}
 
+.card.ativo {
+  transform: scale(1.04);
+}
+
+#CardEntrada.ativo {
+  border-color: #22c55e;
+  box-shadow: 0 0 26px rgba(34,197,94,.32);
+}
+
+#CardSaida.ativo {
+  border-color: #ef4444;
+  box-shadow: 0 0 26px rgba(239,68,68,.32);
+}
+
+#CardSaldo.ativo {
+  border-color: #3b82f6;
+  box-shadow: 0 0 26px rgba(59,130,246,.32);
 }
 
 /* =========================
-   BOTÃO ADICIONAR
+   TOOLBAR / FILTROS
 ========================= */
 
-.area-adicionar {
+.toolbar {
   display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.area-adicionar,
+.filtros {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  min-width: 260px;
+}
+
+#iptPesquisa,
+#filtroMes {
+  flex: 1;
+  min-width: 160px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 12px 14px;
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: #f8fafc;
+  font-size: 14px;
+  outline: none;
+  transition: .25s;
+}
+
+input:focus,
+select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+}
+
+input::placeholder {
+  color: #64748b;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  transition: .25s;
+  white-space: nowrap;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(37,99,235,.28);
+}
+
+button:active {
+  transform: scale(.98);
 }
 
 #btnAdicionar,
-#btnFiltrar {
-  padding: 12px 21px;
-  width: 32.5%;
-  cursor: pointer;
+#btnFiltrar,
+#btnBuscar {
+  min-width: 120px;
 }
-#toolbar #btnAdicionar, #toolbar #btnFiltrar, #top-bar #btnBuscar{
-    background: #3a2727;
-
-}
-#filtroMes{
-  width: 70%;
-  cursor: pointer;
-}
-
-.filtros {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 33.5%;
-    
-}
-
-
-#iptPesquisa:focus,#filtroMes:focus {  
-  border-color: #9055ff;     /* Borda roxa combinando com a identidade do seu gráfico */
-  box-shadow: 0 0 0 3px rgba(144, 85, 255, 0.2); /* Sombra suave ao redor */
-}
-
-#iptPesquisa,#filtroMes {  
-  background-color: #1a1a1a; /* Fundo escuro sutil para destacar do fundo do modal */
-  border: 1px solid #444;    /* Borda suave */
-  border-radius: 6px;        /* Cantos arredondados modernos */
-  color: #ffffff;            /* Texto branco bem legível */
-  font-size: 14px;
-  padding: 10px 14px;        /* Espaçamento interno para o texto não ficar colado */
-  width: 90%;               /* Faz os campos ocuparem toda a largura disponível */
-  box-sizing: border-box;    /* Garante que o padding não quebre a largura */
-  transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Transição suave para o foco */
-  outline: none;
-}
-/* Efeito ao clicar/focar no campo */
-#iptPesquisa:focus,#filtroMes:focus {  
-  border-color: #9055ff;     /* Borda roxa combinando com a identidade do seu gráfico */
-  box-shadow: 0 0 0 3px rgba(144, 85, 255, 0.2); /* Sombra suave ao redor */
-}
-
-/* Ajuste específico para o texto placeholder (dentro do input) */
-#iptPesquisa::placeholder {
-  color: #777;               /* Cor cinza discreta para o texto de instrução */
-}
-
-#btnBuscar{
-  width: 9%;
-  cursor: pointer;
-  background-color: #3a2727;
-  padding: 12px 21px;
-}
-
-.toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 20px;
-    gap: 20px;
-}
-
-
-
 
 /* =========================
    TABELA
@@ -206,69 +208,105 @@ h1 {
 .tabela-container {
   width: 100%;
   overflow-x: auto;
+  border: 1px solid #1f2937;
+  border-radius: 16px;
 }
 
 table {
   width: 100%;
-  min-width: 700px;
-
+  min-width: 780px;
   border-collapse: collapse;
-}
-
-th {
-  background: #3a2727;
-  color: white;
+  background: #0f172a;
 }
 
 th,
 td {
-  padding: 12px;
+  padding: 14px;
   text-align: left;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #1f2937;
+  vertical-align: middle;
 }
 
-tr:hover {
-  background: #222;
+th {
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+tbody tr {
+  transition: .2s;
+}
+
+tbody tr:hover {
+  background: #162033;
+}
+
+/* Ordenação */
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: .2s;
+}
+
+.sortable:hover {
+  color: #818cf8;
+}
+
+.sort-icon {
+  margin-left: 6px;
+  font-size: 14px;
+  color: #94a3b8;
+  transition: .25s;
+}
+
+.sort-asc {
+  color: #22c55e;
+  text-shadow: 0 0 10px rgba(34,197,94,.4);
+  font-weight: bold;
+}
+
+.sort-desc {
+  color: #ef4444;
+  text-shadow: 0 0 10px rgba(239,68,68,.4);
+  font-weight: bold;
 }
 
 /* =========================
-   BOTÕES AÇÕES
+   AÇÕES DA TABELA
 ========================= */
 
 .acoes-tabela {
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .btn-acao {
-  width: 36px;
-  height: 36px;
-
-  border: none;
-  border-radius: 6px;
-
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 10px;
   display: flex;
-  justify-content: center;
   align-items: center;
-
-  cursor: pointer;
+  justify-content: center;
 }
 
 .btn-delete {
-  background: #e74c3c;
+  background: #dc2626;
 }
 
 .btn-delete:hover {
-  background: #c0392b;
+  background: #b91c1c;
 }
 
 .btn-edit {
-  background: #1e90ff;
+  background: #2563eb;
 }
 
 .btn-edit:hover {
-  background: #0066cc;
+  background: #1d4ed8;
 }
 
 /* =========================
@@ -279,69 +317,50 @@ tr:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-
-  margin-top: 20px;
+  gap: 14px;
+  margin-top: 24px;
+  flex-wrap: wrap;
 }
 
-.paginacao button {
-  background: #333;
-  color: white;
-  border: none;
-
-  padding: 10px 15px;
-
-  border-radius: 6px;
-  cursor: pointer;
+#prevBtn,
+#nextBtn {
+  min-width: 120px;
 }
 
-.paginacao button:hover {
-  background: #0056b3;
+#pageInfo {
+  font-weight: 700;
+  color: #cbd5e1;
 }
 
 /* =========================
-   MENU
+   MENU LATERAL
 ========================= */
- 
+
 #btnMenu {
   position: fixed;
-  top: 30px;;
-  left: 30px;
+  top: 16px;
+  left: 16px;
   z-index: 2000;
+  width: auto;
+  padding: 11px 14px;
 }
 
 .hamburger {
-  background: #3a2727;
-
-  color: white;
-
-  border: none;
-
-  border-radius: 6px;
-
-  padding: 10px 12px;
-
-  cursor: pointer;
-
   font-size: 18px;
 }
 
 .sidebar {
   position: fixed;
-
   top: 0;
-  left: -280px;
-
-  width: 250px;
+  left: -285px;
+  width: 260px;
   height: 100vh;
-
-  background: #111;
-
+  background: #020617;
   padding: 20px;
-
   transition: .3s;
-
-  z-index: 999;
+  z-index: 9998;
+  border-right: 1px solid #1e293b;
+  box-shadow: 20px 0 45px rgba(0,0,0,.35);
 }
 
 .sidebar.active {
@@ -352,36 +371,29 @@ tr:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .menu-header h3 {
-  margin: 0;
   font-size: 22px;
   color: white;
 }
 
 .sidebar button {
   width: 100%;
-
+  text-align: left;
   margin-bottom: 10px;
-
-  background: #333;
-
-  color: white;
-
-  border: none;
-
-  border-radius: 6px;
-
-  padding: 12px;
-
-  cursor: pointer;
+  background: #111827;
+  border: 1px solid #1f2937;
 }
 
 .sidebar button:hover {
-  background: #0056b3;
+  background: #1e293b;
+}
+
+#btnMenuin {
+  width: auto;
+  background: #2563eb;
 }
 
 /* =========================
@@ -392,307 +404,29 @@ tr:hover {
 #modalEdit,
 #modalCadUser {
   display: none;
-
   position: fixed;
-
   inset: 0;
-
-  background: rgba(0,0,0,.65);
-
+  background: rgba(0,0,0,.68);
+  backdrop-filter: blur(5px);
   justify-content: center;
   align-items: center;
-
+  padding: 16px;
   z-index: 9999;
 }
-#modalNovoRegistro input,
-#modalNovoRegistro select {  
-  background-color: #1a1a1a; /* Fundo escuro sutil para destacar do fundo do modal */
-  border: 1px solid #444;    /* Borda suave */
-  border-radius: 6px;        /* Cantos arredondados modernos */
-  color: #ffffff;            /* Texto branco bem legível */
-  font-size: 16px;
-  padding: 10px 14px;        /* Espaçamento interno para o texto não ficar colado */
-  width: 100%;               /* Faz os campos ocuparem toda a largura disponível */
-  box-sizing: border-box;    /* Garante que o padding não quebre a largura */
-  transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Transição suave para o foco */
-  outline: none;
-}
-/* Efeito ao clicar/focar no campo */
-#modalNovoRegistro input:focus,
-#modalNovoRegistro select:focus {  
-  border-color: #9055ff;     /* Borda roxa combinando com a identidade do seu gráfico */
-  box-shadow: 0 0 0 3px rgba(144, 85, 255, 0.2); /* Sombra suave ao redor */
-}
-
-/* Ajuste específico para o texto placeholder (dentro do input) */
-#modalNovoRegistro input::placeholder {
-  color: #777;               /* Cor cinza discreta para o texto de instrução */
-}
-
-/* Ajuste para as opções do select não ficarem transparentes ou ilegíveis */
-#modalNovoRegistro select option {
-  background-color: #1a1a1a;
-  color: #ffffff;
-}
-#modalNovoRegistro #btnSalvarNovoRegistro  {
-  background: #3a2727;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 15px;
-  cursor: pointer;
-}
-
-#modalEdit input,
-#modalEdit select {  
-  background-color: #1a1a1a; /* Fundo escuro sutil para destacar do fundo do modal */
-  border: 1px solid #444;    /* Borda suave */
-  border-radius: 6px;        /* Cantos arredondados modernos */
-  color: #ffffff;            /* Texto branco bem legível */
-  font-size: 16px;
-  padding: 10px 14px;        /* Espaçamento interno para o texto não ficar colado */
-  width: 100%;               /* Faz os campos ocuparem toda a largura disponível */
-  box-sizing: border-box;    /* Garante que o padding não quebre a largura */
-  transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Transição suave para o foco */
-  outline: none;
-}
-/* Efeito ao clicar/focar no campo */
-#modalEdit input:focus,
-#modalEdit select:focus {  
-  border-color: #9055ff;     /* Borda roxa combinando com a identidade do seu gráfico */
-  box-shadow: 0 0 0 3px rgba(144, 85, 255, 0.2); /* Sombra suave ao redor */
-}
-
-/* Ajuste específico para o texto placeholder (dentro do input) */
-#modalEdit input::placeholder {
-  color: #777;               /* Cor cinza discreta para o texto de instrução */
-}
-
-/* Ajuste para as opções do select não ficarem transparentes ou ilegíveis */
-#modalEdit select option {
-  background-color: #1a1a1a;
-  color: #ffffff;
-}
-
-#modalCadUser input,
-#modalCadUser select {  
-  background-color: #1a1a1a; /* Fundo escuro sutil para destacar do fundo do modal */
-  border: 1px solid #444;    /* Borda suave */
-  border-radius: 6px;        /* Cantos arredondados modernos */
-  color: #ffffff;            /* Texto branco bem legível */
-  font-size: 16px;
-  padding: 10px 14px;        /* Espaçamento interno para o texto não ficar colado */
-  width: 100%;               /* Faz os campos ocuparem toda a largura disponível */
-  box-sizing: border-box;    /* Garante que o padding não quebre a largura */
-  transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Transição suave para o foco */
-  outline: none;
-}
-/* Efeito ao clicar/focar no campo */
-#modalCadUser input:focus,
-#modalCadUser select:focus {  
-  border-color: #9055ff;     /* Borda roxa combinando com a identidade do seu gráfico */
-  box-shadow: 0 0 0 3px rgba(144, 85, 255, 0.2); /* Sombra suave ao redor */
-}
-
-/* Ajuste específico para o texto placeholder (dentro do input) */
-#modalCadUser input::placeholder {
-  color: #777;               /* Cor cinza discreta para o texto de instrução */
-}
-
-/* Ajuste para as opções do select não ficarem transparentes ou ilegíveis */
-#modalCadUser select option {
-  background-color: #1a1a1a;
-  color: #ffffff;
-}
-#modalCadUser #btnSalvarCadUser  {
-  background: #3a2727;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 15px;
-  cursor: pointer;
-}
-
-/* ========================================
-   MODAL NOVO REGISTRO
-======================================== */
-
-#modalNovoRegistro, #modalEdit, #modalCadUser {
-  backdrop-filter: blur(4px);
-}
-
-
-/* Área dos botões */
-
-.modal-botoes {
-  display: flex;
-  gap: 12px;
-  margin-top: 15px;
-}
-
-/* Estilo base */
-
-#btnSalvarNovoRegistro,
-#btnCancelarNovoRegistro,
-#btnRegistrarOutro,
-#btnSalvarEdicao,
-#btnCancelarEdicao,
-#btnCadastrarUser,
-#btnCancelarCadastro {
-
-  flex: 1;
-
-  border: none;
-  border-radius: 10px;
-
-  padding: 12px 16px;
-
-  font-size: 14px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition: all 0.25s ease;
-
-  box-shadow:
-    0 4px 10px rgba(0,0,0,0.25);
-
-  letter-spacing: 0.3px;
-}
-
-/* ========================================
-   SALVAR
-======================================== */
-
-#btnSalvarNovoRegistro, 
-#btnSalvarEdicao, 
-#btnCadastrarUser,
-#btnAdicionar,
-#btnFiltrar,
-#btnBuscar {
-  background: linear-gradient(
-    135deg,
-    #2ecc71,
-    #27ae60
-  );
-
-  color: white;
-}
-
-#btnSalvarNovoRegistro:hover, 
-#btnSalvarEdicao:hover, 
-#btnCadastrarUser:hover,
-#btnAdicionar:hover,
-#btnFiltrar:hover,
-#btnBuscar:hover{
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 8px 18px rgba(46,204,113,.35);
-}
-
-#btnSalvarNovoRegistro:active, 
-#btnSalvarEdicao:active, 
-#btnCadastrarUser:active,
-#btnAdicionar:active,
-#btnFiltrar:active,
-#btnBuscar:active{
-  transform: scale(.98);
-}
-
-/* ========================================
-   REGISTRAR OUTRO
-======================================== */
-
-#btnRegistrarOutro {
-  background: linear-gradient(
-    135deg,
-    #1e90ff,
-    #0066cc
-  );
-
-  color: white;
-}
-
-#btnRegistrarOutro:hover {
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 8px 18px rgba(30,144,255,.35);
-}
-
-#btnRegistrarOutro:active {
-  transform: scale(.98);
-}
-
-/* ========================================
-   CANCELAR
-======================================== */
-
-#btnCancelarNovoRegistro, 
-#btnCancelarEdicao, 
-#btnCancelarCadastro {
-  background: linear-gradient(
-    135deg,
-    #555,
-    #3d3d3d
-  );
-
-  color: white;
-}
-
-#btnCancelarNovoRegistro:hover, 
-#btnCancelarEdicao:hover, 
-#btnCancelarCadastro:hover {
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 8px 18px rgba(120,120,120,.25);
-}
-
-#btnCancelarNovoRegistro:active, 
-#btnCancelarEdicao:active, 
-#btnCancelarCadastro:active {
-  transform: scale(.98);
-}
-
-/* ========================================
-   RESPONSIVO
-======================================== */
-
-@media (max-width: 768px) {
-
-  .modal-botoes {
-    flex-direction: column;
-  }
-
-  #btnSalvarNovoRegistro,
-  #btnCancelarNovoRegistro,
-  #btnRegistrarOutro,
-  #btnSalvarEdicao,
-  #btnCancelarEdicao,
-  #btnCadastrarUser,
-  #btnCancelarCadastro {
-    width: 100%;
-  }
-}
-
 
 .modal-content,
 .modal-registro-content {
-  background: #1e1e1e;
-
-  width: 420px;
-  max-width: 95%;
-
-  border-radius: 12px;
-
-  padding: 20px;
-
+  width: 430px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-
+  gap: 12px;
   color: white;
 }
 
@@ -703,21 +437,18 @@ tr:hover {
   align-items: center;
 }
 
-.modal-header h3,
-.modal-registro-header h3 {
-  margin: 0;
-}
-
 .btn-fechar-modal {
   background: transparent;
-  border: none;
-  color: white;
-  cursor: pointer;
+  box-shadow: none;
+  padding: 0;
   font-size: 24px;
+  color: white;
 }
 
 .btn-fechar-modal:hover {
-  color: #ff4444;
+  color: #ef4444;
+  transform: none;
+  box-shadow: none;
 }
 
 .modal-content input,
@@ -725,97 +456,109 @@ tr:hover {
 .modal-registro-content input,
 .modal-registro-content select {
   width: 100%;
-
-  padding: 10px;
-
-  border-radius: 6px;
-
-  border: 1px solid #555;
-
-  background: #111;
-
-  color: white;
 }
 
+.modal-botoes,
 .modal-acoes {
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
+.modal-botoes button,
 .modal-acoes button {
   flex: 1;
+}
 
-  border: none;
+#btnSalvarNovoRegistro,
+#btnSalvarEdicao,
+#btnCadastrarUser,
+#btnSalvarCadUser {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
 
-  border-radius: 6px;
+#btnRegistrarOutro {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
 
-  padding: 10px;
-
-  cursor: pointer;
+#btnCancelarNovoRegistro,
+#btnCancelarEdicao,
+#btnCancelarCadastro {
+  background: linear-gradient(135deg, #475569, #334155);
 }
 
 #msgNovoRegistro {
-  color: #2ecc71;
+  color: #22c55e;
   text-align: center;
   display: none;
 }
 
-/* =========================
-   SENHA
-========================= */
+/* Senha */
 
+.senha-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.senha-wrapper input {
+  padding-right: 50px;
+}
+
+#btnEye,
 #togglePassword {
-  width: fit-content;
-  align-self: flex-end;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #94a3b8;
+}
+
+#btnEye:hover,
+#togglePassword:hover {
+  color: white;
+  transform: translateY(-50%);
+  box-shadow: none;
 }
 
 /* =========================
    RESPONSIVO TABLET
 ========================= */
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  body {
+    padding: 18px;
+    padding-top: 72px;
+  }
 
   .container {
-    padding: 15px;
-    margin-top: 50px;
+    padding: 20px;
   }
 
   .cards {
     grid-template-columns: 1fr;
   }
 
-  #btnAdicionar{
-    width: 30%;
-  }
-  .filtros{
-    width: 70%;
-  }
-  #filtroMes{
-    width: 90%;
-  }
-  #btnFiltrar{
-    width: 27.7%;
-  }
-
-  #btnBuscar{
-    width: 16.7%;
-  }
-  #iptPesquisa{
-    width: 80%;
-  }
-
-  .sidebar {
-    width: 220px;
-  }
-  
-
-  .modal-acoes {
+  .toolbar {
     flex-direction: column;
   }
 
-  .btn-acao {
-    width: 32px;
-    height: 32px;
+  .area-adicionar,
+  .filtros,
+  #btnAdicionar,
+  #btnFiltrar,
+  #btnBuscar,
+  #iptPesquisa,
+  #filtroMes {
+    width: 100%;
+  }
+
+  .area-adicionar,
+  .filtros {
+    flex-direction: column;
   }
 }
 
@@ -823,318 +566,554 @@ tr:hover {
    RESPONSIVO CELULAR
 ========================= */
 
-@media (max-width: 480px) {
-
-  h1 {
-    font-size: 20px;
+@media (max-width: 520px) {
+  body {
+    padding: 12px;
+    padding-top: 70px;
   }
 
-  .card h3 {
-    font-size: 12px;
+  .container {
+    padding: 16px;
+    border-radius: 16px;
   }
 
-  .card span {
-    font-size: 18px;
+  .card {
+    min-height: 92px;
+    padding: 16px;
+  }
+
+  table {
+    min-width: 760px;
   }
 
   th,
   td {
-    font-size: 12px;
-    padding: 8px;
+    padding: 12px;
+    font-size: 13px;
   }
 
   .btn-acao {
-    width: 28px;
-    height: 28px;
-  }
-
-  .hamburger {
-    padding: 8px;
-    font-size: 14px;
+    width: 34px;
+    height: 34px;
   }
 
   .sidebar {
     width: 85%;
-    max-width: 220px;
+    left: -90%;
   }
 
   .modal-content,
   .modal-registro-content {
-    padding: 15px;
+    padding: 18px;
+  }
+
+  .modal-botoes,
+  .modal-acoes {
+    flex-direction: column;
+  }
+
+  .modal-botoes button,
+  .modal-acoes button {
+    width: 100%;
   }
 }
-/* =========================
-   PAGINAÇÃO
-========================= */
+/* Área de pesquisa */
+.pesquisa-container{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    width:100%;
+}
 
-.paginacao {
+#iptPesquisa{
+    flex:1;
+    min-width:0;
+}
+
+#btnBuscar{
+    flex:0 0 auto;
+    width:48px;
+    min-width:48px;
+    max-width:48px;
+    padding:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+/* ==========================
+   MODAL CADASTRO USUÁRIO
+========================== */
+
+.modal{
+
+    display:none;
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.70);
+
+    backdrop-filter:blur(6px);
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:20px;
+
+    z-index:9999;
+
+}
+
+.modal-cad-user{
+
+    position:relative;
+
+    width:430px;
+
+    max-width:100%;
+
+    background:#111827;
+
+    border:1px solid #334155;
+
+    border-radius:18px;
+
+    padding:26px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+    box-shadow:0 25px 60px rgba(0,0,0,.45);
+
+}
+
+.modal-cad-user h2{
+
+    margin:0;
+
+    color:white;
+
+    text-align:center;
+
+    font-size:24px;
+
+}
+
+.modal-cad-user label{
+
+    color:#cbd5e1;
+
+    font-size:14px;
+
+    font-weight:600;
+
+}
+
+.modal-cad-user input,
+.modal-cad-user select{
+
+    width:100%;
+
+    padding:12px;
+
+    border-radius:12px;
+
+    border:1px solid #334155;
+
+    background:#020617;
+
+    color:white;
+
+    transition:.25s;
+
+}
+
+.modal-cad-user input:focus,
+.modal-cad-user select:focus{
+
+    border-color:#3b82f6;
+
+    box-shadow:0 0 0 3px rgba(59,130,246,.20);
+
+}
+
+.btn-fechar-modal{
+
+    position:absolute;
+
+    top:14px;
+
+    right:16px;
+
+    width:36px;
+
+    height:36px;
+
+    border-radius:50%;
+
+    background:none;
+
+    color:#ef4444;
+
+    font-size:22px;
+
+    box-shadow:none;
+
+}
+
+.btn-fechar-modal:hover{
+
+    background:rgba(239,68,68,.12);
+
+    transform:rotate(90deg);
+
+}
+
+.modal-acoes{
+
+    display:flex;
+
+    gap:12px;
+
+    margin-top:8px;
+
+}
+
+.modal-acoes button{
+
+    flex:1;
+
+}
+
+#btnCadastrarUser{
+
+    background:
+        linear-gradient(
+            135deg,
+            #22c55e,
+            #16a34a
+        );
+
+}
+
+#btnCancelarCadastro{
+
+    background:
+        linear-gradient(
+            135deg,
+            #475569,
+            #334155
+        );
+
+}
+
+.erro-msg{
+
+    color:#ef4444;
+
+    font-size:14px;
+
+    text-align:center;
+
+    display:none;
+
+}
+
+.sucesso-msg{
+
+    color:#22c55e;
+
+    font-size:14px;
+
+    text-align:center;
+
+    display:none;
+
+}
+
+@media(max-width:600px){
+
+    .modal-cad-user{
+
+        width:100%;
+
+        padding:20px;
+
+    }
+
+    .modal-acoes{
+
+        flex-direction:column;
+
+    }
+
+}
+
+/* ==========================
+   MODAL EDITAR LANÇAMENTO
+========================== */
+
+.modal-edit {
+  position: relative;
+  width: 430px;
+  max-width: 100%;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 26px;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-
-  margin-top: 20px;
-}
-
-#prevBtn,
-#nextBtn {
-  width: auto !important;
-  min-width: 120px;
-
-  background: #3a2727;
+  flex-direction: column;
+  gap: 12px;
   color: white;
-
-  border: none;
-  border-radius: 6px;
-
-  padding: 10px 15px;
-
-  cursor: pointer;
+  box-shadow: 0 25px 60px rgba(0,0,0,.45);
 }
 
-#prevBtn:hover,
-#nextBtn:hover {
-  background: #0056b3;
-}
-
-#pageInfo {
+.modal-edit h2 {
+  margin: 0 0 6px;
   color: white;
-  font-weight: bold;
-}
-/* =========================
-   MENU
-========================= */
-
-#btnMenu {
-  position: fixed;
-
-  top: 12px;
-  left: 12px;
-
-  width: auto !important;
-
-  padding: 10px 14px;
-
-  background: #3a2727;
-
-}
-#btnMenu:hover {
-  background: #0056b3;
+  text-align: center;
+  font-size: 24px;
 }
 
-#btnMenuin {
-  width: auto !important;
-
-  padding: 10px 14px;
-
-  background: #3a2727;
-}
-#btnMenuin:hover {
-  background: #0056b3;
+.modal-edit label {
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.sidebar {
-  position: fixed;
-
-  top: 0;
-  left: -280px;
-
-  width: 240px;
-  height: 100vh;
-
-  background: #111;
-
-  padding: 20px;
-
-  transition: 0.3s;
-
-  z-index: 9998;
-}
-
-.sidebar.active {
-  left: 0;
-}
-
-.sidebar button {
+.modal-edit input,
+.modal-edit select {
   width: 100%;
-
-  text-align: left;
-
-  margin-bottom: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: white;
+  transition: .25s;
+  outline: none;
 }
 
-/*#btnEye{
-  background: transparent;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  width: fit-content;
-}*/
-.senha-wrapper{
-  position:relative;
-  width:100%;
+.modal-edit input:focus,
+.modal-edit select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.20);
 }
 
-.senha-wrapper input{
-  width:100%;
-  padding-right:50px;
+@media(max-width:600px) {
+  .modal-edit {
+    width: 100%;
+    padding: 20px;
+  }
 }
 
-#btnEye{
-  position:absolute;
-  right:10px;
-  top:50%;
-  transform:translateY(-50%);
+/* ==========================
+   MODAL NOVO REGISTRO
+========================== */
 
-  background:none;
-  border:none;
+.modal-registro{
 
-  width:auto !important;
+    position:relative;
 
-  color:#aaa;
+    width:460px;
 
-  cursor:pointer;
-}
+    max-width:100%;
 
-#btnEye:hover{
-  color:white;
-}
-/* CARD SELECIONADO */
+    background:#111827;
 
-.card.ativo {
+    border:1px solid #334155;
 
-    transform: scale(1.05);
+    border-radius:18px;
 
-    border: 2px solid transparent;
+    padding:26px;
 
-    transition: all .25s ease;
+    display:flex;
 
-}
+    flex-direction:column;
 
-/* ENTRADAS */
+    gap:12px;
 
-#CardEntrada.ativo {
-
-    border-color: #22c55e;
+    color:white;
 
     box-shadow:
-        0 0 20px rgba(34,197,94,.35),
-        0 8px 20px rgba(0,0,0,.15);
+        0 25px 60px rgba(0,0,0,.45);
 
 }
 
-/* SAÍDAS */
+.modal-registro h2{
 
-#CardSaida.ativo {
+    margin:0;
 
-    border-color: #ef4444;
+    text-align:center;
+
+    color:white;
+
+    font-size:24px;
+
+}
+
+.modal-registro label{
+
+    color:#cbd5e1;
+
+    font-size:14px;
+
+    font-weight:600;
+
+}
+
+.modal-registro input,
+.modal-registro select{
+
+    width:100%;
+
+    padding:12px;
+
+    border-radius:12px;
+
+    border:1px solid #334155;
+
+    background:#020617;
+
+    color:white;
+
+    outline:none;
+
+    transition:.25s;
+
+}
+
+.modal-registro input:focus,
+.modal-registro select:focus{
+
+    border-color:#3b82f6;
 
     box-shadow:
-        0 0 20px rgba(239,68,68,.35),
-        0 8px 20px rgba(0,0,0,.15);
+        0 0 0 3px
+        rgba(59,130,246,.20);
 
 }
 
-/* SALDO */
+/* Botões */
 
-#CardSaldo.ativo {
+#btnSalvarNovoRegistro{
 
-    border-color: #3b82f6;
-
-    box-shadow:
-        0 0 20px rgba(59,130,246,.35),
-        0 8px 20px rgba(0,0,0,.15);
+    background:
+        linear-gradient(
+            135deg,
+            #22c55e,
+            #16a34a
+        );
 
 }
-.sortable {
 
-    cursor: pointer;
+#btnRegistrarOutro{
 
-    user-select: none;
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #1d4ed8
+        );
 
-    transition: .2s;
 }
 
-.sortable:hover {
+#btnCancelarNovoRegistro{
 
-    color: #3b82f6;
+    background:
+        linear-gradient(
+            135deg,
+            #475569,
+            #334155
+        );
 
-    transform: translateY(-1px);
-}
-/* =========================
-   ORDENAÇÃO
-========================= */
-
-.sortable {
-
-    cursor: pointer;
-
-    user-select: none;
-
-    transition: .2s;
 }
 
-.sortable:hover {
+/* Mobile */
 
-    color: #6366f1;
+@media(max-width:600px){
+
+    .modal-registro{
+
+        width:100%;
+
+        padding:20px;
+
+    }
+
+}
+/* ==========================
+   RESPONSIVIDADE DOS MODAIS
+========================== */
+
+.modal {
+  padding: 12px;
+  align-items: flex-start;
+  overflow-y: auto;
 }
 
-.sort-icon {
+.modal-cad-user,
+.modal-edit,
+.modal-registro {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  margin: 12px auto;
+}
 
-    margin-left: 6px;
+.modal-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
+.modal-acoes button {
+  width: 100%;
+  min-height: 46px;
+}
+
+/* CELULAR */
+
+@media (max-width: 600px) {
+  .modal {
+    padding: 10px;
+    align-items: flex-start;
+  }
+
+  .modal-cad-user,
+  .modal-edit,
+  .modal-registro {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 20px);
+    padding: 18px;
+    border-radius: 14px;
+    overflow-y: auto;
+  }
+
+  .modal-cad-user h2,
+  .modal-edit h2,
+  .modal-registro h2 {
+    font-size: 20px;
+    padding-right: 30px;
+  }
+
+  .modal-cad-user input,
+  .modal-cad-user select,
+  .modal-edit input,
+  .modal-edit select,
+  .modal-registro input,
+  .modal-registro select {
+    min-height: 44px;
     font-size: 14px;
+  }
 
-    color: #94a3b8;
-
-    transition: .25s;
-}
-
-/* Crescente */
-
-.sort-asc {
-
-    color: #22c55e;
-
-    text-shadow:
-        0 0 10px rgba(34,197,94,.4);
-
-    font-weight: bold;
-}
-
-/* Decrescente */
-
-.sort-desc {
-
-    color: #ef4444;
-
-    text-shadow:
-        0 0 10px rgba(239,68,68,.4);
-
-    font-weight: bold;
-}
-/* FILTRO COMPACTO */
-.top-bar {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-}
-
-button {
-    padding: 6px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.05);
-    background: #333;
-    color: #eaeaea;
-    font-size: 12px;
-}
-select{
-  padding: 6px 70px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.05);
-  background: #333;
-  color: #eaeaea;
-  font-size: 12px;
+  .btn-fechar-modal {
+    top: 10px;
+    right: 12px;
+  }
 }

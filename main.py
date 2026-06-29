@@ -11,8 +11,16 @@ from database import (
     listar_lancamentos,
     criar_lancamento,
     atualizar_lancamento,
-    excluir_lancamento
+    excluir_lancamento,
+
+    listar_usuarios,
+    atualizar_perfil_usuario,
+    atualizar_status_usuario,
+    alterar_senha_usuario,
+    atualizar_dados_usuario,
+    excluir_usuario
 )
+
 from flask import (
     Flask,
     request,
@@ -23,6 +31,7 @@ from flask import (
     redirect
 )
 import os
+
 
 
 app = Flask(
@@ -73,6 +82,17 @@ def financas():
 
     return render_template("financas.html")
 
+@app.route("/admin")
+def admin():
+
+    if "usuario_id" not in session:
+        return redirect("/")
+
+    if not usuario_admin():
+        return redirect("/home")
+
+    return render_template("admin.html")
+
 @app.route("/logout")
 def logout():
 
@@ -95,8 +115,42 @@ def verificar_sessao():
     return jsonify({
         "logado": False
     })
+@app.route("/admin/usuarios/<int:id>/dados", methods=["PUT"])
+def admin_atualizar_dados_usuario(id):
 
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
 
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    dados = request.get_json()
+
+    atualizar_dados_usuario(
+        id,
+        dados.get("nome"),
+        dados.get("email"),
+        dados.get("perfil")
+    )
+
+    return jsonify({"status": "ok"})
+@app.route("/admin/usuarios/<int:id>", methods=["DELETE"])
+def admin_excluir_usuario(id):
+
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    if session.get("usuario_id") == id:
+        return jsonify({
+            "erro": "Você não pode excluir seu próprio usuário logado."
+        }), 400
+
+    excluir_usuario(id)
+
+    return jsonify({"status": "ok"})
 # =========================
 # USUÁRIOS
 # =========================
@@ -172,6 +226,54 @@ def usuario_admin():
         session.get("usuario_perfil")
         == "Administrativo"
     )
+
+@app.route("/admin/usuarios/<int:id>/status", methods=["PUT"])
+def admin_status_usuario(id):
+
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    dados = request.get_json()
+
+    atualizar_status_usuario(
+        id,
+        dados.get("ativo")
+    )
+
+    return jsonify({"status": "ok"})
+
+
+@app.route("/admin/usuarios/<int:id>/senha", methods=["PUT"])
+def admin_alterar_senha(id):
+
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    dados = request.get_json()
+
+    alterar_senha_usuario(
+        id,
+        dados.get("senha")
+    )
+
+    return jsonify({"status": "ok"})
+
+@app.route("/admin/usuarios", methods=["GET"])
+def admin_listar_usuarios():
+
+    if "usuario_id" not in session:
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    return jsonify(listar_usuarios())
 
 # =========================
 # LANÇAMENTOS
