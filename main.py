@@ -1,24 +1,26 @@
-from werkzeug.security import (
-    generate_password_hash,
-    check_password_hash
-)
 from flask_cors import CORS
 
 from database import (
     criar_tabelas,
     criar_usuario,
     buscar_usuario,
+
     listar_lancamentos,
     criar_lancamento,
     atualizar_lancamento,
     excluir_lancamento,
 
     listar_usuarios,
-    atualizar_perfil_usuario,
     atualizar_status_usuario,
     alterar_senha_usuario,
     atualizar_dados_usuario,
-    excluir_usuario
+    excluir_usuario,
+
+    listar_compras,
+    criar_compra,
+    atualizar_compra,
+    atualizar_status_compra,
+    excluir_compra
 )
 
 from flask import (
@@ -30,8 +32,8 @@ from flask import (
     session,
     redirect
 )
-import os
 
+import os
 
 
 app = Flask(
@@ -47,18 +49,11 @@ app.secret_key = os.getenv(
 
 CORS(app)
 
+
 # =========================
 # COMPONENTES
 # =========================
 
-@app.route("/compras")
-def compras():
-
-    if "usuario_id" not in session:
-        return redirect("/")
-
-    return render_template("compras.html")
-    
 @app.route("/components/<path:filename>")
 def components(filename):
     return send_from_directory("components", filename)
@@ -90,6 +85,16 @@ def financas():
 
     return render_template("financas.html")
 
+
+@app.route("/compras")
+def compras():
+
+    if "usuario_id" not in session:
+        return redirect("/")
+
+    return render_template("compras.html")
+
+
 @app.route("/admin")
 def admin():
 
@@ -101,6 +106,7 @@ def admin():
 
     return render_template("admin.html")
 
+
 @app.route("/logout")
 def logout():
 
@@ -108,10 +114,9 @@ def logout():
 
     return redirect("/")
 
+
 @app.route("/session")
 def verificar_sessao():
-
-    print("SESSION:", session)
 
     if "usuario_id" in session:
         return jsonify({
@@ -123,52 +128,58 @@ def verificar_sessao():
     return jsonify({
         "logado": False
     })
-@app.route("/admin/usuarios/<int:id>/dados", methods=["PUT"])
-def admin_atualizar_dados_usuario(id):
 
-    if "usuario_id" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
 
-    if not usuario_admin():
-        return jsonify({"erro": "Acesso negado"}), 403
+# =========================
+# HELPERS
+# =========================
+
+def usuario_admin():
+
+    return (
+        session.get("usuario_perfil")
+        == "Administrativo"
+    )
+
+
+def usuario_logado():
+
+    return "usuario_id" in session
+
+
+# =========================
+# LOGIN / USUÁRIOS
+# =========================
+
+@app.route("/login", methods=["POST"])
+def login():
 
     dados = request.get_json()
 
-    atualizar_dados_usuario(
-        id,
-        dados.get("nome"),
+    usuario = buscar_usuario(
         dados.get("email"),
-        dados.get("perfil")
+        dados.get("password")
     )
 
-    return jsonify({"status": "ok"})
-@app.route("/admin/usuarios/<int:id>", methods=["DELETE"])
-def admin_excluir_usuario(id):
+    if usuario:
 
-    if "usuario_id" not in session:
-        return jsonify({"erro": "Não autenticado"}), 401
+        session["usuario_id"] = usuario["id"]
+        session["usuario_nome"] = usuario["nome"]
+        session["usuario_perfil"] = usuario["perfil"]
 
-    if not usuario_admin():
-        return jsonify({"erro": "Acesso negado"}), 403
-
-    if session.get("usuario_id") == id:
         return jsonify({
-            "erro": "Você não pode excluir seu próprio usuário logado."
-        }), 400
+            "success": True
+        })
 
-    excluir_usuario(id)
+    return jsonify({
+        "success": False
+    }), 401
 
-    return jsonify({"status": "ok"})
-# =========================
-# USUÁRIOS
-# =========================
 
 @app.route("/usuarios", methods=["POST"])
 def usuarios():
 
-    data = request.get_json()
-
-    if "usuario_id" not in session:
+    if not usuario_logado():
         return jsonify({
             "status": "erro",
             "mensagem": "Não autenticado"
@@ -179,6 +190,8 @@ def usuarios():
             "status": "erro",
             "mensagem": "Acesso negado"
         }), 403
+
+    data = request.get_json()
 
     try:
 
@@ -202,43 +215,48 @@ def usuarios():
             "mensagem": str(e)
         }), 400
 
-@app.route("/login", methods=["POST"])
-def login():
+
+# =========================
+# ADMIN API
+# =========================
+
+@app.route("/admin/usuarios", methods=["GET"])
+def admin_listar_usuarios():
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    return jsonify(listar_usuarios())
+
+
+@app.route("/admin/usuarios/<int:id>/dados", methods=["PUT"])
+def admin_atualizar_dados_usuario(id):
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
 
     dados = request.get_json()
 
-    usuario = buscar_usuario(
+    atualizar_dados_usuario(
+        id,
+        dados.get("nome"),
         dados.get("email"),
-        dados.get("password")
+        dados.get("perfil")
     )
 
-    if usuario:
+    return jsonify({"status": "ok"})
 
-        session["usuario_id"] = usuario["id"]
-        session["usuario_nome"] = usuario["nome"]
-        session["usuario_perfil"] = usuario["perfil"]
-
-        print(session)
-
-        return jsonify({
-            "success": True
-        })
-
-    return jsonify({
-        "success": False
-    }), 401
-
-def usuario_admin():
-
-    return (
-        session.get("usuario_perfil")
-        == "Administrativo"
-    )
 
 @app.route("/admin/usuarios/<int:id>/status", methods=["PUT"])
 def admin_status_usuario(id):
 
-    if "usuario_id" not in session:
+    if not usuario_logado():
         return jsonify({"erro": "Não autenticado"}), 401
 
     if not usuario_admin():
@@ -257,7 +275,7 @@ def admin_status_usuario(id):
 @app.route("/admin/usuarios/<int:id>/senha", methods=["PUT"])
 def admin_alterar_senha(id):
 
-    if "usuario_id" not in session:
+    if not usuario_logado():
         return jsonify({"erro": "Não autenticado"}), 401
 
     if not usuario_admin():
@@ -272,25 +290,34 @@ def admin_alterar_senha(id):
 
     return jsonify({"status": "ok"})
 
-@app.route("/admin/usuarios", methods=["GET"])
-def admin_listar_usuarios():
 
-    if "usuario_id" not in session:
+@app.route("/admin/usuarios/<int:id>", methods=["DELETE"])
+def admin_excluir_usuario(id):
+
+    if not usuario_logado():
         return jsonify({"erro": "Não autenticado"}), 401
 
     if not usuario_admin():
         return jsonify({"erro": "Acesso negado"}), 403
 
-    return jsonify(listar_usuarios())
+    if session.get("usuario_id") == id:
+        return jsonify({
+            "erro": "Você não pode excluir seu próprio usuário logado."
+        }), 400
+
+    excluir_usuario(id)
+
+    return jsonify({"status": "ok"})
+
 
 # =========================
-# LANÇAMENTOS
+# LANÇAMENTOS API
 # =========================
 
 @app.route("/lancamentos", methods=["GET"])
 def get_lancamentos():
 
-    if "usuario_id" not in session:
+    if not usuario_logado():
         return jsonify({"erro": "Não autenticado"}), 401
 
     return jsonify(
@@ -303,7 +330,7 @@ def get_lancamentos():
 @app.route("/lancamentos", methods=["POST"])
 def add_lancamento():
 
-    if "usuario_id" not in session:
+    if not usuario_logado():
         return jsonify({"erro": "Não autenticado"}), 401
 
     novo = request.get_json()
@@ -335,10 +362,11 @@ def add_lancamento():
             "mensagem": str(e)
         }), 400
 
-@app.route("/lancamentos/<int:id>", methods=["PUT"])
-def editar(id):
 
-    if "usuario_id" not in session:
+@app.route("/lancamentos/<int:id>", methods=["PUT"])
+def editar_lancamento(id):
+
+    if not usuario_logado():
         return jsonify({"erro": "Não autenticado"}), 401
 
     atualizado = request.get_json()
@@ -355,10 +383,11 @@ def editar(id):
 
     return jsonify({"status": "ok"})
 
-@app.route("/lancamentos/<int:id>", methods=["DELETE"])
-def deletar(id):
 
-    if "usuario_id" not in session:
+@app.route("/lancamentos/<int:id>", methods=["DELETE"])
+def deletar_lancamento(id):
+
+    if not usuario_logado():
         return jsonify({"erro": "Não autenticado"}), 401
 
     excluir_lancamento(
@@ -368,14 +397,11 @@ def deletar(id):
 
     return jsonify({"status": "ok"})
 
-# =========================
-# FINANÇAS API
-# =========================
 
 @app.route("/api/financas")
 def api_financas():
 
-    if "usuario_id" not in session:
+    if not usuario_logado():
         return jsonify({"erro": "Não autenticado"}), 401
 
     return jsonify(
@@ -383,6 +409,115 @@ def api_financas():
             session["usuario_id"]
         )
     )
+
+
+# =========================
+# COMPRAS API
+# =========================
+
+@app.route("/api/compras", methods=["GET"])
+def api_listar_compras():
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    return jsonify(
+        listar_compras(
+            session["usuario_id"]
+        )
+    )
+
+
+@app.route("/api/compras", methods=["POST"])
+def api_criar_compra():
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    dados = request.get_json()
+
+    try:
+
+        criar_compra(
+            session["usuario_id"],
+            dados.get("data"),
+            dados.get("categoria"),
+            dados.get("item"),
+            dados.get("quantidade"),
+            dados.get("valor_unitario"),
+            dados.get("obs")
+        )
+
+        return jsonify({"status": "ok"}), 201
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
+
+
+@app.route("/api/compras/<int:id>", methods=["PUT"])
+def api_atualizar_compra(id):
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    dados = request.get_json()
+
+    try:
+
+        atualizar_compra(
+            session["usuario_id"],
+            id,
+            dados.get("data"),
+            dados.get("categoria"),
+            dados.get("item"),
+            dados.get("quantidade"),
+            dados.get("valor_unitario"),
+            dados.get("obs")
+        )
+
+        return jsonify({"status": "ok"})
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
+
+
+@app.route("/api/compras/<int:id>/status", methods=["PUT"])
+def api_status_compra(id):
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    dados = request.get_json()
+
+    atualizar_status_compra(
+        session["usuario_id"],
+        id,
+        dados.get("comprado")
+    )
+
+    return jsonify({"status": "ok"})
+
+
+@app.route("/api/compras/<int:id>", methods=["DELETE"])
+def api_excluir_compra(id):
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    excluir_compra(
+        session["usuario_id"],
+        id
+    )
+
+    return jsonify({"status": "ok"})
 
 
 # =========================

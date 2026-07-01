@@ -1,42 +1,162 @@
+/* =========================
+   RESET / BASE
+========================= */
+
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
+html,
 body {
-  margin: 0;
+  min-height: 100%;
+}
+
+body {
   font-family: "Segoe UI", Arial, sans-serif;
   background:
     radial-gradient(circle at top, rgba(59,130,246,.14), transparent 35%),
     linear-gradient(135deg, #020617, #0f172a);
   color: #e5e7eb;
   padding: 24px;
+  padding-top: 76px;
 }
 
+/* =========================
+   CONTAINER
+========================= */
+
 .container {
-  max-width: 1100px;
-  margin: auto;
-  background: rgba(15,23,42,.94);
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 26px;
+  background: rgba(15, 23, 42, .94);
   border: 1px solid rgba(148,163,184,.18);
   border-radius: 20px;
-  padding: 26px;
   box-shadow: 0 30px 65px rgba(0,0,0,.42);
 }
 
-header {
+.compras-header {
   display: flex;
   justify-content: space-between;
   gap: 20px;
   align-items: center;
+  margin-bottom: 26px;
+}
+
+.compras-header h1 {
+  color: #f8fafc;
+  font-size: clamp(24px, 4vw, 36px);
+}
+
+.compras-header p {
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+/* =========================
+   CARDS
+========================= */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
   margin-bottom: 24px;
 }
 
-h1, h2 {
-  margin: 0;
+.card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-left: 6px solid #3b82f6;
+  border-radius: 18px;
+  padding: 20px;
+  min-height: 105px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: .25s ease;
+  box-shadow: 0 12px 28px rgba(0,0,0,.22);
 }
 
-p {
-  color: #94a3b8;
+.card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 42px rgba(0,0,0,.34);
 }
+
+.card span {
+  color: #cbd5e1;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.card strong {
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.toolbar-card,
+.table-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+#iptPesquisaCompra,
+#filtroCategoria,
+#filtroStatus {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* =========================
+   FORM
+========================= */
+
+input,
+select {
+  width: 100%;
+  height: 42px;
+  padding: 10px 12px;
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: #f8fafc;
+  font-size: 14px;
+  outline: none;
+  transition: .25s;
+}
+
+input:focus,
+select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+}
+
+input::placeholder {
+  color: #64748b;
+}
+
+/* =========================
+   BOTÕES
+========================= */
 
 button {
   border: none;
@@ -46,148 +166,177 @@ button {
   font-weight: 700;
   color: white;
   background: linear-gradient(135deg, #2563eb, #4f46e5);
+  transition: .25s;
+  white-space: nowrap;
 }
 
 button:hover {
   transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(37,99,235,.28);
 }
 
-.cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  margin-bottom: 24px;
+button:active {
+  transform: scale(.98);
 }
 
-.card,
-.form-card,
-.categoria-card {
-  background: #111827;
-  border: 1px solid #1f2937;
-  border-radius: 18px;
-  padding: 20px;
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.card span {
-  color: #94a3b8;
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
 }
 
-.card strong {
-  display: block;
-  margin-top: 8px;
-  font-size: 28px;
-  color: #38bdf8;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 2fr 1.3fr .7fr 1fr auto;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-input,
-select {
-  width: 100%;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid #334155;
-  background: #020617;
-  color: white;
-  outline: none;
-}
-
-input:focus,
-select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,.2);
-}
-
-.campo-erro {
-  border: 2px solid #ef4444 !important;
-}
-
-#mensagemErro {
-  display: none;
-  margin-top: 12px;
-  color: #ef4444;
-  font-weight: 700;
-}
-
-.categorias {
-  display: grid;
-  gap: 18px;
-  margin-top: 24px;
-}
-
-.categoria-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.categoria-header strong {
-  color: #22c55e;
-}
-
-.item {
-  display: grid;
-  grid-template-columns: 40px 1fr 90px 120px 120px 90px;
-  gap: 10px;
-  align-items: center;
-  padding: 12px;
-  border-top: 1px solid #1f2937;
-}
-
-.item.comprado {
-  opacity: .55;
-  text-decoration: line-through;
+.btn-secondary {
+  background: linear-gradient(135deg, #475569, #334155);
 }
 
 .btn-danger {
   background: #dc2626;
 }
 
-@media(max-width: 900px) {
-  .cards {
-    grid-template-columns: 1fr;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .item {
-    grid-template-columns: 30px 1fr;
-  }
-
-  .item span,
-  .item button {
-    grid-column: 2;
-  }
-
-  header {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.btn-danger:hover {
+  background: #b91c1c;
 }
+
+.btn-success {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
 /* =========================
-   MENU COMPONENT
+   TABELA
+========================= */
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+}
+
+table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  background: #0f172a;
+}
+
+th,
+td {
+  padding: 14px;
+  text-align: left;
+  border-bottom: 1px solid #1f2937;
+  vertical-align: middle;
+}
+
+th {
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+tbody tr {
+  transition: .2s;
+}
+
+tbody tr:hover {
+  background: #162033;
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.badge-ok {
+  background: rgba(34,197,94,.15);
+  color: #4ade80;
+}
+
+.badge-pendente {
+  background: rgba(239,68,68,.15);
+  color: #f87171;
+}
+
+.acoes {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.acoes button {
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+/* =========================
+   VALIDAÇÃO
+========================= */
+
+.campo-erro {
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.16);
+}
+
+.erro-msg {
+  display: none;
+  color: #ef4444;
+  background: rgba(239,68,68,.12);
+  border: 1px solid rgba(239,68,68,.35);
+  padding: 10px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* =========================
+   PAGINAÇÃO
+========================= */
+
+.paginacao {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+#prevBtn,
+#nextBtn {
+  width: auto;
+  min-width: 130px;
+}
+
+#pageInfo {
+  white-space: nowrap;
+  text-align: center;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+/* =========================
+   MENU LATERAL
 ========================= */
 
 #btnMenu {
   position: fixed;
   top: 16px;
   left: 16px;
-  z-index: 10001;
   width: auto;
   padding: 11px 14px;
   border-radius: 12px;
-  border: none;
   background: linear-gradient(135deg, #2563eb, #4f46e5);
-  color: white;
   font-size: 18px;
-  cursor: pointer;
 }
 
 #menuOverlay {
@@ -206,7 +355,7 @@ select:focus {
 .sidebar {
   position: fixed;
   top: 0;
-  left: -280px;
+  left: -285px;
   width: 260px;
   height: 100vh;
   background: #020617;
@@ -229,7 +378,6 @@ select:focus {
 }
 
 .menu-header h3 {
-  margin: 0;
   font-size: 22px;
   color: white;
 }
@@ -239,11 +387,7 @@ select:focus {
   text-align: left;
   margin-bottom: 10px;
   background: #111827;
-  color: #e5e7eb;
   border: 1px solid #1f2937;
-  border-radius: 12px;
-  padding: 12px;
-  cursor: pointer;
 }
 
 .sidebar button:hover {
@@ -253,5 +397,330 @@ select:focus {
 #btnMenuin {
   width: auto;
   background: #2563eb;
+}
+
+/* =========================
+   MODAL COMPACTO
+========================= */
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.70);
+  backdrop-filter: blur(6px);
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  overflow-y: auto;
+  z-index: 9999;
+}
+
+.modal-content {
+  position: relative;
+  width: 420px;
+  max-width: 95%;
+  max-height: 75vh;
+  overflow-y: auto;
+  margin: 0 auto;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   color: white;
+  box-shadow: 0 20px 50px rgba(0,0,0,.45);
+}
+
+.modal-content h2 {
+  margin: 0 0 4px;
+  text-align: center;
+  color: white;
+  font-size: 21px;
+}
+
+.modal-content label {
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.modal-content input,
+.modal-content select {
+  width: 100%;
+  height: 40px;
+  padding: 9px 11px;
+  font-size: 14px;
+}
+
+#compraValorTotal {
+  color: #22c55e;
+  font-weight: 800;
+}
+
+.btn-fechar-modal {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  background: none;
+  color: #ef4444;
+  font-size: 19px;
+  box-shadow: none;
+}
+
+.btn-fechar-modal:hover {
+  background: rgba(239,68,68,.12);
+  transform: rotate(90deg);
+  box-shadow: none;
+}
+
+.modal-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.modal-acoes button {
+  width: 100%;
+  min-height: 40px;
+  font-size: 14px;
+  padding: 10px 14px;
+}
+
+/* =========================
+   RESPONSIVO TABLET
+========================= */
+
+@media (max-width: 900px) {
+  body {
+    padding: 18px;
+    padding-top: 72px;
+  }
+
+  .container {
+    padding: 20px;
+  }
+
+  .compras-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .toolbar {
+    flex-direction: column;
+  }
+
+  #iptPesquisaCompra,
+  #filtroCategoria,
+  #filtroStatus,
+  .toolbar button {
+    width: 100%;
+  }
+}
+
+/* =========================
+   RESPONSIVO CELULAR
+========================= */
+
+@media (max-width: 600px) {
+  body {
+    padding: 12px;
+    padding-top: 70px;
+  }
+
+  .container {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-height: 92px;
+    padding: 16px;
+  }
+
+
+
+  .table-wrapper{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  table{
+      width:100%;
+      min-width:720px;
+  }
+
+  th,
+  td{
+      white-space:nowrap;
+  }
+
+  td.desktop-only,
+  .desktop-only {
+    display: none !important;
+  }
+
+  .acoes {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+ .acoes button {
+    width: auto;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    font-size: 0;
+    border-radius: 9px;
+  }
+  .acoes .btn-success::after {
+    content: "✓";
+    font-size: 15px;
+  }
+
+  .acoes .btn-secondary::after {
+    content: "✏️";
+    font-size: 14px;
+  }
+
+  .acoes .btn-danger::after {
+    content: "🗑️";
+    font-size: 14px;
+  }
+
+  .sidebar {
+    width: 85%;
+    left: -90%;
+  }
+
+  .modal {
+    align-items: center;
+    padding: 12px;
+  }
+
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    max-height: 82vh;
+    padding: 16px;
+    gap: 6px;
+    border-radius: 14px;
+  }
+
+  .modal-content h2 {
+    font-size: 18px;
+    padding-right: 30px;
+  }
+
+  .modal-content label {
+    font-size: 12px;
+  }
+
+  .modal-content input,
+  .modal-content select {
+    height: 38px;
+    min-height: 38px;
+    font-size: 14px;
+  }
+
+  .btn-fechar-modal {
+    top: 8px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+  }
+
+  .modal-acoes {
+    gap: 8px;
+  }
+
+  .modal-acoes button {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .paginacao {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+
+  #pageInfo {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: 18px;
+  }
+
+  #prevBtn,
+  #nextBtn {
+    width: 100%;
+    min-width: 0;
+    padding: 14px 12px;
+    font-size: 15px;
+  }
+
+  #prevBtn {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  #nextBtn {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+/* CELULAR MUITO PEQUENO */
+
+@media (max-width: 380px) {
+  .paginacao {
+    grid-template-columns: 1fr;
+  }
+
+  #pageInfo,
+  #prevBtn,
+  #nextBtn {
+    grid-column: 1;
+  }
+
+  #pageInfo {
+    grid-row: 1;
+  }
+
+  #prevBtn {
+    grid-row: 2;
+  }
+
+  #nextBtn {
+    grid-row: 3;
+  }
+}
+.card {
+  cursor: pointer;
+}
+
+.card:active {
+  transform: scale(.98);
 }

@@ -2,79 +2,190 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Lista de Compras</title>
-  <link rel="stylesheet" href="/static/css/compras.css">
-  <link rel="icon" type="image/png"href="{{ url_for('static', filename='img/favicon.png') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <title>Lista de Compras</title>
+
+  <link rel="stylesheet" href="/static/css/compras.css">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
+
 <body>
 
-    <div id="menu-container"></div>
+  <button id="btnMenu" onclick="toggleMenu()">☰</button>
+  <div id="menuOverlay" onclick="fecharMenu()"></div>
+  <div id="menu-container"></div>
 
-    <button id="btnMenu" onclick="toggleMenu()">☰</button>
+  <main class="container">
 
-    <div id="menuOverlay" onclick="fecharMenu()"></div>
+    <header class="compras-header">
+      <div>
+        <h1>🛒 Lista de Compras</h1>
+        <p>Organize compras por categoria e acompanhe seus totais.</p>
+      </div>
 
-    <div id="menu-container"></div>
+      <button class="btn-secondary" onclick="window.location.href='/home'">
+        ⬅ Voltar
+      </button>
+    </header>
 
-<div class="container">
+    <section class="cards">
+      <div class="card">
+        <span>Total previsto</span>
+        <strong id="totalGeral">R$ 0,00</strong>
+      </div>
 
-  <header>
-    <div>
-      <h1>Lista de Compras</h1>
-      <p>Organize compras por categoria e acompanhe o total.</p>
+      <div class="card" onclick="mostrarTodasCompras()">
+        <span>Total de itens</span>
+        <strong id="totalItens">0</strong>
+      </div>
+
+      <div class="card" onclick="filtrarComprados()">
+        <span>Comprados</span>
+        <strong id="totalComprados">0</strong>
+      </div>
+
+      <div class="card" onclick="filtrarPendentes()">
+        <span>Pendentes</span>
+        <strong id="totalPendentes">0</strong>
+      </div>
+    </section>
+
+    <section class="toolbar-card">
+      <div class="toolbar">
+        <input
+          id="iptPesquisaCompra"
+          type="text"
+          placeholder="Pesquisar por item, categoria ou observação...">
+
+        <select id="filtroCategoria">
+          <option value="">Todas as categorias</option>
+          <option value="Mercado">Mercado</option>
+          <option value="Uso pessoal">Uso pessoal</option>
+          <option value="Casa">Casa</option>
+          <option value="Farmácia">Farmácia</option>
+          <option value="Limpeza">Limpeza</option>
+          <option value="Higiene">Higiene</option>
+          <option value="Pets">Pets</option>
+          <option value="Outros">Outros</option>
+        </select>
+
+        <select id="filtroStatus">
+          <option value="">Todos os status</option>
+          <option value="0">Pendentes</option>
+          <option value="1">Comprados</option>
+        </select>
+
+        <button class="btn-primary" onclick="abrirModalCompra()">
+          ➕ Novo item
+        </button>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+          <tr>
+
+              <th class="desktop-only">Data</th>
+
+              <th class="desktop-only">Categoria</th>
+
+              <th>Item</th>
+
+              <th>Qtd</th>
+
+              <th>Unitário</th>
+
+              <th class="desktop-only">Total</th>
+
+              <th>Status</th>
+
+              <th>Ações</th>
+
+          </tr>
+          </thead>
+
+          <tbody id="tabelaCompras"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="paginacao">
+      <button id="prevBtn" onclick="paginaAnterior()">Anterior</button>
+      <span id="pageInfo">Página 1 de 1</span>
+      <button id="nextBtn" onclick="proximaPagina()">Próximo</button>
     </div>
 
-    <button onclick="window.location.href='/home'">
-      ⬅ Voltar
-    </button>
-  </header>
+  </main>
 
-  <section class="cards">
-    <div class="card">
-      <span>Total previsto</span>
-      <strong id="totalGeral">R$ 0,00</strong>
-    </div>
+  <div id="modalCompra" class="modal">
 
-    <div class="card">
-      <span>Itens</span>
-      <strong id="totalItens">0</strong>
-    </div>
+    <div class="modal-content">
 
-    <div class="card">
-      <span>Comprados</span>
-      <strong id="totalComprados">0</strong>
-    </div>
-  </section>
+      <button
+        type="button"
+        class="btn-fechar-modal"
+        onclick="fecharModalCompra()">
+        ✕
+      </button>
 
-  <section class="form-card">
-    <h2>Novo item</h2>
+      <h2 id="tituloModalCompra">🛒 Novo item</h2>
 
-    <div class="form-grid">
-      <input id="itemNome" placeholder="Nome do item">
+      <input type="hidden" id="compraId">
 
-      <select id="itemCategoria">
+      <label for="compraData">Data</label>
+      <input id="compraData" type="date">
+
+      <label for="compraCategoria">Categoria</label>
+      <select id="compraCategoria">
         <option value="Mercado">Mercado</option>
         <option value="Uso pessoal">Uso pessoal</option>
         <option value="Casa">Casa</option>
         <option value="Farmácia">Farmácia</option>
+        <option value="Limpeza">Limpeza</option>
+        <option value="Higiene">Higiene</option>
+        <option value="Pets">Pets</option>
         <option value="Outros">Outros</option>
       </select>
 
-      <input id="itemQtd" type="number" placeholder="Qtd" min="1" value="1">
+      <label for="compraItem">Item</label>
+      <input id="compraItem" type="text" placeholder="Nome do item">
 
-      <input id="itemValor" type="number" placeholder="Valor unitário" step="0.01">
+      <label for="compraQuantidade">Quantidade</label>
+      <input id="compraQuantidade" type="number" min="1" step="1" value="1">
 
-      <button onclick="adicionarItem()">Adicionar</button>
+      <label for="compraValorUnitario">Valor unitário</label>
+      <input id="compraValorUnitario" type="number" min="0" step="0.01" placeholder="0,00">
+
+      <label for="compraValorTotal">Valor total</label>
+      <input id="compraValorTotal" type="text" readonly value="R$ 0,00">
+
+      <label for="compraObs">Observação</label>
+      <input id="compraObs" type="text" placeholder="Opcional">
+
+      <span id="erroCompra" class="erro-msg"></span>
+
+      <div class="modal-acoes">
+        <button class="btn-success" onclick="salvarCompra()">
+          💾 Salvar
+        </button>
+
+        <button class="btn-primary" onclick="salvarCompra(true)">
+          ➕ Salvar e Novo
+        </button>
+
+        <button class="btn-secondary" onclick="fecharModalCompra()">
+          Cancelar
+        </button>
+      </div>
+
     </div>
 
-    <span id="mensagemErro"></span>
-  </section>
+  </div>
 
-  <section id="listaCategorias" class="categorias"></section>
-
-</div>
-<script src="/static/js/menu.js"></script>
-<script src="/static/js/compras.js"></script>
+  <script src="/static/js/menu.js"></script>
+  <script src="/static/js/compras.js"></script>
 </body>
 </html>

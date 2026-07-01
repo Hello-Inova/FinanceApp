@@ -28,27 +28,42 @@ def criar_tabelas():
     cursor = conn.cursor()
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        senha TEXT NOT NULL,
-        perfil TEXT NOT NULL DEFAULT 'Padrão',
-        ativo INTEGER NOT NULL DEFAULT 1
-    )
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            senha TEXT NOT NULL,
+            perfil TEXT NOT NULL DEFAULT 'Padrão',
+            ativo INTEGER NOT NULL DEFAULT 1
+        )
     """)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS lancamentos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             usuario_id INTEGER NOT NULL,
-
             data TEXT NOT NULL,
             tipo TEXT NOT NULL,
             descricao TEXT NOT NULL,
             valor REAL NOT NULL,
             obs TEXT,
+            FOREIGN KEY(usuario_id)
+            REFERENCES usuarios(id)
+        )
+    """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS compras (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            data TEXT NOT NULL,
+            categoria TEXT NOT NULL,
+            item TEXT NOT NULL,
+            quantidade REAL NOT NULL,
+            valor_unitario REAL NOT NULL,
+            valor_total REAL NOT NULL,
+            comprado INTEGER NOT NULL DEFAULT 0,
+            obs TEXT,
             FOREIGN KEY(usuario_id)
             REFERENCES usuarios(id)
         )
@@ -116,6 +131,7 @@ def buscar_usuario(email, senha):
         }
 
     return None
+
 
 def listar_usuarios():
 
@@ -198,6 +214,54 @@ def alterar_senha_usuario(usuario_id, nova_senha):
     conn.commit()
     conn.close()
 
+
+def atualizar_dados_usuario(usuario_id, nome, email, perfil):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE usuarios
+        SET
+            nome = ?,
+            email = ?,
+            perfil = ?
+        WHERE id = ?
+    """, (
+        nome,
+        email,
+        perfil,
+        usuario_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def excluir_usuario(usuario_id):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM lancamentos
+        WHERE usuario_id = ?
+    """, (usuario_id,))
+
+    cursor.execute("""
+        DELETE FROM compras
+        WHERE usuario_id = ?
+    """, (usuario_id,))
+
+    cursor.execute("""
+        DELETE FROM usuarios
+        WHERE id = ?
+    """, (usuario_id,))
+
+    conn.commit()
+    conn.close()
+
+
 # =========================
 # LANÇAMENTOS
 # =========================
@@ -226,24 +290,7 @@ def listar_lancamentos(usuario_id):
 
 def listar_lancamentos_usuario(usuario_id):
 
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT *
-        FROM lancamentos
-        WHERE usuario_id = ?
-        ORDER BY id DESC
-    """, (usuario_id,))
-
-    registros = [
-        dict(row)
-        for row in cursor.fetchall()
-    ]
-
-    conn.close()
-
-    return registros
+    return listar_lancamentos(usuario_id)
 
 
 def criar_lancamento(
@@ -281,6 +328,7 @@ def criar_lancamento(
     conn.commit()
     conn.close()
 
+
 def atualizar_lancamento(
     usuario_id,
     id,
@@ -290,6 +338,7 @@ def atualizar_lancamento(
     valor,
     obs
 ):
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -316,6 +365,7 @@ def atualizar_lancamento(
     conn.commit()
     conn.close()
 
+
 def excluir_lancamento(usuario_id, id):
 
     conn = conectar()
@@ -332,22 +382,120 @@ def excluir_lancamento(usuario_id, id):
 
     conn.commit()
     conn.close()
-def atualizar_dados_usuario(usuario_id, nome, email, perfil):
+
+
+# =========================
+# COMPRAS
+# =========================
+
+def listar_compras(usuario_id):
 
     conn = conectar()
     cursor = conn.cursor()
 
     cursor.execute("""
-        UPDATE usuarios
-        SET
-            nome = ?,
-            email = ?,
-            perfil = ?
-        WHERE id = ?
+        SELECT *
+        FROM compras
+        WHERE usuario_id = ?
+        ORDER BY id DESC
+    """, (usuario_id,))
+
+    registros = [
+        dict(row)
+        for row in cursor.fetchall()
+    ]
+
+    conn.close()
+
+    return registros
+
+
+def criar_compra(
+    usuario_id,
+    data,
+    categoria,
+    item,
+    quantidade,
+    valor_unitario,
+    obs
+):
+
+    quantidade = float(quantidade)
+    valor_unitario = float(valor_unitario)
+    valor_total = quantidade * valor_unitario
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO compras
+        (
+            usuario_id,
+            data,
+            categoria,
+            item,
+            quantidade,
+            valor_unitario,
+            valor_total,
+            comprado,
+            obs
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        nome,
-        email,
-        perfil,
+        usuario_id,
+        data,
+        categoria,
+        item,
+        quantidade,
+        valor_unitario,
+        valor_total,
+        0,
+        obs
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def atualizar_compra(
+    usuario_id,
+    id,
+    data,
+    categoria,
+    item,
+    quantidade,
+    valor_unitario,
+    obs
+):
+
+    quantidade = float(quantidade)
+    valor_unitario = float(valor_unitario)
+    valor_total = quantidade * valor_unitario
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE compras
+        SET
+            data = ?,
+            categoria = ?,
+            item = ?,
+            quantidade = ?,
+            valor_unitario = ?,
+            valor_total = ?,
+            obs = ?
+        WHERE id = ?
+        AND usuario_id = ?
+    """, (
+        data,
+        categoria,
+        item,
+        quantidade,
+        valor_unitario,
+        valor_total,
+        obs,
+        id,
         usuario_id
     ))
 
@@ -355,20 +503,39 @@ def atualizar_dados_usuario(usuario_id, nome, email, perfil):
     conn.close()
 
 
-def excluir_usuario(usuario_id):
+def atualizar_status_compra(usuario_id, id, comprado):
 
     conn = conectar()
     cursor = conn.cursor()
 
     cursor.execute("""
-        DELETE FROM lancamentos
-        WHERE usuario_id = ?
-    """, (usuario_id,))
+        UPDATE compras
+        SET comprado = ?
+        WHERE id = ?
+        AND usuario_id = ?
+    """, (
+        comprado,
+        id,
+        usuario_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def excluir_compra(usuario_id, id):
+
+    conn = conectar()
+    cursor = conn.cursor()
 
     cursor.execute("""
-        DELETE FROM usuarios
+        DELETE FROM compras
         WHERE id = ?
-    """, (usuario_id,))
+        AND usuario_id = ?
+    """, (
+        id,
+        usuario_id
+    ))
 
     conn.commit()
     conn.close()
