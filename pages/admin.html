@@ -15,10 +15,19 @@
   <aside class="admin-sidebar">
     <h2>Admin</h2>
 
-    <button class="menu-item active">👤 Usuários</button>
-    <button class="menu-item disabled">⚙️ Configurações</button>
+    <button id="btnMenuUsuarios" class="menu-item active" onclick="mostrarUsuarios()">
+      👤 Usuários
+    </button>
+
+    <button id="btnMenuConfiguracoes" class="menu-item" onclick="mostrarConfiguracoes()">
+      ⚙️ Configurações
+    </button>
+
     <button class="menu-item disabled">📊 Relatórios</button>
-    <button class="menu-item" onclick="window.location.href='/home'">⬅ Voltar</button>
+
+    <button class="menu-item" onclick="window.location.href='/home'">
+      ⬅ Voltar
+    </button>
   </aside>
 
   <main class="admin-main">
@@ -28,7 +37,8 @@
       <p>Gerencie usuários, permissões e configurações do sistema.</p>
     </header>
 
-    <section class="admin-card">
+    <!-- SEÇÃO USUÁRIOS -->
+    <section id="secUsuarios" class="admin-card">
 
       <div class="section-header">
         <div>
@@ -70,6 +80,88 @@
 
           <tbody id="tabelaUsuarios"></tbody>
         </table>
+      </div>
+
+    </section>
+
+    <!-- SEÇÃO CONFIGURAÇÕES -->
+    <section id="secConfiguracoes" class="admin-card" style="display:none;">
+
+      <div class="section-header">
+        <div>
+          <h2>🏦 Recebimentos PIX</h2>
+          <p>Configure sua chave PIX para recebimentos.</p>
+        </div>
+      </div>
+
+      <div class="config-grid">
+
+        <div class="form-group">
+          <label for="tipoPix">Tipo da chave</label>
+
+          <select id="tipoPix">
+            <option value="">Selecione</option>
+            <option value="CPF">CPF</option>
+            <option value="CNPJ">CNPJ</option>
+            <option value="Email">Email</option>
+            <option value="Telefone">Telefone</option>
+            <option value="Aleatória">Aleatória</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="nomeRecebedor">Nome do Recebedor</label>
+          <input id="nomeRecebedor" type="text" placeholder="Ex: João Silva">
+        </div>
+
+        <div class="form-group">
+          <label for="chavePix">Chave PIX</label>
+          <input id="chavePix" type="text" placeholder="Digite sua chave PIX">
+        </div>
+
+        <div class="form-group">
+          <label for="banco">Banco</label>
+          <input id="banco" type="text" placeholder="Ex: Nubank">
+        </div>
+        <div class="qrcode-box">
+
+        <canvas id="pixQrCode"></canvas>
+
+          <div
+              id="qrCodePlaceholder"
+              class="qrcode-placeholder">
+
+              Informe uma chave PIX
+
+          </div>
+
+        </div>
+
+        <div class="form-group">
+          <label for="pixCopiaCola">PIX Copia e Cola</label>
+
+          <textarea
+            id="pixCopiaCola"
+            readonly
+            placeholder="O código PIX será gerado automaticamente">
+          </textarea>
+        </div>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          onclick="copiarPixCopiaCola()">
+          📋 Copiar PIX
+        </button>
+
+      </div>
+
+      <br><span id="msgConfiguracoes" class="erro-msg"></span>
+
+      <div class="config-actions">
+        <button class="btn-success" onclick="salvarConfiguracoes()">
+          💾 Salvar Configurações
+        </button>
       </div>
 
     </section>
@@ -188,7 +280,7 @@
     </div>
 
   </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="/static/js/admin.js"></script>
 </body>
 </html>

@@ -20,7 +20,12 @@ from database import (
     criar_compra,
     atualizar_compra,
     atualizar_status_compra,
-    excluir_compra
+    excluir_compra,
+
+    buscar_configuracoes,
+    salvar_configuracoes,
+    atualizar_configuracoes,
+    existe_configuracao
 )
 
 from flask import (
@@ -519,7 +524,92 @@ def api_excluir_compra(id):
 
     return jsonify({"status": "ok"})
 
+@app.route("/configuracoes")
+def configuracoes():
 
+    if "usuario_id" not in session:
+        return redirect("/")
+
+    if not usuario_admin():
+        return redirect("/home")
+
+    return render_template("configuracoes.html")
+
+# =========================
+# CONFIGURAÇÕES API
+# =========================
+
+@app.route("/api/configuracoes", methods=["GET"])
+def api_buscar_configuracoes():
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    configuracoes = buscar_configuracoes()
+
+    if not configuracoes:
+        return jsonify({})
+
+    return jsonify(configuracoes)
+
+
+@app.route("/api/configuracoes", methods=["POST"])
+def api_salvar_configuracoes():
+
+    if not usuario_logado():
+        return jsonify({"erro": "Não autenticado"}), 401
+
+    if not usuario_admin():
+        return jsonify({"erro": "Acesso negado"}), 403
+
+    dados = request.get_json()
+
+    tipo_pix = dados.get("tipo_pix")
+    chave_pix = dados.get("chave_pix")
+    nome_recebedor = dados.get("nome_recebedor")
+    banco = dados.get("banco")
+
+    if not tipo_pix or not chave_pix or not nome_recebedor or not banco:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Preencha todos os campos obrigatórios."
+        }), 400
+
+    try:
+
+        if existe_configuracao():
+
+            atualizar_configuracoes(
+                tipo_pix,
+                chave_pix,
+                nome_recebedor,
+                banco
+            )
+
+        else:
+
+            salvar_configuracoes(
+                tipo_pix,
+                chave_pix,
+                nome_recebedor,
+                banco
+            )
+
+        return jsonify({
+            "status": "ok",
+            "mensagem": "Configurações salvas com sucesso."
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
+        
 # =========================
 # RUN
 # =========================

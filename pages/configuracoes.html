@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Configurações</title>
+
+  <link rel="stylesheet" href="/static/css/configuracoes.css">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+
+<body>
+
+  <button id="btnMenu" onclick="toggleMenu()">☰</button>
+  <div id="menuOverlay" onclick="fecharMenu()"></div>
+  <div id="menu-container"></div>
+
+  <main class="container">
+
+    <header class="config-header">
+      <h1>⚙️ Configurações</h1>
+      <p>Gerencie os parâmetros administrativos do sistema.</p>
+    </header>
+
+    <section class="config-card pix-layout">
+
+      <div class="pix-form">
+
+        <div class="section-header">
+          <div>
+            <h2>🏦 Recebimentos PIX</h2>
+            <p>Configure sua chave PIX para recebimentos.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="tipoPix">Tipo da chave</label>
+            <select id="tipoPix">
+              <option value="">Selecione</option>
+              <option value="CPF">CPF</option>
+              <option value="CNPJ">CNPJ</option>
+              <option value="Email">Email</option>
+              <option value="Telefone">Telefone</option>
+              <option value="Aleatória">Aleatória</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="nomeRecebedor">Nome do recebedor</label>
+            <input id="nomeRecebedor" type="text" placeholder="Ex: João Silva">
+          </div>
+
+          <div class="form-group">
+            <label for="chavePix">Chave PIX</label>
+            <input id="chavePix" type="text" placeholder="Digite sua chave PIX">
+            <small>Digite a chave PIX para gerar o QR Code.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="banco">Banco</label>
+            <input id="banco" type="text" placeholder="Ex: Nubank, Itaú, Inter">
+          </div>
+
+        </div>
+
+        <span id="msgConfiguracoes" class="msg"></span>
+
+        <div class="actions">
+          <button class="btn-success" onclick="salvarConfiguracoes()">
+            💾 Salvar Configurações PIX
+          </button>
+        </div>
+
+      </div>
+
+      <aside class="pix-qrcode-card">
+
+        <h3>QR Code PIX</h3>
+
+        <p>
+          O QR Code é atualizado automaticamente sempre que a chave PIX for alterada.
+        </p>
+
+        <div class="qrcode-box">
+          <canvas id="pixQrCode"></canvas>
+
+          <div id="qrCodePlaceholder" class="qrcode-placeholder">
+            Informe a chave PIX
+          </div>
+        </div>
+
+        <div class="qrcode-info">
+          ℹ️ Este QR Code representa a chave PIX informada.
+        </div>
+
+      </aside>
+
+    </section>
+
+    <section class="info-card">
+      <h3>💡 Sobre o QR Code PIX</h3>
+      <p>
+        O QR Code será gerado com base na chave PIX cadastrada. Sempre que a chave for alterada,
+        a prévia será atualizada automaticamente.
+      </p>
+    </section>
+
+  </main>
+
+  <script src="/static/js/menu.js"></script>
+  <script src="/static/js/configuracoes.js"></script>
+</body>
+</html>

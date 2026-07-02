@@ -68,6 +68,25 @@ def criar_tabelas():
             REFERENCES usuarios(id)
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS configuracoes (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            tipo_pix TEXT NOT NULL,
+
+            chave_pix TEXT NOT NULL,
+
+            nome_recebedor TEXT NOT NULL,
+
+            banco TEXT NOT NULL,
+
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+            atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+        )
+    """)
 
     conn.commit()
     conn.close()
@@ -261,6 +280,110 @@ def excluir_usuario(usuario_id):
     conn.commit()
     conn.close()
 
+# =========================
+# CONFIGURAÇÕES
+# =========================
+
+def buscar_configuracoes():
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM configuracoes
+        LIMIT 1
+    """)
+
+    configuracao = cursor.fetchone()
+
+    conn.close()
+
+    if configuracao:
+        return dict(configuracao)
+
+    return None
+
+
+def salvar_configuracoes(
+    tipo_pix,
+    chave_pix,
+    nome_recebedor,
+    banco
+):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO configuracoes
+        (
+            tipo_pix,
+            chave_pix,
+            nome_recebedor,
+            banco
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        tipo_pix,
+        chave_pix,
+        nome_recebedor,
+        banco
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def atualizar_configuracoes(
+    tipo_pix,
+    chave_pix,
+    nome_recebedor,
+    banco
+):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE configuracoes
+        SET
+            tipo_pix = ?,
+            chave_pix = ?,
+            nome_recebedor = ?,
+            banco = ?,
+            atualizado_em = CURRENT_TIMESTAMP
+        WHERE id = (
+            SELECT id
+            FROM configuracoes
+            LIMIT 1
+        )
+    """, (
+        tipo_pix,
+        chave_pix,
+        nome_recebedor,
+        banco
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def existe_configuracao():
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM configuracoes
+    """)
+
+    existe = cursor.fetchone()[0] > 0
+
+    conn.close()
+
+    return existe
 
 # =========================
 # LANÇAMENTOS

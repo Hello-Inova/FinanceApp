@@ -434,6 +434,271 @@ function toggleSenhaAdmin(idInput, botao) {
   }
 }
 
+function mostrarUsuarios() {
+  document.getElementById("secUsuarios").style.display = "block";
+  document.getElementById("secConfiguracoes").style.display = "none";
+
+  btnMenuUsuarios.classList.add("active");
+  btnMenuConfiguracoes.classList.remove("active");
+}
+
+function mostrarConfiguracoes() {
+  document.getElementById("secUsuarios").style.display = "none";
+  document.getElementById("secConfiguracoes").style.display = "block";
+
+  btnMenuConfiguracoes.classList.add("active");
+  btnMenuUsuarios.classList.remove("active");
+
+  carregarConfiguracoes();
+}
+
+// =========================
+// CONFIGURAÇÕES PIX
+// =========================
+
+async function carregarConfiguracoes() {
+  try {
+    const res = await fetch(`${API_URL}/api/configuracoes`);
+
+    if (!res.ok) {
+      console.error("Erro ao carregar configurações");
+      return;
+    }
+
+    const dados = await res.json();
+
+    if (!dados || Object.keys(dados).length === 0) {
+      gerarQrCodePix();
+      return;
+    }
+
+    tipoPix.value = dados.tipo_pix || "";
+    chavePix.value = dados.chave_pix || "";
+    nomeRecebedor.value = dados.nome_recebedor || "";
+    banco.value = dados.banco || "";
+
+    gerarQrCodePix();
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function limparValidacoesConfiguracoes() {
+  [tipoPix, chavePix, nomeRecebedor, banco].forEach(campo => {
+    campo.classList.remove("campo-erro");
+  });
+
+  msgConfiguracoes.className = "erro-msg";
+  msgConfiguracoes.innerText = "";
+  msgConfiguracoes.style.display = "none";
+}
+
+function mostrarMensagemConfiguracoes(texto, tipo) {
+  msgConfiguracoes.innerText = texto;
+  msgConfiguracoes.style.display = "block";
+
+  if (tipo === "sucesso") {
+    msgConfiguracoes.style.color = "#22c55e";
+    msgConfiguracoes.style.background = "rgba(34,197,94,.12)";
+    msgConfiguracoes.style.border = "1px solid rgba(34,197,94,.35)";
+  } else {
+    msgConfiguracoes.style.color = "#ef4444";
+    msgConfiguracoes.style.background = "rgba(239,68,68,.12)";
+    msgConfiguracoes.style.border = "1px solid rgba(239,68,68,.35)";
+  }
+}
+
+async function salvarConfiguracoes() {
+  limparValidacoesConfiguracoes();
+
+  const campos = [tipoPix, chavePix, nomeRecebedor, banco];
+
+  let possuiErro = false;
+
+  campos.forEach(campo => {
+    if (!campo.value.trim()) {
+      campo.classList.add("campo-erro");
+      possuiErro = true;
+    }
+  });
+
+  if (possuiErro) {
+    mostrarMensagemConfiguracoes(
+      "⚠️ Preencha todos os campos obrigatórios.",
+      "erro"
+    );
+    return;
+  }
+
+  const body = {
+    tipo_pix: tipoPix.value.trim(),
+    chave_pix: chavePix.value.trim(),
+    nome_recebedor: nomeRecebedor.value.trim(),
+    banco: banco.value.trim()
+  };
+
+  const res = await fetch(`${API_URL}/api/configuracoes`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  const dados = await res.json();
+
+  if (!res.ok) {
+    mostrarMensagemConfiguracoes(
+      dados.mensagem || "Erro ao salvar configurações.",
+      "erro"
+    );
+    return;
+  }
+
+  await carregarConfiguracoes();
+  gerarQrCodePix();
+
+  mostrarMensagemConfiguracoes(
+    "✅ Configurações salvas com sucesso.",
+    "sucesso"
+  );
+}
+
+function gerarQrCodePix() {
+  const canvas = document.getElementById("pixQrCode");
+  const placeholder = document.getElementById("qrCodePlaceholder");
+  const campoPix = document.getElementById("pixCopiaCola");
+
+  if (!canvas || !placeholder) return;
+
+  const chave = chavePix.value.trim();
+  const nome = nomeRecebedor.value.trim() || "RECEBEDOR";
+  const cidade = "SAO PAULO";
+
+  if (!chave) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    placeholder.style.display = "block";
+
+    if (campoPix) {
+      campoPix.value = "";
+    }
+
+    return;
+  }
+
+  const payloadPix = gerarPayloadPix({
+    chave,
+    nome,
+    cidade
+  });
+
+  if (campoPix) {
+    campoPix.value = payloadPix;
+  }
+
+  placeholder.style.display = "none";
+
+  QRCode.toCanvas(canvas, payloadPix, {
+    width: 230,
+    margin: 1
+  });
+}
+
+function montarCampoPix(id, valor) {
+  const tamanho = String(valor.length).padStart(2, "0");
+  return id + tamanho + valor;
+}
+
+function gerarPayloadPix({ chave, nome, cidade }) {
+  nome = removerAcentos(nome)
+    .substring(0, 25)
+    .toUpperCase();
+
+  cidade = removerAcentos(cidade)
+    .substring(0, 15)
+    .toUpperCase();
+
+  const merchantAccountInfo =
+    montarCampoPix("00", "BR.GOV.BCB.PIX") +
+    montarCampoPix("01", chave);
+
+  const payloadSemCRC =
+    montarCampoPix("00", "01") +
+    montarCampoPix("26", merchantAccountInfo) +
+    montarCampoPix("52", "0000") +
+    montarCampoPix("53", "986") +
+    montarCampoPix("58", "BR") +
+    montarCampoPix("59", nome) +
+    montarCampoPix("60", cidade) +
+    montarCampoPix("62", montarCampoPix("05", "***")) +
+    "6304";
+
+  const crc = calcularCRC16(payloadSemCRC);
+
+  return payloadSemCRC + crc;
+}
+
+function calcularCRC16(payload) {
+  let polinomio = 0x1021;
+  let resultado = 0xffff;
+
+  for (let i = 0; i < payload.length; i++) {
+    resultado ^= payload.charCodeAt(i) << 8;
+
+    for (let bit = 0; bit < 8; bit++) {
+      if ((resultado & 0x8000) !== 0) {
+        resultado = (resultado << 1) ^ polinomio;
+      } else {
+        resultado <<= 1;
+      }
+
+      resultado &= 0xffff;
+    }
+  }
+
+  return resultado.toString(16).toUpperCase().padStart(4, "0");
+}
+
+function removerAcentos(texto) {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function copiarPixCopiaCola() {
+  const campoPix = document.getElementById("pixCopiaCola");
+
+  if (!campoPix || !campoPix.value.trim()) {
+    alert("Nenhum código PIX gerado.");
+    return;
+  }
+
+  navigator.clipboard.writeText(campoPix.value);
+
+  alert("PIX Copia e Cola copiado!");
+}
+
+function configurarEventosConfiguracoes() {
+  [tipoPix, chavePix, nomeRecebedor, banco].forEach(campo => {
+    if (!campo) return;
+
+    campo.addEventListener("input", () => {
+      campo.classList.remove("campo-erro");
+      msgConfiguracoes.style.display = "none";
+      msgConfiguracoes.innerText = "";
+      gerarQrCodePix();
+    });
+
+    campo.addEventListener("change", () => {
+      campo.classList.remove("campo-erro");
+      gerarQrCodePix();
+    });
+  });
+}
+
 // =========================
 // EXPORT GLOBAL
 // =========================
@@ -441,18 +706,18 @@ function toggleSenhaAdmin(idInput, botao) {
 window.abrirModalNovoUsuario = abrirModalNovoUsuario;
 window.fecharModalNovoUsuario = fecharModalNovoUsuario;
 window.salvarNovoUsuario = salvarNovoUsuario;
-
 window.abrirModalEditar = abrirModalEditar;
 window.fecharModalEditar = fecharModalEditar;
 window.salvarUsuario = salvarUsuario;
-
 window.alterarStatus = alterarStatus;
 window.deletarUsuario = deletarUsuario;
-
 window.buscarUsuario = buscarUsuario;
 window.limparBusca = limparBusca;
-
 window.toggleSenhaAdmin = toggleSenhaAdmin;
+window.salvarConfiguracoes = salvarConfiguracoes;
+window.mostrarUsuarios = mostrarUsuarios;
+window.mostrarConfiguracoes = mostrarConfiguracoes;
+window.copiarPixCopiaCola = copiarPixCopiaCola;
 
 // =========================
 // INIT
@@ -462,4 +727,6 @@ window.onload = async () => {
   await carregarUsuarios();
 
   configurarValidacaoNovoUsuario();
+  configurarEventosConfiguracoes();
+
 };

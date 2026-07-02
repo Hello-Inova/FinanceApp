@@ -495,3 +495,49 @@ th {
     flex-direction: column-reverse;
   }
 }
+#secConfiguracoes {
+  width: 100%;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.config-grid .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.config-actions button {
+  min-width: 220px;
+}
+
+@media (max-width: 700px) {
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .config-actions button {
+    width: 100%;
+  }
+}
+#pixCopiaCola {
+  width: 100%;
+  min-height: 90px;
+  resize: none;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 13px;
+}
