@@ -127,3 +127,270 @@ button:active {
     font-size: 24px;
   }
 }
+.erro-login {
+  display: none;
+  color: #ef4444;
+  background: rgba(239, 68, 68, .12);
+  border: 1px solid rgba(239, 68, 68, .35);
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.label-senha {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.btn-link-cadastro {
+  margin-top: 8px;
+  background: transparent;
+  color: #38bdf8;
+  padding: 0;
+  box-shadow: none;
+  font-size: 14px;
+}
+
+.btn-link-cadastro:hover {
+  transform: none;
+  box-shadow: none;
+  color: #60a5fa;
+}
+
+/* MODAL CADASTRO */
+
+.modal-cadastro {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(6px);
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9999;
+}
+
+.modal-content-cadastro {
+  position: relative;
+  width: 430px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 24px;
+  color: #e5e7eb;
+  box-shadow: 0 25px 60px rgba(0,0,0,.55);
+}
+
+.btn-fechar-modal {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  padding: 0;
+  background: rgba(239,68,68,.12);
+  color: #ef4444;
+  font-size: 18px;
+}
+
+.etapa-cadastro h2 {
+  text-align: center;
+  margin-bottom: 8px;
+  color: #f8fafc;
+}
+
+.modal-subtitle {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.etapa-cadastro label {
+  display: block;
+  color: #cbd5e1;
+  font-size: 14px;
+  margin: 12px 0 6px;
+}
+
+.etapa-cadastro input,
+.etapa-cadastro textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: #f8fafc;
+  outline: none;
+}
+
+.etapa-cadastro textarea {
+  min-height: 95px;
+  resize: none;
+  font-size: 12px;
+}
+
+.etapa-cadastro input:focus,
+.etapa-cadastro textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.18);
+}
+
+.campo-erro {
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.16);
+}
+
+.msg-modal {
+  display: none;
+  margin: 14px 0;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.msg-modal.erro {
+  display: block;
+  color: #ef4444;
+  background: rgba(239,68,68,.12);
+  border: 1px solid rgba(239,68,68,.35);
+}
+
+.msg-modal.sucesso {
+  display: block;
+  color: #22c55e;
+  background: rgba(34,197,94,.12);
+  border: 1px solid rgba(34,197,94,.35);
+}
+
+.btn-primary,
+.btn-secondary {
+  margin-top: 12px;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #475569, #334155);
+}
+
+.qrcode-box-login {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto 18px;
+  background: white;
+  border-radius: 14px;
+  padding: 12px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#pixCadastroQrCode {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.qrcode-placeholder-login {
+  position: absolute;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .modal-content-cadastro {
+    padding: 20px;
+  }
+
+  .qrcode-box-login {
+    width: 210px;
+    height: 210px;
+  }
+}
+.steps-cadastro {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.step {
+  flex: 1;
+  text-align: center;
+  opacity: .45;
+}
+
+.step span {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 6px;
+  border-radius: 50%;
+  background: #334155;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.step p {
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.step.active {
+  opacity: 1;
+}
+
+.step.active span {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+}
+
+.status-pagamento {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  margin: 14px 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(59,130,246,.10);
+  border: 1px solid rgba(59,130,246,.25);
+}
+
+.status-pagamento p {
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(59,130,246,.25);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.menu-item.disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}

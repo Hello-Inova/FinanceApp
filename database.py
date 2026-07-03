@@ -68,23 +68,28 @@ def criar_tabelas():
             REFERENCES usuarios(id)
         )
     """)
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS configuracoes (
-
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             tipo_pix TEXT NOT NULL,
-
             chave_pix TEXT NOT NULL,
-
             nome_recebedor TEXT NOT NULL,
-
             banco TEXT NOT NULL,
-
             criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
             atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS solicitacoes_cadastro (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cpf TEXT NOT NULL,
+            email TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pendente',
+            usuario_criado INTEGER NOT NULL DEFAULT 0,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            pago_em TIMESTAMP
         )
     """)
 
@@ -280,6 +285,7 @@ def excluir_usuario(usuario_id):
     conn.commit()
     conn.close()
 
+
 # =========================
 # CONFIGURAÇÕES
 # =========================
@@ -384,6 +390,135 @@ def existe_configuracao():
     conn.close()
 
     return existe
+
+
+# =========================
+# SOLICITAÇÕES DE CADASTRO
+# =========================
+
+def criar_solicitacao_cadastro(cpf, email):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO solicitacoes_cadastro
+        (
+            cpf,
+            email,
+            status
+        )
+        VALUES (?, ?, ?)
+    """, (
+        cpf,
+        email,
+        "pendente"
+    ))
+
+    solicitacao_id = cursor.lastrowid
+
+    conn.commit()
+    conn.close()
+
+    return solicitacao_id
+
+
+def buscar_solicitacao_cadastro(solicitacao_id):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM solicitacoes_cadastro
+        WHERE id = ?
+    """, (solicitacao_id,))
+
+    solicitacao = cursor.fetchone()
+
+    conn.close()
+
+    if solicitacao:
+        return dict(solicitacao)
+
+    return None
+
+
+def buscar_solicitacao_por_email(email):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM solicitacoes_cadastro
+        WHERE email = ?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (email,))
+
+    solicitacao = cursor.fetchone()
+
+    conn.close()
+
+    if solicitacao:
+        return dict(solicitacao)
+
+    return None
+
+
+def marcar_solicitacao_como_paga(solicitacao_id):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE solicitacoes_cadastro
+        SET
+            status = 'pago',
+            pago_em = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (solicitacao_id,))
+
+    conn.commit()
+    conn.close()
+
+
+def marcar_usuario_criado_solicitacao(solicitacao_id):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE solicitacoes_cadastro
+        SET usuario_criado = 1
+        WHERE id = ?
+    """, (solicitacao_id,))
+
+    conn.commit()
+    conn.close()
+
+
+def listar_solicitacoes_cadastro():
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM solicitacoes_cadastro
+        ORDER BY id DESC
+    """)
+
+    solicitacoes = [
+        dict(row)
+        for row in cursor.fetchall()
+    ]
+
+    conn.close()
+
+    return solicitacoes
+
 
 # =========================
 # LANÇAMENTOS

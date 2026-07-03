@@ -25,7 +25,13 @@ from database import (
     buscar_configuracoes,
     salvar_configuracoes,
     atualizar_configuracoes,
-    existe_configuracao
+    existe_configuracao,
+
+    criar_solicitacao_cadastro,
+    buscar_solicitacao_cadastro,
+    marcar_solicitacao_como_paga,
+    marcar_usuario_criado_solicitacao
+    
 )
 
 from flask import (
@@ -609,6 +615,179 @@ def api_salvar_configuracoes():
             "status": "erro",
             "mensagem": str(e)
         }), 400
+
+# =========================
+# CADASTRO PÚBLICO / PIX
+# =========================
+
+@app.route("/api/public/pix", methods=["GET"])
+def api_public_pix():
+
+    configuracoes = buscar_configuracoes()
+
+    if not configuracoes:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "PIX não configurado."
+        }), 404
+
+    return jsonify({
+        "tipo_pix": configuracoes.get("tipo_pix"),
+        "chave_pix": configuracoes.get("chave_pix"),
+        "nome_recebedor": configuracoes.get("nome_recebedor"),
+        "banco": configuracoes.get("banco")
+    })
+
+
+@app.route("/api/public/cadastro", methods=["POST"])
+def api_criar_solicitacao_cadastro():
+
+    dados = request.get_json()
+
+    cpf = dados.get("cpf")
+    email = dados.get("email")
+
+    if not cpf or not email:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Informe CPF e e-mail."
+        }), 400
+
+    try:
+
+        solicitacao_id = criar_solicitacao_cadastro(
+            cpf,
+            email
+        )
+
+        configuracoes = buscar_configuracoes()
+
+        return jsonify({
+            "status": "ok",
+            "solicitacao_id": solicitacao_id,
+            "pix": configuracoes or {}
+        }), 201
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
+
+
+@app.route("/api/public/cadastro/<int:id>", methods=["GET"])
+def api_status_solicitacao_cadastro(id):
+
+    solicitacao = buscar_solicitacao_cadastro(id)
+
+    if not solicitacao:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Solicitação não encontrada."
+        }), 404
+
+    return jsonify({
+        "status": "ok",
+        "solicitacao": solicitacao
+    })
+
+
+@app.route("/api/public/finalizar-cadastro", methods=["POST"])
+def api_finalizar_cadastro():
+
+    dados = request.get_json()
+
+    solicitacao_id = dados.get("solicitacao_id")
+    nome = dados.get("nome")
+    email = dados.get("email")
+    senha = dados.get("senha")
+    confirmar_senha = dados.get("confirmar_senha")
+
+    if not solicitacao_id or not nome or not email or not senha or not confirmar_senha:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Preencha todos os campos."
+        }), 400
+
+    if senha != confirmar_senha:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "As senhas são diferentes."
+        }), 400
+
+    solicitacao = buscar_solicitacao_cadastro(solicitacao_id)
+
+    if not solicitacao:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Solicitação não encontrada."
+        }), 404
+
+    if solicitacao["status"] != "pago":
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Pagamento ainda não confirmado."
+        }), 403
+
+    if solicitacao["usuario_criado"] == 1:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Usuário já foi criado para esta solicitação."
+        }), 400
+
+    if solicitacao["email"] != email:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "O e-mail informado é diferente do e-mail da solicitação."
+        }), 400
+
+    try:
+
+        criar_usuario(
+            nome,
+            email,
+            senha,
+            "Padrão"
+        )
+
+        marcar_usuario_criado_solicitacao(
+            solicitacao_id
+        )
+
+        return jsonify({
+            "status": "ok",
+            "mensagem": "Cadastro realizado com sucesso."
+        }), 201
+
+    except Exception as e:
+
+        return jsonify({
+            "status": "erro",
+            "mensagem": str(e)
+        }), 400
+
+
+# ROTA TEMPORÁRIA PARA TESTE
+# Depois será substituída pelo webhook do gateway de pagamento.
+
+@app.route("/api/public/cadastro/<int:id>/simular-pagamento", methods=["POST"])
+def api_simular_pagamento_cadastro(id):
+
+    solicitacao = buscar_solicitacao_cadastro(id)
+
+    if not solicitacao:
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Solicitação não encontrada."
+        }), 404
+
+    marcar_solicitacao_como_paga(id)
+
+    return jsonify({
+        "status": "ok",
+        "mensagem": "Pagamento simulado com sucesso."
+    })
         
 # =========================
 # RUN
