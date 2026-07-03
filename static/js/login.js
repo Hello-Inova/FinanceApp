@@ -133,6 +133,69 @@ function mostrarEtapaCadastro(etapa) {
   atualizarStepsCadastro(etapa);
 }
 
+function validarEmail(email) {
+  const regex =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  return regex.test(email);
+}
+
+
+function limparCpf(cpf) {
+  return cpf.replace(/\D/g, "");
+}
+
+
+function aplicarMascaraCpf(valor) {
+  valor = valor.replace(/\D/g, "");
+
+  valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+  valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+  valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+
+  return valor;
+}
+
+
+function validarCpf(cpf) {
+  cpf = limparCpf(cpf);
+
+  if (cpf.length !== 11) return false;
+
+  if (/^(\d)\1+$/.test(cpf)) return false;
+
+  let soma = 0;
+  let resto;
+
+  for (let i = 1; i <= 9; i++) {
+    soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+  }
+
+  resto = (soma * 10) % 11;
+
+  if (resto === 10 || resto === 11) {
+    resto = 0;
+  }
+
+  if (resto !== parseInt(cpf.substring(9, 10))) {
+    return false;
+  }
+
+  soma = 0;
+
+  for (let i = 1; i <= 10; i++) {
+    soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+  }
+
+  resto = (soma * 10) % 11;
+
+  if (resto === 10 || resto === 11) {
+    resto = 0;
+  }
+
+  return resto === parseInt(cpf.substring(10, 11));
+}
+
 function atualizarStepsCadastro(etapa) {
   stepDados.classList.remove("active");
   stepPagamento.classList.remove("active");
@@ -195,6 +258,11 @@ function limparMensagensCadastro() {
 function mostrarMensagemCadastro(id, texto, tipo) {
   const msg = document.getElementById(id);
 
+  if (!msg) {
+    console.error("Elemento de mensagem não encontrado:", id);
+    return;
+  }
+
   msg.className = `msg-modal ${tipo}`;
   msg.innerText = texto;
 }
@@ -237,6 +305,31 @@ async function gerarPixCadastro() {
     "msgCadastroPix"
   );
 
+  if (!validarCpf(cpf.value)) {
+    cpf.classList.add("campo-erro");
+
+    mostrarMensagemCadastro(
+      "msgCadastroPix",
+      "⚠️ CPF inválido.",
+      "erro"
+    );
+
+    return;
+  }
+
+
+  if (!validarEmail(email.value.trim())) {
+    email.classList.add("campo-erro");
+
+    mostrarMensagemCadastro(
+      "msgCadastroPix",
+      "⚠️ Informe um e-mail válido.",
+      "erro"
+    );
+
+    return;
+  }
+
   if (!valido) return;
 
   try {
@@ -246,7 +339,7 @@ async function gerarPixCadastro() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        cpf: cpf.value.trim(),
+        cpf: limparCpf(cpf.value),
         email: email.value.trim()
       })
     });
@@ -264,6 +357,18 @@ async function gerarPixCadastro() {
 
     solicitacaoCadastroId = dados.solicitacao_id;
     emailSolicitacaoCadastro = email.value.trim();
+
+    if (
+      dados.solicitacao &&
+      dados.solicitacao.status === "pago"
+    ) {
+      document.getElementById("cadastroEmailFinal").value =
+        emailSolicitacaoCadastro;
+
+      mostrarEtapaCadastro("etapaCriarConta");
+
+      return;
+    }
 
     const pix = dados.pix || {};
 
@@ -516,6 +621,33 @@ function removerAcentos(texto) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+const campoCpfCadastro =
+  document.getElementById("cadastroCpf");
+
+  if (campoCpfCadastro) {
+    campoCpfCadastro.addEventListener("input", () => {
+      campoCpfCadastro.value =
+        aplicarMascaraCpf(campoCpfCadastro.value);
+
+      campoCpfCadastro.classList.remove("campo-erro");
+
+      limparMensagensCadastro();
+    });
+}
+
+function toggleSenhaCadastro(idInput, botao) {
+  const input = document.getElementById(idInput);
+
+  if (input.type === "password") {
+    input.type = "text";
+    botao.innerHTML = "🙈";
+  } else {
+    input.type = "password";
+    botao.innerHTML = "👁️";
+  }
+}
+
+
 // =========================
 // EVENTOS
 // =========================
@@ -543,3 +675,4 @@ window.gerarPixCadastro = gerarPixCadastro;
 window.copiarPixCadastro = copiarPixCadastro;
 window.verificarPagamentoCadastro = verificarPagamentoCadastro;
 window.finalizarCadastro = finalizarCadastro;
+window.toggleSenhaCadastro = toggleSenhaCadastro;

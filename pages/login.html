@@ -183,16 +183,22 @@
           readonly >
 
         <label for="cadastroSenhaFinal">Senha</label>
-        <input
-          id="cadastroSenhaFinal"
-          type="password"
-          placeholder="Crie uma senha">
+        <div class="senha-wrapper-modal">
+          <input id="cadastroSenhaFinal" type="password" placeholder="Crie uma senha">
+
+          <button type="button" onclick="toggleSenhaCadastro('cadastroSenhaFinal', this)">
+            👁️
+          </button>
+        </div>
 
         <label for="cadastroConfirmarSenhaFinal">Confirmar senha</label>
-        <input
-          id="cadastroConfirmarSenhaFinal"
-          type="password"
-          placeholder="Confirme sua senha">
+        <div class="senha-wrapper-modal">
+          <input id="cadastroConfirmarSenhaFinal" type="password" placeholder="Confirme sua senha">
+
+          <button type="button" onclick="toggleSenhaCadastro('cadastroConfirmarSenhaFinal', this)">
+            👁️
+          </button>
+        </div>
 
         <span id="msgCriarConta" class="msg-modal"></span>
 

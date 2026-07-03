@@ -31,6 +31,7 @@ def criar_tabelas():
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
+            cpf TEXT UNIQUE,
             email TEXT NOT NULL UNIQUE,
             senha TEXT NOT NULL,
             perfil TEXT NOT NULL DEFAULT 'Padrão',
@@ -100,8 +101,82 @@ def criar_tabelas():
 # =========================
 # USUÁRIOS
 # =========================
+def email_usuario_existe(email):
 
-def criar_usuario(nome, email, senha, perfil):
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM usuarios
+        WHERE email = ?
+    """, (email,))
+
+    existe = cursor.fetchone()[0] > 0
+
+    conn.close()
+
+    return existe
+
+
+def cpf_usuario_existe(cpf):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM usuarios
+        WHERE cpf = ?
+    """, (cpf,))
+
+    existe = cursor.fetchone()[0] > 0
+
+    conn.close()
+
+    return existe
+
+
+def buscar_solicitacao_por_cpf(cpf):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM solicitacoes_cadastro
+        WHERE cpf = ?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (cpf,))
+
+    solicitacao = cursor.fetchone()
+
+    conn.close()
+
+    return dict(solicitacao) if solicitacao else None
+
+
+def buscar_solicitacao_por_email(email):
+
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM solicitacoes_cadastro
+        WHERE email = ?
+        ORDER BY id DESC
+        LIMIT 1
+    """, (email,))
+
+    solicitacao = cursor.fetchone()
+
+    conn.close()
+
+    return dict(solicitacao) if solicitacao else None
+
+def criar_usuario(nome, cpf, email, senha, perfil):
 
     senha_hash = generate_password_hash(senha)
 
@@ -110,10 +185,11 @@ def criar_usuario(nome, email, senha, perfil):
 
     cursor.execute("""
         INSERT INTO usuarios
-        (nome, email, senha, perfil)
-        VALUES (?, ?, ?, ?)
+        (nome, cpf, email, senha, perfil)
+        VALUES (?, ?, ?, ?, ?)
     """, (
         nome,
+        cpf,
         email,
         senha_hash,
         perfil
@@ -121,7 +197,6 @@ def criar_usuario(nome, email, senha, perfil):
 
     conn.commit()
     conn.close()
-
 
 def buscar_usuario(email, senha):
 

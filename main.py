@@ -30,8 +30,12 @@ from database import (
     criar_solicitacao_cadastro,
     buscar_solicitacao_cadastro,
     marcar_solicitacao_como_paga,
-    marcar_usuario_criado_solicitacao
-    
+    marcar_usuario_criado_solicitacao,
+
+    email_usuario_existe,
+    cpf_usuario_existe,
+    buscar_solicitacao_por_cpf,
+    buscar_solicitacao_por_email    
 )
 
 from flask import (
@@ -208,6 +212,7 @@ def usuarios():
 
         criar_usuario(
             data.get("nome"),
+            data.get("cpf"),
             data.get("email"),
             data.get("senha"),
             data.get("perfil")
@@ -644,14 +649,78 @@ def api_criar_solicitacao_cadastro():
 
     dados = request.get_json()
 
-    cpf = dados.get("cpf")
-    email = dados.get("email")
+    cpf = dados.get("cpf", "").strip()
+    email = dados.get("email", "").strip().lower()
 
     if not cpf or not email:
         return jsonify({
             "status": "erro",
             "mensagem": "Informe CPF e e-mail."
         }), 400
+
+    # -----------------------------
+    # Usuário já cadastrado
+    # -----------------------------
+
+    if cpf_usuario_existe(cpf):
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Já existe um usuário cadastrado com este CPF."
+        }), 400
+
+    if email_usuario_existe(email):
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Já existe um usuário cadastrado com este e-mail."
+        }), 400
+
+    # -----------------------------
+    # Procura solicitações existentes
+    # -----------------------------
+
+    solicitacao_cpf = buscar_solicitacao_por_cpf(cpf)
+    solicitacao_email = buscar_solicitacao_por_email(email)
+
+    # CPF já pertence a outro e-mail
+    if (
+        solicitacao_cpf
+        and solicitacao_cpf["email"].lower() != email
+    ):
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Este CPF já possui uma solicitação vinculada a outro e-mail."
+        }), 400
+
+    # Email já pertence a outro CPF
+    if (
+        solicitacao_email
+        and solicitacao_email["cpf"] != cpf
+    ):
+        return jsonify({
+            "status": "erro",
+            "mensagem": "Este e-mail já está vinculado a outro CPF."
+        }), 400
+
+    # -----------------------------
+    # Já existe solicitação do mesmo usuário
+    # -----------------------------
+
+    if solicitacao_cpf:
+
+        configuracoes = buscar_configuracoes()
+
+        return jsonify({
+            "status": "ok",
+            "reutilizada": True,
+            "mensagem": "Solicitação existente encontrada.",
+            "solicitacao_id": solicitacao_cpf["id"],
+            "solicitacao": solicitacao_cpf,
+            "pix": configuracoes or {}
+        }), 200
+
+    # -----------------------------
+    # Nova solicitação
+    # -----------------------------
 
     try:
 
@@ -664,6 +733,7 @@ def api_criar_solicitacao_cadastro():
 
         return jsonify({
             "status": "ok",
+            "reutilizada": False,
             "solicitacao_id": solicitacao_id,
             "pix": configuracoes or {}
         }), 201
@@ -674,7 +744,6 @@ def api_criar_solicitacao_cadastro():
             "status": "erro",
             "mensagem": str(e)
         }), 400
-
 
 @app.route("/api/public/cadastro/<int:id>", methods=["GET"])
 def api_status_solicitacao_cadastro(id):
@@ -746,6 +815,7 @@ def api_finalizar_cadastro():
 
         criar_usuario(
             nome,
+            solicitacao["cpf"],
             email,
             senha,
             "Padrão"

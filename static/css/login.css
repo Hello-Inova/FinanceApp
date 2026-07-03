@@ -394,3 +394,29 @@ button:active {
   opacity: .4;
   cursor: not-allowed;
 }
+.senha-wrapper-modal {
+  position: relative;
+  width: 100%;
+}
+
+.senha-wrapper-modal input {
+  padding-right: 50px;
+}
+
+.senha-wrapper-modal button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+.senha-wrapper-modal button:hover {
+  transform: translateY(-50%);
+  box-shadow: none;
+}
