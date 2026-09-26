@@ -2,6 +2,7 @@ from flask_cors import CORS
 
 from database import (
     criar_tabelas,
+    criar_admin_inicial,
     criar_usuario,
     buscar_usuario,
 
@@ -62,7 +63,18 @@ app.secret_key = os.getenv(
     "dev_secret"
 )
 
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=bool(os.getenv("VERCEL")),
+)
+
 CORS(app)
+
+# Serverless functions do not execute the __main__ block. Creating the schema
+# here makes every fresh production database ready on its first cold start.
+criar_tabelas()
+criar_admin_inicial()
 
 
 # =========================
@@ -81,6 +93,11 @@ def components(filename):
 @app.route("/")
 def index():
     return render_template("login.html")
+
+
+@app.route("/api/health")
+def health():
+    return jsonify({"status": "ok"})
 
 
 @app.route("/home")
