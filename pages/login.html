@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <title>Login</title>
 
@@ -184,7 +185,7 @@
 
         <label for="cadastroSenhaFinal">Senha</label>
         <div class="senha-wrapper-modal">
-          <input id="cadastroSenhaFinal" type="password" placeholder="Crie uma senha">
+          <input id="cadastroSenhaFinal" type="password" minlength="12" autocomplete="new-password" placeholder="Mínimo 12 caracteres">
 
           <button type="button" onclick="toggleSenhaCadastro('cadastroSenhaFinal', this)">
             👁️
@@ -193,7 +194,7 @@
 
         <label for="cadastroConfirmarSenhaFinal">Confirmar senha</label>
         <div class="senha-wrapper-modal">
-          <input id="cadastroConfirmarSenhaFinal" type="password" placeholder="Confirme sua senha">
+          <input id="cadastroConfirmarSenhaFinal" type="password" minlength="12" autocomplete="new-password" placeholder="Confirme sua senha">
 
           <button type="button" onclick="toggleSenhaCadastro('cadastroConfirmarSenhaFinal', this)">
             👁️
@@ -215,6 +216,7 @@
 
   </div>
 
+  <script src="/static/js/security.js"></script>
   <script src="/static/js/login.js"></script>
 </body>
 </html>

@@ -574,11 +574,6 @@ function toggleMenu() {
   sidebar.classList.toggle("active");
 }
 
-async function logout() {
-  await fetch("/logout");
-  window.location.href = "/";
-}
-
 // =========================
 // EXPORT GLOBAL
 // =========================
@@ -591,7 +586,6 @@ window.fecharModalNovoRegistro = fecharModalNovoRegistro;
 window.fecharModalEdit = fecharModalEdit;
 window.salvarNovoRegistro = salvarNovoRegistro;
 window.registrarOutro = registrarOutro;
-window.logout = logout;
 window.filtrarEntradas = filtrarEntradas;
 window.filtrarSaidas = filtrarSaidas;
 window.mostrarTodos = mostrarTodos;

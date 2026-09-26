@@ -5,3 +5,10 @@ __pycache__/
 !.env.example
 .vercel/
 .venv/
+financeiro.db
+*.sqbpro
+.pytest_cache/
+pytest-cache-files-*/
+.test-tmp/
+.coverage
+htmlcov/

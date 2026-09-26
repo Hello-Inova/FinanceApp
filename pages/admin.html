@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <title>Administração</title>
 
@@ -280,6 +281,7 @@
     </div>
 
   </div>
+  <script src="/static/js/security.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="/static/js/admin.js"></script>
 </body>

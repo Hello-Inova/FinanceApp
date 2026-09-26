@@ -1,0 +1,6 @@
+financeiro.db
+*.sqbpro
+__pycache__/
+tests/
+.pytest_cache/
+.env*

@@ -3,12 +3,14 @@
 <head>
 
 <meta charset="UTF-8">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Dashboard Financeiro</title>
 
 <link rel="stylesheet"
 href="{{ url_for('static', filename='css/financas.css') }}">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/security.js') }}"></script>
 
 <script defer
 src="{{ url_for('static', filename='js/menu.js') }}">

@@ -75,7 +75,7 @@ function obterComprasFiltradas() {
   });
 }
 
-function criarCelula(row, label, conteudo, classe = "") {
+function criarCelula(row, label, conteudo, classe = "", permitirHtml = false) {
   const cell = row.insertCell();
 
   cell.setAttribute("data-label", label);
@@ -84,7 +84,11 @@ function criarCelula(row, label, conteudo, classe = "") {
     cell.classList.add(classe);
   }
 
-  cell.innerHTML = conteudo;
+  if (permitirHtml) {
+    cell.innerHTML = conteudo;
+  } else {
+    cell.textContent = conteudo;
+  }
 
   return cell;
 }
@@ -151,7 +155,9 @@ function renderizarCompras() {
         <span class="badge ${Number(compra.comprado) === 1 ? "badge-ok" : "badge-pendente"}">
           ${Number(compra.comprado) === 1 ? "Comprado" : "Pendente"}
         </span>
-      `
+      `,
+      "",
+      true
     );
 
     criarCelula(
@@ -177,7 +183,9 @@ function renderizarCompras() {
             Excluir
           </button>
         </div>
-      `
+      `,
+      "",
+      true
     );
   });
 

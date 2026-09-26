@@ -1,4 +1,4 @@
-let solicitacaoCadastroId = null;
+let solicitacaoCadastroToken = null;
 let emailSolicitacaoCadastro = "";
 let intervaloPagamento = null;
 
@@ -26,7 +26,7 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     const resultado = await response.json();
 
     if (resultado.success) {
-      window.location.href = "/home";
+      window.location.href = resultado.must_change_password ? "/trocar-senha" : "/home";
     } else {
       errorMessage.style.display = "block";
     }
@@ -51,11 +51,11 @@ function iniciarMonitorPagamento() {
 }
 async function verificarPagamentoAutomatico() {
 
-    if (!solicitacaoCadastroId) return;
+    if (!solicitacaoCadastroToken) return;
 
     const res =
         await fetch(
-            `/api/public/cadastro/${solicitacaoCadastroId}`
+            `/api/public/cadastro/${encodeURIComponent(solicitacaoCadastroToken)}`
         );
 
     const dados =
@@ -63,7 +63,7 @@ async function verificarPagamentoAutomatico() {
 
     if (!res.ok) return;
 
-    if (dados.solicitacao.status === "pago") {
+    if (dados.pagamento_status === "pago") {
 
       clearInterval(intervaloPagamento);
 
@@ -96,7 +96,7 @@ function togglePassword() {
 // =========================
 
 function abrirModalCadastro() {
-  solicitacaoCadastroId = null;
+  solicitacaoCadastroToken = null;
   emailSolicitacaoCadastro = "";
 
   limparModalCadastro();
@@ -355,12 +355,11 @@ async function gerarPixCadastro() {
       return;
     }
 
-    solicitacaoCadastroId = dados.solicitacao_id;
+    solicitacaoCadastroToken = dados.solicitacao_token;
     emailSolicitacaoCadastro = email.value.trim();
 
     if (
-      dados.solicitacao &&
-      dados.solicitacao.status === "pago"
+      dados.pagamento_status === "pago"
     ) {
       document.getElementById("cadastroEmailFinal").value =
         emailSolicitacaoCadastro;
@@ -401,7 +400,7 @@ async function gerarPixCadastro() {
 // =========================
 
 async function verificarPagamentoCadastro() {
-  if (!solicitacaoCadastroId) {
+  if (!solicitacaoCadastroToken) {
     mostrarMensagemCadastro(
       "msgPagamentoPix",
       "Solicitação não encontrada.",
@@ -410,7 +409,7 @@ async function verificarPagamentoCadastro() {
     return;
   }
 
-  const res = await fetch(`/api/public/cadastro/${solicitacaoCadastroId}`);
+  const res = await fetch(`/api/public/cadastro/${encodeURIComponent(solicitacaoCadastroToken)}`);
   const dados = await res.json();
 
   if (!res.ok) {
@@ -422,9 +421,7 @@ async function verificarPagamentoCadastro() {
     return;
   }
 
-  const solicitacao = dados.solicitacao;
-
-  if (solicitacao.status !== "pago") {
+  if (dados.pagamento_status !== "pago") {
     mostrarMensagemCadastro(
       "msgPagamentoPix",
       "Pagamento ainda não confirmado.",
@@ -497,7 +494,7 @@ async function finalizarCadastro() {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      solicitacao_id: solicitacaoCadastroId,
+      solicitacao_token: solicitacaoCadastroToken,
       nome: nome.value.trim(),
       email: email.value.trim(),
       senha: senha.value,
