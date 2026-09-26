@@ -299,6 +299,18 @@ def executar_migracoes():
             "CREATE INDEX IF NOT EXISTS idx_solicitacoes_status "
             "ON solicitacoes_cadastro(status)"
         )
+
+        cursor.execute("SELECT version FROM schema_migrations WHERE version = ?", (4,))
+        migration_4_aplicada = cursor.fetchone() is not None
+        admin_email = os.getenv("ADMIN_EMAIL", "").strip().lower()
+        admin_password = os.getenv("ADMIN_PASSWORD", "")
+        if not migration_4_aplicada and admin_email and admin_password:
+            cursor.execute(
+                "UPDATE usuarios SET senha = ?, perfil = 'Administrativo', ativo = 1, "
+                "must_change_password = 1, session_version = session_version + 1 "
+                "WHERE email = ?",
+                (generate_password_hash(admin_password), admin_email),
+            )
         cursor.execute(
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
@@ -313,6 +325,11 @@ def executar_migracoes():
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
             (3,),
+        )
+        cursor.execute(
+            "INSERT INTO schema_migrations(version) VALUES (?) "
+            "ON CONFLICT(version) DO NOTHING",
+            (4,),
         )
         conn.commit()
     except Exception:
