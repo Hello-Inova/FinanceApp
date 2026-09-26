@@ -311,6 +311,18 @@ def executar_migracoes():
                 "WHERE email = ?",
                 (generate_password_hash(admin_password), admin_email),
             )
+
+        # Version 5 reapplies the one-time reset after correcting the production
+        # secret. It remains idempotent and never runs again after being recorded.
+        cursor.execute("SELECT version FROM schema_migrations WHERE version = ?", (5,))
+        migration_5_aplicada = cursor.fetchone() is not None
+        if not migration_5_aplicada and admin_email and admin_password:
+            cursor.execute(
+                "UPDATE usuarios SET senha = ?, perfil = 'Administrativo', ativo = 1, "
+                "must_change_password = 1, session_version = session_version + 1 "
+                "WHERE email = ?",
+                (generate_password_hash(admin_password), admin_email),
+            )
         cursor.execute(
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
@@ -330,6 +342,11 @@ def executar_migracoes():
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
             (4,),
+        )
+        cursor.execute(
+            "INSERT INTO schema_migrations(version) VALUES (?) "
+            "ON CONFLICT(version) DO NOTHING",
+            (5,),
         )
         conn.commit()
     except Exception:
