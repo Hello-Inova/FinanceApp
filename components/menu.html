@@ -5,12 +5,12 @@
     <button type="button" class="hamburger" id="btnMenuin" onclick="fecharMenu()" aria-label="Fechar menu">×</button>
   </div>
   <div class="menu-links">
-    <button id="btnAdmin" data-url="/admin" onclick="navegar('/admin')" hidden>🗒️ Administrativo</button>
-    <button data-url="/home" onclick="navegar('/home')">💰 Finanças</button>
-    <button data-url="/metas" onclick="navegar('/metas')">🎯 Metas</button>
-    <button data-url="/financas" onclick="navegar('/financas')">📈 Gráfico Financeiro</button>
-    <button data-url="/agenda" onclick="navegar('/agenda')">📅 Agenda</button>
-    <button data-url="/compras" onclick="navegar('/compras')">🛒 Compras</button>
+    <button id="btnAdmin" data-url="/admin" onclick="navegar('/admin')" hidden><span class="menu-icon" aria-hidden="true">🗒️</span><span>Administrativo</span></button>
+    <button data-url="/home" onclick="navegar('/home')"><span class="menu-icon" aria-hidden="true">💰</span><span>Finanças</span></button>
+    <button data-url="/metas" onclick="navegar('/metas')"><span class="menu-icon" aria-hidden="true">🎯</span><span>Metas</span></button>
+    <button data-url="/financas" onclick="navegar('/financas')"><span class="menu-icon" aria-hidden="true">📈</span><span>Gráfico Financeiro</span></button>
+    <button data-url="/agenda" onclick="navegar('/agenda')"><span class="menu-icon" aria-hidden="true">📅</span><span>Agenda</span></button>
+    <button data-url="/compras" onclick="navegar('/compras')"><span class="menu-icon" aria-hidden="true">🛒</span><span>Compras</span></button>
   </div>
-  <button class="menu-logout" type="button" onclick="logout()">↪ Sair</button>
+  <button class="menu-logout" type="button" onclick="logout()"><span class="menu-icon" aria-hidden="true">↪</span><span>Sair</span></button>
 </nav>

@@ -8,35 +8,28 @@
   <title>Administração</title>
 
   <link rel="stylesheet" href="/static/css/admin.css">
+  <link rel="stylesheet" href="/static/css/app-shell.css">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 
 <body>
-
-  <aside class="admin-sidebar">
-    <h2>Admin</h2>
-
-    <button id="btnMenuUsuarios" class="menu-item active" onclick="mostrarUsuarios()">
-      👤 Usuários
-    </button>
-
-    <button id="btnMenuConfiguracoes" class="menu-item" onclick="mostrarConfiguracoes()">
-      ⚙️ Configurações
-    </button>
-
-    <button class="menu-item disabled">📊 Relatórios</button>
-
-    <button class="menu-item" onclick="window.location.href='/home'">
-      ⬅ Voltar
-    </button>
-  </aside>
+  <button id="btnMenu" type="button" onclick="toggleMenu()" aria-label="Abrir menu">☰</button>
+  <div id="menuOverlay" onclick="fecharMenu()"></div>
+  <div id="menu-container"></div>
 
   <main class="admin-main">
 
     <header class="admin-header">
+      <span class="admin-eyebrow">Administração</span>
       <h1>Painel Administrativo</h1>
       <p>Gerencie usuários, permissões e configurações do sistema.</p>
     </header>
+
+    <nav class="admin-tabs" aria-label="Seções administrativas">
+      <button id="btnMenuUsuarios" class="menu-item active" onclick="mostrarUsuarios()">👤 Usuários</button>
+      <button id="btnMenuConfiguracoes" class="menu-item" onclick="mostrarConfiguracoes()">⚙️ Configurações</button>
+      <button class="menu-item disabled" type="button" disabled>📊 Relatórios</button>
+    </nav>
 
     <!-- SEÇÃO USUÁRIOS -->
     <section id="secUsuarios" class="admin-card">
@@ -304,6 +297,7 @@
   </div>
   <script src="/static/js/security.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="/static/js/menu.js"></script>
   <script src="/static/js/admin.js"></script>
 </body>
 </html>

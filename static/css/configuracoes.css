@@ -158,75 +158,6 @@ button:hover {
   background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 
-/* MENU */
-
-#btnMenu {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 10001;
-  width: auto;
-  padding: 11px 14px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  font-size: 18px;
-}
-
-#menuOverlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(3px);
-  z-index: 9998;
-}
-
-#menuOverlay.active {
-  display: block;
-}
-
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -285px;
-  width: 260px;
-  height: 100vh;
-  background: #020617;
-  padding: 20px;
-  transition: .3s;
-  z-index: 9999;
-  border-right: 1px solid #1e293b;
-  box-shadow: 20px 0 45px rgba(0,0,0,.35);
-}
-
-.sidebar.active {
-  left: 0;
-}
-
-.menu-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 22px;
-}
-
-.menu-header h3 {
-  font-size: 22px;
-  color: white;
-}
-
-.sidebar button {
-  width: 100%;
-  text-align: left;
-  margin-bottom: 10px;
-  background: #111827;
-  border: 1px solid #1f2937;
-}
-
-.sidebar button:hover {
-  background: #1e293b;
-}
-
 /* RESPONSIVO */
 
 @media (max-width: 700px) {
@@ -256,10 +187,6 @@ button:hover {
     width: 100%;
   }
 
-  .sidebar {
-    width: 85%;
-    left: -90%;
-  }
 }
 .config-grid{
 

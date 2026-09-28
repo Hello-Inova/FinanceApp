@@ -244,6 +244,21 @@ def test_crud_financeiro_autenticado(client, csrf):
         assert client.get(rota).status_code == 200
 
 
+def test_menu_compartilhado_em_todas_as_telas_autenticadas(client, csrf):
+    login_admin(client, csrf)
+    trocar_senha(client, csrf)
+    rotas = (
+        "/home", "/metas", "/financas", "/agenda", "/compras", "/admin",
+        "/financas/entradas", "/financas/saidas", "/financas/saldo",
+    )
+    for rota in rotas:
+        pagina = client.get(rota)
+        conteudo = pagina.get_data(as_text=True)
+        assert pagina.status_code == 200
+        assert "app-shell.css" in conteudo
+        assert 'id="menu-container"' in conteudo
+
+
 def test_crud_agenda_autenticada(client, csrf):
     login_admin(client, csrf)
     trocar_senha(client, csrf)

@@ -1,4 +1,4 @@
-const MENU_CACHE_KEY = "financeapp-menu-v3";
+const MENU_CACHE_KEY = "financeapp-menu-v5";
 
 function renderizarMenu(html) {
   const container = document.getElementById("menu-container");
@@ -23,7 +23,7 @@ async function carregarMenu() {
   const cache = sessionStorage.getItem(MENU_CACHE_KEY);
   if (cache) renderizarMenu(cache);
   try {
-    const res = await fetch("/components/menu.html?v=3", { loading: false, cache: "force-cache" });
+    const res = await fetch("/components/menu.html?v=5", { loading: false, cache: "force-cache" });
     if (!res.ok) throw new Error("Menu indisponível");
     const html = await res.text();
     sessionStorage.setItem(MENU_CACHE_KEY, html);
@@ -49,12 +49,16 @@ function marcarPaginaAtual() {
 
 function toggleMenu() {
   if (window.matchMedia("(min-width: 1100px)").matches) return;
-  document.querySelector(".sidebar")?.classList.toggle("active");
-  document.getElementById("menuOverlay")?.classList.toggle("active");
+  const aberto = document.querySelector(".sidebar")?.classList.toggle("active") ?? false;
+  document.getElementById("menuOverlay")?.classList.toggle("active", aberto);
+  document.body.classList.toggle("menu-open", aberto);
+  document.getElementById("btnMenu")?.setAttribute("aria-expanded", String(aberto));
 }
 function fecharMenu() {
   document.querySelector(".sidebar")?.classList.remove("active");
   document.getElementById("menuOverlay")?.classList.remove("active");
+  document.body.classList.remove("menu-open");
+  document.getElementById("btnMenu")?.setAttribute("aria-expanded", "false");
 }
 function navegar(url) {
   fecharMenu();
@@ -66,3 +70,9 @@ window.toggleMenu = toggleMenu;
 window.fecharMenu = fecharMenu;
 window.navegar = navegar;
 window.addEventListener("DOMContentLoaded", carregarMenu);
+window.addEventListener("resize", () => {
+  if (window.matchMedia("(min-width: 1100px)").matches) fecharMenu();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") fecharMenu();
+});
