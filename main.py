@@ -3,6 +3,11 @@ import hmac
 import logging
 import os
 import re
+import secrets
+import urllib.error
+import urllib.request
+from html import escape
+import json
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
@@ -16,10 +21,11 @@ from database import (
     atualizar_status_usuario, buscar_configuracoes, buscar_status_solicitacao,
     buscar_usuario, buscar_usuario_por_id, confirmar_pagamento, cpf_usuario_existe,
     criar_admin_inicial, criar_compra, criar_lancamento, criar_ou_buscar_solicitacao,
-    criar_tabelas, criar_usuario, email_usuario_existe, excluir_compra,
+    criar_tabelas, criar_token_recuperacao, criar_usuario, email_usuario_existe, excluir_compra,
     excluir_lancamento, excluir_usuario, finalizar_cadastro, healthcheck,
     listar_compras, listar_lancamentos, listar_usuarios, rate_limit_limpar,
-    rate_limit_permitir, salvar_ou_atualizar_configuracoes,
+    rate_limit_permitir, redefinir_senha_com_token, salvar_ou_atualizar_configuracoes,
+    token_recuperacao_valido,
 )
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -50,6 +56,7 @@ TIPOS_LANCAMENTO = {"Entrada", "Saída"}
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 PAYMENTS_ENABLED = os.getenv("PAYMENTS_ENABLED", "false").lower() == "true"
 CADASTRO_VALOR_CENTAVOS = int(os.getenv("CADASTRO_VALOR_CENTAVOS", "0"))
+RESET_TOKEN_TTL = 30 * 60
 
 
 def resposta_erro(mensagem, status=400):
@@ -93,6 +100,55 @@ def senha_forte(senha):
     if not all(re.search(regra, senha) for regra in (r"[a-z]", r"[A-Z]", r"\d", r"[^A-Za-z0-9]")):
         raise ValueError("A senha deve conter maiúscula, minúscula, número e símbolo.")
     return senha
+
+
+def url_base_aplicacao():
+    configurada = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    if configurada:
+        if not configurada.startswith("https://") and os.getenv("APP_ENV", "production") != "development":
+            raise RuntimeError("APP_BASE_URL deve usar HTTPS em produção.")
+        return configurada
+    if os.getenv("APP_ENV", "production") == "development":
+        return request.url_root.rstrip("/")
+    raise RuntimeError("APP_BASE_URL deve ser configurada em produção.")
+
+
+def enviar_email_recuperacao(destinatario, nome, link):
+    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    remetente = os.getenv("RESEND_FROM_EMAIL", "").strip()
+    if not api_key or not remetente:
+        raise RuntimeError("RESEND_API_KEY e RESEND_FROM_EMAIL devem ser configuradas.")
+    nome_seguro = escape(nome or "usuário")
+    link_seguro = escape(link, quote=True)
+    payload = json.dumps({
+        "from": remetente,
+        "to": [destinatario],
+        "subject": "Redefinição de senha - FinanceApp",
+        "html": (
+            f"<p>Olá, {nome_seguro}.</p>"
+            "<p>Recebemos uma solicitação para redefinir sua senha no FinanceApp.</p>"
+            f'<p><a href="{link_seguro}">Redefinir minha senha</a></p>'
+            "<p>O link expira em 30 minutos e pode ser usado apenas uma vez. "
+            "Se você não fez esta solicitação, ignore este e-mail.</p>"
+        ),
+    }).encode("utf-8")
+    requisicao = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=payload,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "FinanceApp/1.0",
+        },
+    )
+    with urllib.request.urlopen(requisicao, timeout=10) as resposta:
+        if resposta.status not in {200, 201}:
+            raise RuntimeError(f"Resend retornou HTTP {resposta.status}.")
+
+
+def recuperacao_senha_configurada():
+    return all(os.getenv(nome, "").strip() for nome in ("APP_BASE_URL", "RESEND_API_KEY", "RESEND_FROM_EMAIL"))
 
 
 def data_iso(valor):
@@ -180,6 +236,9 @@ def cabecalhos_seguranca(response):
     )
     if request.path.startswith("/api/") or request.path == "/session":
         response.headers["Cache-Control"] = "no-store"
+    if request.path.startswith("/redefinir-senha/"):
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Cache-Control"] = "no-store"
     return response
 
 
@@ -203,7 +262,7 @@ def index():
     usuario = usuario_atual()
     if usuario:
         return redirect("/trocar-senha" if usuario["must_change_password"] else "/home")
-    return render_template("login.html")
+    return render_template("login.html", password_reset_enabled=recuperacao_senha_configurada())
 
 
 def pagina_autenticada(template, admin=False):
@@ -245,6 +304,21 @@ def trocar_senha_pagina():
     if not usuario_atual():
         return redirect("/")
     return render_template("trocar-senha.html")
+
+
+@app.route("/recuperar-senha")
+def recuperar_senha_pagina():
+    if usuario_atual():
+        return redirect("/home")
+    if not recuperacao_senha_configurada():
+        return redirect("/")
+    return render_template("recuperar-senha.html")
+
+
+@app.route("/redefinir-senha/<token>")
+def redefinir_senha_pagina(token):
+    valido = bool(re.fullmatch(r"[A-Za-z0-9_-]{40,100}", token)) and token_recuperacao_valido(token)
+    return render_template("redefinir-senha.html", token=token if valido else "", token_valido=valido)
 
 
 @app.route("/api/health")
@@ -291,6 +365,52 @@ def login():
     session["usuario_id"] = usuario["id"]
     session["session_version"] = usuario["session_version"]
     return jsonify({"success": True, "must_change_password": bool(usuario["must_change_password"])})
+
+
+@app.route("/api/public/password-reset/request", methods=["POST"])
+def solicitar_recuperacao_senha():
+    mensagem = "Se existir uma conta ativa para este e-mail, enviaremos as instruções em instantes."
+    if not recuperacao_senha_configurada():
+        return resposta_erro("Recuperação de senha temporariamente indisponível.", 503)
+    try:
+        email = email_valido(json_body().get("email"))
+    except ValueError:
+        return jsonify({"status": "ok", "mensagem": mensagem})
+    chave_ip = chave_rate_limit("password-reset-ip", ip_cliente())
+    chave_email = chave_rate_limit("password-reset-email", email)
+    if not rate_limit_permitir(chave_ip, 10, 60 * 60) or not rate_limit_permitir(chave_email, 3, 60 * 60):
+        return jsonify({"status": "ok", "mensagem": mensagem})
+    token = secrets.token_urlsafe(32)
+    try:
+        usuario = criar_token_recuperacao(email, token, RESET_TOKEN_TTL)
+        if usuario:
+            link = f"{url_base_aplicacao()}/redefinir-senha/{token}"
+            enviar_email_recuperacao(usuario["email"], usuario["nome"], link)
+    except Exception:
+        logger.exception("Falha ao processar recuperação de senha")
+    return jsonify({"status": "ok", "mensagem": mensagem})
+
+
+@app.route("/api/public/password-reset/confirm", methods=["POST"])
+def confirmar_recuperacao_senha():
+    dados = json_body()
+    try:
+        token = texto(dados.get("token"), "Token", 40, 100)
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", token):
+            raise ValueError("Link inválido ou expirado.")
+        nova_senha = senha_forte(dados.get("nova_senha"))
+        if nova_senha != dados.get("confirmar_senha"):
+            raise ValueError("As senhas não coincidem.")
+    except ValueError as erro:
+        return resposta_erro(str(erro))
+    chave = chave_rate_limit("password-reset-confirm", f"{ip_cliente()}:{token}")
+    if not rate_limit_permitir(chave, 8, 15 * 60):
+        return resposta_erro("Muitas tentativas. Solicite um novo link.", 429)
+    if not redefinir_senha_com_token(token, nova_senha):
+        return resposta_erro("Link inválido ou expirado.", 400)
+    rate_limit_limpar(chave)
+    session.clear()
+    return jsonify({"status": "ok", "mensagem": "Senha redefinida com sucesso."})
 
 
 @app.route("/api/account/password", methods=["PUT"])

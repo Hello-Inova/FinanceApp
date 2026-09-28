@@ -1,3 +1,4 @@
+import hashlib
 import os
 import secrets
 import sqlite3
@@ -213,6 +214,16 @@ def executar_migracoes():
                 janela_inicio INTEGER NOT NULL
             )
         """)
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id {identity},
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                token_hash TEXT NOT NULL UNIQUE,
+                expires_at INTEGER NOT NULL,
+                used_at INTEGER,
+                criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
         timestamp_addition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP" if postgres else "TIMESTAMP"
         additions = {
@@ -299,6 +310,10 @@ def executar_migracoes():
             "CREATE INDEX IF NOT EXISTS idx_solicitacoes_status "
             "ON solicitacoes_cadastro(status)"
         )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_password_reset_usuario "
+            "ON password_reset_tokens(usuario_id, expires_at)"
+        )
 
         cursor.execute("SELECT version FROM schema_migrations WHERE version = ?", (4,))
         migration_4_aplicada = cursor.fetchone() is not None
@@ -347,6 +362,11 @@ def executar_migracoes():
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
             (5,),
+        )
+        cursor.execute(
+            "INSERT INTO schema_migrations(version) VALUES (?) "
+            "ON CONFLICT(version) DO NOTHING",
+            (6,),
         )
         conn.commit()
     except Exception:
@@ -509,6 +529,97 @@ def alterar_senha_propria(usuario_id, senha_atual, nova_senha):
     conn.commit()
     conn.close()
     return nova_versao
+
+
+def criar_token_recuperacao(email, token, validade_segundos=1800):
+    """Create a single-use reset token, storing only its SHA-256 digest."""
+    agora = int(time.time())
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT id, nome, email FROM usuarios WHERE email = ? AND ativo = 1",
+            (email.strip().lower(),),
+        )
+        usuario = cursor.fetchone()
+        if not usuario:
+            return None
+        cursor.execute(
+            "DELETE FROM password_reset_tokens "
+            "WHERE usuario_id = ? OR expires_at <= ?",
+            (usuario["id"], agora),
+        )
+        cursor.execute(
+            "INSERT INTO password_reset_tokens "
+            "(usuario_id, token_hash, expires_at) VALUES (?, ?, ?)",
+            (usuario["id"], token_hash, agora + validade_segundos),
+        )
+        conn.commit()
+        return usuario
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def token_recuperacao_valido(token):
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT 1 AS valido FROM password_reset_tokens pr "
+        "JOIN usuarios u ON u.id = pr.usuario_id "
+        "WHERE pr.token_hash = ? AND pr.used_at IS NULL "
+        "AND pr.expires_at > ? AND u.ativo = 1",
+        (token_hash, int(time.time())),
+    )
+    valido = cursor.fetchone() is not None
+    conn.close()
+    return valido
+
+
+def redefinir_senha_com_token(token, nova_senha):
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    agora = int(time.time())
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        lock = " FOR UPDATE" if conn.postgres else ""
+        cursor.execute(
+            "SELECT pr.id, pr.usuario_id FROM password_reset_tokens pr "
+            "JOIN usuarios u ON u.id = pr.usuario_id "
+            "WHERE pr.token_hash = ? AND pr.used_at IS NULL "
+            "AND pr.expires_at > ? AND u.ativo = 1" + lock,
+            (token_hash, agora),
+        )
+        registro = cursor.fetchone()
+        if not registro:
+            conn.rollback()
+            return False
+        cursor.execute(
+            "UPDATE usuarios SET senha = ?, must_change_password = 0, "
+            "session_version = session_version + 1 WHERE id = ?",
+            (generate_password_hash(nova_senha), registro["usuario_id"]),
+        )
+        cursor.execute(
+            "UPDATE password_reset_tokens SET used_at = ? "
+            "WHERE id = ? AND used_at IS NULL",
+            (agora, registro["id"]),
+        )
+        cursor.execute(
+            "DELETE FROM password_reset_tokens "
+            "WHERE usuario_id = ? AND id <> ?",
+            (registro["usuario_id"], registro["id"]),
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def excluir_usuario(usuario_id):

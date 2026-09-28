@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Recuperar senha | FinanceApp</title>
+  <link rel="stylesheet" href="/static/css/login.css">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+</head>
+<body>
+  <main class="login-container">
+    <h2>Recuperar senha</h2>
+    <p class="auth-description">Informe seu e-mail para receber um link seguro de redefinição.</p>
+    <form id="recoveryForm">
+      <div class="input-group">
+        <label for="recoveryEmail">E-mail</label>
+        <input type="email" id="recoveryEmail" autocomplete="email" required>
+      </div>
+      <p id="recoveryMessage" class="auth-message" role="status" aria-live="polite"></p>
+      <button type="submit" id="recoverySubmit">Enviar link</button>
+      <a class="link-recuperacao" href="/">Voltar ao login</a>
+    </form>
+  </main>
+  <script src="/static/js/security.js"></script>
+  <script src="/static/js/recuperar-senha.js"></script>
+</body>
+</html>

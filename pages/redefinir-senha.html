@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Redefinir senha | FinanceApp</title>
+  <link rel="stylesheet" href="/static/css/login.css">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+</head>
+<body>
+  <main class="login-container">
+    <h2>Redefinir senha</h2>
+    {% if token_valido %}
+      <p class="auth-description">Escolha uma nova senha para sua conta.</p>
+      <form id="resetForm" data-token="{{ token }}">
+        <div class="input-group">
+          <label for="newPassword">Nova senha</label>
+          <input type="password" id="newPassword" autocomplete="new-password" minlength="12" required>
+        </div>
+        <div class="input-group">
+          <label for="confirmPassword">Confirmar nova senha</label>
+          <input type="password" id="confirmPassword" autocomplete="new-password" minlength="12" required>
+        </div>
+        <p class="password-rules">Use ao menos 12 caracteres, com maiúscula, minúscula, número e símbolo.</p>
+        <p id="resetMessage" class="auth-message" role="status" aria-live="polite"></p>
+        <button type="submit" id="resetSubmit">Redefinir senha</button>
+      </form>
+    {% else %}
+      <p class="auth-message error">Este link é inválido, expirou ou já foi utilizado.</p>
+      <a class="link-recuperacao" href="/recuperar-senha">Solicitar novo link</a>
+    {% endif %}
+    <a class="link-recuperacao" href="/">Voltar ao login</a>
+  </main>
+  <script src="/static/js/security.js"></script>
+  {% if token_valido %}<script src="/static/js/redefinir-senha.js"></script>{% endif %}
+</body>
+</html>

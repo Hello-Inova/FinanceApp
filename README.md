@@ -32,6 +32,13 @@ Copie `.env.example` para `.env`, use `APP_ENV=development` e configure uma `SEC
 - `PAYMENTS_ENABLED=false`: mantenha assim até configurar o gateway.
 - `CADASTRO_VALOR_CENTAVOS`: preço exato em centavos.
 - `PAYMENT_WEBHOOK_SECRET`: segredo compartilhado pelo gateway.
+- `APP_BASE_URL`: URL pública canônica, usada nos links de recuperação.
+- `RESEND_API_KEY`: chave de envio criada no Resend.
+- `RESEND_FROM_EMAIL`: remetente verificado, por exemplo `FinanceApp <nao-responda@seudominio.com>`.
+
+## Recuperação de senha
+
+O fluxo usa tokens aleatórios de uso único, armazena apenas o hash SHA-256 no banco, expira em 30 minutos e invalida sessões anteriores apó a troca. A solicitação sempre retorna a mesma mensagem para não revelar quais e-mails estão cadastrados. Para produção, verifique o domínio no Resend e configure as três variáveis acima na Vercel.
 
 ## Webhook de pagamento
 
