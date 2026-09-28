@@ -7,7 +7,7 @@
 
   <title>Login</title>
 
-  <link rel="stylesheet" href="/static/css/login.css">
+  <link rel="stylesheet" href="/static/css/login.css?v=2">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
@@ -102,6 +102,12 @@
           Informe seus dados para gerar o PIX de liberação.
         </p>
 
+        <div class="cadastro-price" aria-live="polite">
+          <span>Valor do cadastro</span>
+          <strong id="valorCadastroPix">Consultando...</strong>
+          <small>Cobrança única para liberar a criação da conta.</small>
+        </div>
+
         <label for="cadastroNome">Nome completo</label>
         <input
           id="cadastroNome"
@@ -140,6 +146,12 @@
         <p class="modal-subtitle">
           Escaneie o QR Code ou copie o código PIX abaixo.
         </p>
+
+        <div class="cadastro-price cadastro-price-payment" aria-live="polite">
+          <span>Valor a pagar</span>
+          <strong id="valorPagamentoPix">—</strong>
+          <small>Confira o valor antes de concluir o pagamento.</small>
+        </div>
 
         <div class="qrcode-box-login">
           <canvas id="pixCadastroQrCode"></canvas>
@@ -226,6 +238,6 @@
   </div>
 
   <script src="/static/js/security.js"></script>
-  <script src="/static/js/login.js"></script>
+  <script src="/static/js/login.js?v=2"></script>
 </body>
 </html>

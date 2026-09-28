@@ -63,6 +63,16 @@ def test_pagamento_simulado_foi_removido(client, csrf):
     assert response.status_code == 404
 
 
+def test_cadastro_exibe_valor_da_cobranca(client):
+    pagina = client.get("/")
+    conteudo = pagina.get_data(as_text=True)
+    assert pagina.status_code == 200
+    assert 'id="valorCadastroPix"' in conteudo
+    assert 'id="valorPagamentoPix"' in conteudo
+    assert "Valor do cadastro" in conteudo
+    assert "Valor a pagar" in conteudo
+
+
 def test_cadastro_pago_fica_bloqueado_sem_gateway(client, csrf):
     token = csrf(client.get("/"))
     response = client.post(

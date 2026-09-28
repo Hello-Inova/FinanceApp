@@ -216,6 +216,38 @@ button:active {
   margin-bottom: 20px;
 }
 
+.cadastro-price {
+  display: grid;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  gap: 3px;
+  border: 1px solid rgba(96, 165, 250, .28);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, .14), rgba(79, 70, 229, .08));
+  text-align: center;
+}
+
+.cadastro-price span {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.cadastro-price strong {
+  color: #f8fafc;
+  font-size: 1.65rem;
+  line-height: 1.2;
+}
+
+.cadastro-price small {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.cadastro-price-payment { margin-top: -4px; }
+
 .etapa-cadastro label {
   display: block;
   color: #cbd5e1;

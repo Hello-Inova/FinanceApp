@@ -2,6 +2,41 @@ let solicitacaoCadastroToken = null;
 let emailSolicitacaoCadastro = "";
 let nomeSolicitacaoCadastro = "";
 let intervaloPagamento = null;
+let valorCadastroCentavos = null;
+
+function formatarValorCadastro(centavos) {
+  return (Number(centavos) / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
+function atualizarValorCadastro(centavos) {
+  const valor = Number(centavos);
+  if (!Number.isFinite(valor) || valor <= 0) return false;
+
+  valorCadastroCentavos = Math.round(valor);
+  const valorFormatado = formatarValorCadastro(valorCadastroCentavos);
+  document.getElementById("valorCadastroPix").textContent = valorFormatado;
+  document.getElementById("valorPagamentoPix").textContent = valorFormatado;
+  return true;
+}
+
+async function carregarValorCadastro() {
+  const campo = document.getElementById("valorCadastroPix");
+  campo.textContent = "Consultando...";
+
+  try {
+    const resposta = await fetch("/api/public/pix", { loading: false });
+    const dados = await resposta.json();
+    if (!resposta.ok || !atualizarValorCadastro(dados.valor_centavos)) {
+      throw new Error(dados.mensagem || "Valor indisponível");
+    }
+  } catch (erro) {
+    console.error("Erro ao consultar valor do cadastro:", erro);
+    campo.textContent = "Indisponível";
+  }
+}
 
 document.getElementById("loginForm").addEventListener("submit", async function(e) {
   e.preventDefault();
@@ -107,6 +142,7 @@ function abrirModalCadastro() {
   limparModalCadastro();
 
   document.getElementById("modalCadastroPix").style.display = "flex";
+  carregarValorCadastro();
 }
 
 function fecharModalCadastro() {
@@ -240,6 +276,9 @@ function limparModalCadastro() {
   });
 
   document.getElementById("pixCadastroCopiaCola").value = "";
+  valorCadastroCentavos = null;
+  document.getElementById("valorCadastroPix").textContent = "Consultando...";
+  document.getElementById("valorPagamentoPix").textContent = "—";
 
   limparMensagensCadastro();
 
@@ -383,6 +422,8 @@ async function gerarPixCadastro() {
     const pix = dados.pix || {};
 
     const payloadPix = pix.payload || "";
+
+    atualizarValorCadastro(pix.valor_centavos);
 
     if (!payloadPix) {
       mostrarMensagemCadastro(
