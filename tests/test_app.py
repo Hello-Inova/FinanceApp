@@ -241,7 +241,7 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert lancamentos[0]["valor"] == 125.5 or lancamentos[0]["valor"] == "125.5"
 
 
-def test_recuperacao_senha_com_token_unico(client, csrf, monkeypatch):
+def test_recuperacao_senha_com_token_unico(app, client, csrf, monkeypatch):
     import main
 
     enviado = {}
@@ -266,26 +266,26 @@ def test_recuperacao_senha_com_token_unico(client, csrf, monkeypatch):
     assert page.status_code == 200
     assert b'data-token="' in page.data
     token = path.rsplit("/", 1)[-1]
-    token_csrf = csrf(page)
-    response = client.post(
+    # O link de e-mail pode ser aberto em outro navegador/dispositivo, sem a
+    # sessão e o cookie CSRF usados para solicitar a recuperação.
+    cliente_do_link = app.test_client()
+    response = cliente_do_link.post(
         "/api/public/password-reset/confirm",
         json={
             "token": token,
             "nova_senha": "SenhaRecuperada@123",
             "confirmar_senha": "SenhaRecuperada@123",
         },
-        headers={"X-CSRFToken": token_csrf},
     )
     assert response.status_code == 200
 
-    reused = client.post(
+    reused = cliente_do_link.post(
         "/api/public/password-reset/confirm",
         json={
             "token": token,
             "nova_senha": "OutraSenhaForte@123",
             "confirmar_senha": "OutraSenhaForte@123",
         },
-        headers={"X-CSRFToken": token_csrf},
     )
     assert reused.status_code == 400
 

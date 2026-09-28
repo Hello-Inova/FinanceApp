@@ -538,7 +538,11 @@ def solicitar_recuperacao_senha():
 
 
 @app.route("/api/public/password-reset/confirm", methods=["POST"])
+@csrf.exempt
 def confirmar_recuperacao_senha():
+    # O token aleatório, de uso único, com expiração e rate limit autentica
+    # esta operação. Não a vincule à sessão que solicitou o e-mail, pois o
+    # link pode ser aberto legitimamente em outro navegador ou dispositivo.
     dados = json_body()
     try:
         token = texto(dados.get("token"), "Token", 40, 100)
