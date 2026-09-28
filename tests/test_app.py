@@ -61,8 +61,36 @@ def test_cadastro_pago_fica_bloqueado_sem_gateway(client, csrf):
     assert response.status_code == 503
 
 
+def test_admin_configura_valor_do_cadastro(client, csrf, monkeypatch):
+    import main
+
+    login_admin(client, csrf)
+    trocar_senha(client, csrf)
+    token = csrf(client.get("/admin"))
+    response = client.post(
+        "/api/configuracoes",
+        json={
+            "tipo_pix": "",
+            "chave_pix": "",
+            "nome_recebedor": "",
+            "banco": "",
+            "valor_cadastro_centavos": 2590,
+        },
+        headers={"X-CSRFToken": token},
+    )
+    assert response.status_code == 200
+    assert client.get("/api/configuracoes").json["valor_cadastro_centavos"] == 2590
+
+    monkeypatch.setattr(main, "PAYMENTS_ENABLED", True)
+    monkeypatch.setenv("ASAAS_ENVIRONMENT", "sandbox")
+    monkeypatch.setenv("ASAAS_API_KEY", "$aact_hmlg_teste")
+    monkeypatch.setenv("ASAAS_WEBHOOK_TOKEN", "webhook-secreto-teste")
+    assert client.get("/api/public/pix").json["valor_centavos"] == 2590
+
+
 def test_fluxo_cadastro_pix_asaas(client, csrf, monkeypatch):
     import main
+    import database
 
     monkeypatch.setattr(main, "PAYMENTS_ENABLED", True)
     monkeypatch.setattr(main, "CADASTRO_VALOR_CENTAVOS", 1990)
@@ -121,6 +149,9 @@ def test_fluxo_cadastro_pix_asaas(client, csrf, monkeypatch):
     assert repetida.status_code == 201, repetida.json
     assert repetida.json["pix"]["payload"] == "000201010212PIX-DINAMICO-ASAAS"
     assert len(chamadas) == 5
+
+    # Uma mudança de preço não pode invalidar a cobrança já emitida.
+    database.salvar_ou_atualizar_configuracoes("", "", "", "", 2990)
 
     invalido = client.post(
         "/api/payments/webhook",

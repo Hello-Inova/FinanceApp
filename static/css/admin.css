@@ -499,6 +499,66 @@ th {
   width: 100%;
 }
 
+.payment-settings {
+  max-width: 520px;
+  padding: 20px;
+  margin-bottom: 28px;
+  border: 1px solid rgba(59,130,246,.35);
+  border-radius: 14px;
+  background: rgba(37,99,235,.08);
+}
+
+.payment-settings .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payment-settings small {
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.currency-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #020617;
+  overflow: hidden;
+}
+
+.currency-input:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.20);
+}
+
+.currency-input span {
+  padding-left: 14px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.currency-input input {
+  border: 0;
+  box-shadow: none;
+}
+
+.currency-input input:focus {
+  border: 0;
+  box-shadow: none;
+}
+
+.config-subtitle {
+  margin: 0 0 18px;
+}
+
+.config-subtitle span {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .config-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

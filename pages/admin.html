@@ -90,10 +90,30 @@
 
       <div class="section-header">
         <div>
-          <h2>🏦 Recebimentos PIX</h2>
-          <p>Configure sua chave PIX para recebimentos.</p>
+          <h2>⚙️ Configurações comerciais</h2>
+          <p>Defina o preço do cadastro e, se necessário, os dados do PIX manual.</p>
         </div>
       </div>
+
+      <div class="payment-settings">
+        <div class="form-group">
+          <label for="valorCadastro">Valor do cadastro</label>
+          <div class="currency-input">
+            <span>R$</span>
+            <input
+              id="valorCadastro"
+              type="number"
+              inputmode="decimal"
+              min="0.01"
+              max="1000000"
+              step="0.01"
+              placeholder="Ex: 19,90">
+          </div>
+          <small>O novo valor será aplicado somente às cobranças criadas depois de salvar.</small>
+        </div>
+      </div>
+
+      <h3 class="config-subtitle">🏦 PIX manual <span>(opcional)</span></h3>
 
       <div class="config-grid">
 

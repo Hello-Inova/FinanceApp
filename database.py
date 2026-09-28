@@ -188,6 +188,7 @@ def executar_migracoes():
                 chave_pix TEXT NOT NULL,
                 nome_recebedor TEXT NOT NULL,
                 banco TEXT NOT NULL,
+                valor_cadastro_centavos INTEGER NOT NULL DEFAULT 0,
                 criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
@@ -238,6 +239,9 @@ def executar_migracoes():
             },
             "lancamentos": {"criado_em": timestamp_addition},
             "compras": {"criado_em": timestamp_addition},
+            "configuracoes": {
+                "valor_cadastro_centavos": "INTEGER NOT NULL DEFAULT 0",
+            },
             "solicitacoes_cadastro": {
                 "public_token": "TEXT",
                 "nome": "TEXT",
@@ -375,6 +379,11 @@ def executar_migracoes():
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
             (6,),
+        )
+        cursor.execute(
+            "INSERT INTO schema_migrations(version) VALUES (?) "
+            "ON CONFLICT(version) DO NOTHING",
+            (7,),
         )
         conn.commit()
     except Exception:
@@ -654,7 +663,9 @@ def buscar_configuracoes():
     return row
 
 
-def salvar_ou_atualizar_configuracoes(tipo_pix, chave_pix, nome_recebedor, banco):
+def salvar_ou_atualizar_configuracoes(
+    tipo_pix, chave_pix, nome_recebedor, banco, valor_cadastro_centavos
+):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM configuracoes ORDER BY id LIMIT 1")
@@ -662,15 +673,30 @@ def salvar_ou_atualizar_configuracoes(tipo_pix, chave_pix, nome_recebedor, banco
     if existente:
         cursor.execute(
             "UPDATE configuracoes SET tipo_pix = ?, chave_pix = ?, "
-            "nome_recebedor = ?, banco = ?, atualizado_em = CURRENT_TIMESTAMP "
+            "nome_recebedor = ?, banco = ?, valor_cadastro_centavos = ?, "
+            "atualizado_em = CURRENT_TIMESTAMP "
             "WHERE id = ?",
-            (tipo_pix, chave_pix, nome_recebedor, banco, existente["id"]),
+            (
+                tipo_pix,
+                chave_pix,
+                nome_recebedor,
+                banco,
+                valor_cadastro_centavos,
+                existente["id"],
+            ),
         )
     else:
         cursor.execute(
             "INSERT INTO configuracoes "
-            "(tipo_pix, chave_pix, nome_recebedor, banco) VALUES (?, ?, ?, ?)",
-            (tipo_pix, chave_pix, nome_recebedor, banco),
+            "(tipo_pix, chave_pix, nome_recebedor, banco, valor_cadastro_centavos) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                tipo_pix,
+                chave_pix,
+                nome_recebedor,
+                banco,
+                valor_cadastro_centavos,
+            ),
         )
     conn.commit()
     conn.close()
@@ -698,7 +724,7 @@ def criar_ou_buscar_solicitacao(nome, cpf, email, valor_centavos):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT public_token, nome, status, asaas_customer_id, external_payment_id, "
+        "SELECT public_token, nome, status, valor_centavos, asaas_customer_id, external_payment_id, "
         "pix_payload, pix_expiration FROM solicitacoes_cadastro "
         "WHERE cpf = ? AND email = ? AND valor_centavos = ? "
         "ORDER BY id DESC LIMIT 1",
@@ -720,7 +746,7 @@ def criar_ou_buscar_solicitacao(nome, cpf, email, valor_centavos):
     token = secrets.token_urlsafe(32)
     returning = (
         " RETURNING public_token, nome, status, asaas_customer_id, "
-        "external_payment_id, pix_payload, pix_expiration"
+        "external_payment_id, pix_payload, pix_expiration, valor_centavos"
         if conn.postgres else ""
     )
     cursor.execute(
@@ -735,6 +761,7 @@ def criar_ou_buscar_solicitacao(nome, cpf, email, valor_centavos):
             "public_token": token,
             "nome": nome,
             "status": "pendente",
+            "valor_centavos": valor_centavos,
             "asaas_customer_id": None,
             "external_payment_id": None,
             "pix_payload": None,

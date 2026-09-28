@@ -30,7 +30,9 @@ Copie `.env.example` para `.env`, use `APP_ENV=development` e configure uma `SEC
 - `APP_ENV=production`.
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: somente para o primeiro acesso. Remova `ADMIN_PASSWORD` depois da troca da senha.
 - `PAYMENTS_ENABLED=false`: mantenha assim até validar todo o fluxo no Sandbox da Asaas.
-- `CADASTRO_VALOR_CENTAVOS`: preço exato em centavos.
+- `CADASTRO_VALOR_CENTAVOS`: preço inicial/fallback em centavos. Depois da primeira
+  configuração, o administrador altera o valor em **Administração > Configurações**
+  sem precisar publicar novamente o sistema.
 - `ASAAS_ENVIRONMENT`: `sandbox` durante os testes ou `production` na operação real.
 - `ASAAS_API_KEY`: chave secreta do mesmo ambiente configurado acima.
 - `ASAAS_WEBHOOK_TOKEN`: token aleatório enviado pela Asaas no cabeçalho `asaas-access-token`.

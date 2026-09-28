@@ -476,6 +476,9 @@ async function carregarConfiguracoes() {
     chavePix.value = dados.chave_pix || "";
     nomeRecebedor.value = dados.nome_recebedor || "";
     banco.value = dados.banco || "";
+    valorCadastro.value = dados.valor_cadastro_centavos
+      ? (Number(dados.valor_cadastro_centavos) / 100).toFixed(2)
+      : "";
 
     gerarQrCodePix();
 
@@ -485,7 +488,7 @@ async function carregarConfiguracoes() {
 }
 
 function limparValidacoesConfiguracoes() {
-  [tipoPix, chavePix, nomeRecebedor, banco].forEach(campo => {
+  [tipoPix, chavePix, nomeRecebedor, banco, valorCadastro].forEach(campo => {
     campo.classList.remove("campo-erro");
   });
 
@@ -512,20 +515,17 @@ function mostrarMensagemConfiguracoes(texto, tipo) {
 async function salvarConfiguracoes() {
   limparValidacoesConfiguracoes();
 
-  const campos = [tipoPix, chavePix, nomeRecebedor, banco];
+  const valorNumerico = Number(valorCadastro.value);
+  const valorCadastroCentavos = Math.round(valorNumerico * 100);
 
-  let possuiErro = false;
-
-  campos.forEach(campo => {
-    if (!campo.value.trim()) {
-      campo.classList.add("campo-erro");
-      possuiErro = true;
-    }
-  });
-
-  if (possuiErro) {
+  if (
+    !Number.isFinite(valorNumerico) ||
+    valorNumerico <= 0 ||
+    valorCadastroCentavos > 100000000
+  ) {
+    valorCadastro.classList.add("campo-erro");
     mostrarMensagemConfiguracoes(
-      "⚠️ Preencha todos os campos obrigatórios.",
+      "⚠️ Informe um valor de cadastro entre R$ 0,01 e R$ 1.000.000,00.",
       "erro"
     );
     return;
@@ -535,7 +535,8 @@ async function salvarConfiguracoes() {
     tipo_pix: tipoPix.value.trim(),
     chave_pix: chavePix.value.trim(),
     nome_recebedor: nomeRecebedor.value.trim(),
-    banco: banco.value.trim()
+    banco: banco.value.trim(),
+    valor_cadastro_centavos: valorCadastroCentavos
   };
 
   const res = await fetch(`${API_URL}/api/configuracoes`, {
@@ -682,7 +683,7 @@ function copiarPixCopiaCola() {
 }
 
 function configurarEventosConfiguracoes() {
-  [tipoPix, chavePix, nomeRecebedor, banco].forEach(campo => {
+  [tipoPix, chavePix, nomeRecebedor, banco, valorCadastro].forEach(campo => {
     if (!campo) return;
 
     campo.addEventListener("input", () => {

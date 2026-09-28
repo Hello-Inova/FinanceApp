@@ -69,6 +69,15 @@ class AsaasError(RuntimeError):
     pass
 
 
+def valor_cadastro_atual_centavos():
+    configuracoes = buscar_configuracoes() or {}
+    try:
+        valor = int(configuracoes.get("valor_cadastro_centavos") or 0)
+    except (TypeError, ValueError):
+        valor = 0
+    return valor if valor > 0 else CADASTRO_VALOR_CENTAVOS
+
+
 def asaas_configurado():
     ambiente = os.getenv("ASAAS_ENVIRONMENT", "sandbox").strip().lower()
     return bool(
@@ -118,6 +127,7 @@ def valor_asaas_em_centavos(valor):
 
 def garantir_cobranca_asaas(solicitacao, nome, cpf, email):
     token = solicitacao["public_token"]
+    valor_centavos = int(solicitacao["valor_centavos"])
     payment_id = solicitacao.get("external_payment_id")
     customer_id = solicitacao.get("asaas_customer_id")
 
@@ -127,7 +137,7 @@ def garantir_cobranca_asaas(solicitacao, nome, cpf, email):
         ).get("data", [])
         if encontrados:
             pagamento = encontrados[0]
-            if valor_asaas_em_centavos(pagamento.get("value")) != CADASTRO_VALOR_CENTAVOS:
+            if valor_asaas_em_centavos(pagamento.get("value")) != valor_centavos:
                 raise AsaasError("Cobrança divergente encontrada na Asaas.")
             payment_id = pagamento.get("id")
             customer_id = customer_id or pagamento.get("customer")
@@ -155,7 +165,7 @@ def garantir_cobranca_asaas(solicitacao, nome, cpf, email):
         pagamento = asaas_request("POST", "/payments", {
             "customer": customer_id,
             "billingType": "PIX",
-            "value": float(Decimal(CADASTRO_VALOR_CENTAVOS) / 100),
+            "value": float(Decimal(valor_centavos) / 100),
             "dueDate": (date.today() + timedelta(days=1)).isoformat(),
             "description": "Liberação de cadastro no FinanceApp",
             "externalReference": token,
@@ -176,7 +186,7 @@ def garantir_cobranca_asaas(solicitacao, nome, cpf, email):
     return {
         "payload": pix_payload,
         "expiration_date": pix_expiration,
-        "valor_centavos": CADASTRO_VALOR_CENTAVOS,
+        "valor_centavos": valor_centavos,
     }
 
 
@@ -194,6 +204,17 @@ def texto(valor, campo, minimo=1, maximo=200):
     valor = valor.strip()
     if not minimo <= len(valor) <= maximo:
         raise ValueError(f"{campo} deve ter entre {minimo} e {maximo} caracteres.")
+    return valor
+
+
+def texto_opcional(valor, campo, maximo=200):
+    if valor is None:
+        return ""
+    if not isinstance(valor, str):
+        raise ValueError(f"{campo} inválido.")
+    valor = valor.strip()
+    if len(valor) > maximo:
+        raise ValueError(f"{campo} deve ter no máximo {maximo} caracteres.")
     return valor
 
 
@@ -750,7 +771,9 @@ def api_excluir_compra(compra_id):
 @app.route("/api/configuracoes", methods=["GET"])
 @admin_obrigatorio
 def api_buscar_configuracoes():
-    return jsonify(buscar_configuracoes() or {})
+    configuracoes = buscar_configuracoes() or {}
+    configuracoes["valor_cadastro_centavos"] = valor_cadastro_atual_centavos()
+    return jsonify(configuracoes)
 
 
 @app.route("/api/configuracoes", methods=["POST"])
@@ -758,11 +781,21 @@ def api_buscar_configuracoes():
 def api_salvar_configuracoes():
     dados = json_body()
     try:
+        valor_cadastro_centavos = dados.get("valor_cadastro_centavos")
+        if isinstance(valor_cadastro_centavos, bool):
+            raise ValueError("Valor do cadastro inválido.")
+        try:
+            valor_cadastro_centavos = int(valor_cadastro_centavos)
+        except (TypeError, ValueError):
+            raise ValueError("Informe o valor do cadastro.")
+        if not 1 <= valor_cadastro_centavos <= 100_000_000:
+            raise ValueError("O valor do cadastro deve ficar entre R$ 0,01 e R$ 1.000.000,00.")
         salvar_ou_atualizar_configuracoes(
-            texto(dados.get("tipo_pix"), "Tipo PIX", 2, 30),
-            texto(dados.get("chave_pix"), "Chave PIX", 2, 140),
-            texto(dados.get("nome_recebedor"), "Recebedor", 2, 140),
-            texto(dados.get("banco"), "Banco", 2, 140),
+            texto_opcional(dados.get("tipo_pix"), "Tipo PIX", 30),
+            texto_opcional(dados.get("chave_pix"), "Chave PIX", 140),
+            texto_opcional(dados.get("nome_recebedor"), "Recebedor", 140),
+            texto_opcional(dados.get("banco"), "Banco", 140),
+            valor_cadastro_centavos,
         )
         return jsonify({"status": "ok", "mensagem": "Configurações salvas."})
     except ValueError as erro:
@@ -773,17 +806,21 @@ def api_salvar_configuracoes():
 def api_public_pix():
     if not PAYMENTS_ENABLED or not asaas_configurado():
         return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
+    valor_centavos = valor_cadastro_atual_centavos()
+    if valor_centavos <= 0:
+        return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
     return jsonify({
         "provider": "asaas",
-        "valor_centavos": CADASTRO_VALOR_CENTAVOS,
+        "valor_centavos": valor_centavos,
     })
 
 
 @app.route("/api/public/cadastro", methods=["POST"])
 def api_criar_solicitacao_cadastro():
+    valor_centavos = valor_cadastro_atual_centavos()
     if (
         not PAYMENTS_ENABLED
-        or CADASTRO_VALOR_CENTAVOS <= 0
+        or valor_centavos <= 0
         or not asaas_configurado()
     ):
         return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
@@ -798,7 +835,7 @@ def api_criar_solicitacao_cadastro():
         if cpf_usuario_existe(cpf) or email_usuario_existe(email):
             return resposta_erro("Não foi possível iniciar o cadastro com esses dados.")
         solicitacao = criar_ou_buscar_solicitacao(
-            nome, cpf, email, CADASTRO_VALOR_CENTAVOS
+            nome, cpf, email, valor_centavos
         )
         pix = None
         if solicitacao["status"] == "pendente":
@@ -806,7 +843,7 @@ def api_criar_solicitacao_cadastro():
                 pix = {
                     "payload": solicitacao["pix_payload"],
                     "expiration_date": solicitacao.get("pix_expiration"),
-                    "valor_centavos": CADASTRO_VALOR_CENTAVOS,
+                    "valor_centavos": int(solicitacao["valor_centavos"]),
                 }
             else:
                 pix = garantir_cobranca_asaas(solicitacao, nome, cpf, email)
@@ -894,7 +931,12 @@ def webhook_pagamento():
         token = texto(pagamento.get("externalReference"), "Solicitação", 20, 200)
         external_id = texto(pagamento.get("id"), "Identificador", 1, 200)
         valor_centavos = valor_asaas_em_centavos(pagamento.get("value"))
-        if valor_centavos != CADASTRO_VALOR_CENTAVOS:
+        solicitacao = buscar_status_solicitacao(token)
+        if (
+            not solicitacao
+            or solicitacao.get("external_payment_id") != external_id
+            or valor_centavos != int(solicitacao["valor_centavos"])
+        ):
             logger.warning("Webhook Asaas ignorado por valor divergente para %s", external_id)
             return jsonify({"status": "ignored"})
         confirmado = confirmar_pagamento(token, external_id, valor_centavos)
