@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Metas | FinanceApp</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/metas.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+</head>
+<body>
+  <button id="btnMenu" type="button" onclick="toggleMenu()" aria-label="Abrir menu">☰</button>
+  <div id="menuOverlay" onclick="fecharMenu()"></div>
+  <div id="menu-container"></div>
+
+  <main class="metas-container">
+    <header class="page-header">
+      <div class="page-heading">
+        <span class="eyebrow">Planejamento pessoal</span>
+        <h1>🎯 Minhas metas</h1>
+        <p>Transforme planos em progresso, um passo de cada vez.</p>
+      </div>
+      <button class="btn btn-primary" type="button" onclick="abrirModalMeta()">
+        <span aria-hidden="true">＋</span> Nova meta
+      </button>
+    </header>
+
+    <section class="summary-grid" aria-label="Resumo das metas">
+      <article class="summary-card summary-primary">
+        <span class="summary-icon" aria-hidden="true">◎</span>
+        <div><span>Total planejado</span><strong id="resumoPlanejado">R$ 0,00</strong></div>
+      </article>
+      <article class="summary-card summary-success">
+        <span class="summary-icon" aria-hidden="true">↗</span>
+        <div><span>Total acumulado</span><strong id="resumoAcumulado">R$ 0,00</strong></div>
+      </article>
+      <article class="summary-card summary-info">
+        <span class="summary-icon" aria-hidden="true">◔</span>
+        <div><span>Progresso geral</span><strong id="resumoProgresso">0%</strong></div>
+      </article>
+      <article class="summary-card summary-warning">
+        <span class="summary-icon" aria-hidden="true">✓</span>
+        <div><span>Metas concluídas</span><strong id="resumoConcluidas">0</strong></div>
+      </article>
+    </section>
+
+    <section class="filters" aria-label="Filtros de metas">
+      <label class="search-field" for="buscaMeta">
+        <span aria-hidden="true">⌕</span>
+        <input id="buscaMeta" type="search" placeholder="Buscar por meta ou descrição..." autocomplete="off">
+      </label>
+      <label class="sr-only" for="filtroStatus">Filtrar por status</label>
+      <select id="filtroStatus">
+        <option value="">Todos os status</option>
+        <option value="Ativa">Ativas</option>
+        <option value="Pausada">Pausadas</option>
+        <option value="Concluída">Concluídas</option>
+      </select>
+      <label class="sr-only" for="filtroCategoria">Filtrar por categoria</label>
+      <select id="filtroCategoria">
+        <option value="">Todas as categorias</option>
+      </select>
+    </section>
+
+    <div class="results-heading">
+      <div>
+        <h2>Seus objetivos</h2>
+        <span id="contadorMetas">0 metas</span>
+      </div>
+      <select id="ordenacaoMetas" aria-label="Ordenar metas">
+        <option value="prioridade">Ordenar por prioridade</option>
+        <option value="prazo">Prazo mais próximo</option>
+        <option value="progresso">Maior progresso</option>
+        <option value="recente">Mais recentes</option>
+      </select>
+    </div>
+
+    <section id="gridMetas" class="goals-grid" aria-live="polite"></section>
+
+    <section id="estadoVazio" class="empty-state" hidden>
+      <span class="empty-icon" aria-hidden="true">🎯</span>
+      <h2 id="tituloVazio">Sua próxima conquista começa aqui</h2>
+      <p id="textoVazio">Crie uma meta, defina o valor e acompanhe cada avanço.</p>
+      <button id="acaoVazio" class="btn btn-primary" type="button" onclick="abrirModalMeta()">Criar primeira meta</button>
+    </section>
+  </main>
+
+  <div id="modalMeta" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalMeta" hidden>
+    <div class="modal-panel modal-goal">
+      <button class="modal-close" type="button" onclick="fecharModalMeta()" aria-label="Fechar">×</button>
+      <div class="modal-heading">
+        <span class="modal-heading-icon" aria-hidden="true">🎯</span>
+        <div><h2 id="tituloModalMeta">Nova meta</h2><p>Defina um objetivo claro e possível de acompanhar.</p></div>
+      </div>
+
+      <form id="formMeta" novalidate>
+        <div class="field field-full">
+          <label for="metaTitulo">Nome da meta <span>*</span></label>
+          <input id="metaTitulo" maxlength="120" placeholder="Ex.: Viagem de férias" required>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="metaCategoria">Categoria <span>*</span></label>
+            <select id="metaCategoria" required>
+              <option value="Viagem">✈️ Viagem</option>
+              <option value="Reserva">🛟 Reserva</option>
+              <option value="Casa">🏠 Casa</option>
+              <option value="Educação">🎓 Educação</option>
+              <option value="Veículo">🚗 Veículo</option>
+              <option value="Tecnologia">💻 Tecnologia</option>
+              <option value="Saúde">💚 Saúde</option>
+              <option value="Lazer">🎉 Lazer</option>
+              <option value="Outros">✨ Outros</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="metaPrioridade">Prioridade <span>*</span></label>
+            <select id="metaPrioridade" required>
+              <option value="Baixa">Baixa</option>
+              <option value="Média" selected>Média</option>
+              <option value="Alta">Alta</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="metaValorAlvo">Valor da meta <span>*</span></label>
+            <div class="money-field"><span>R$</span><input id="metaValorAlvo" type="number" min="0.01" step="0.01" placeholder="0,00" required></div>
+          </div>
+          <div id="campoValorInicial" class="field">
+            <label for="metaValorAtual">Já tenho guardado</label>
+            <div class="money-field"><span>R$</span><input id="metaValorAtual" type="number" min="0" step="0.01" placeholder="0,00"></div>
+          </div>
+          <div class="field">
+            <label for="metaDataLimite">Prazo</label>
+            <input id="metaDataLimite" type="date">
+          </div>
+          <div class="field">
+            <label for="metaStatus">Status</label>
+            <select id="metaStatus">
+              <option value="Ativa">Ativa</option>
+              <option value="Pausada">Pausada</option>
+              <option value="Concluída">Concluída</option>
+            </select>
+          </div>
+        </div>
+        <div class="field field-full">
+          <label for="metaDescricao">Descrição</label>
+          <textarea id="metaDescricao" maxlength="1000" rows="3" placeholder="Por que essa meta é importante para você?"></textarea>
+        </div>
+        <div id="erroMeta" class="form-message" role="alert" hidden></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" onclick="fecharModalMeta()">Cancelar</button>
+          <button class="btn btn-primary" type="submit">Salvar meta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalMovimentacao" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalMovimentacao" hidden>
+    <div class="modal-panel modal-transaction">
+      <button class="modal-close" type="button" onclick="fecharModalMovimentacao()" aria-label="Fechar">×</button>
+      <div class="modal-heading">
+        <span class="modal-heading-icon" aria-hidden="true">💰</span>
+        <div><h2 id="tituloModalMovimentacao">Atualizar meta</h2><p id="subtituloMovimentacao"></p></div>
+      </div>
+      <form id="formMovimentacao" novalidate>
+        <div class="transaction-type" role="group" aria-label="Tipo de movimentação">
+          <button id="btnTipoAporte" class="type-option active" type="button" data-tipo="Aporte">＋ Adicionar valor</button>
+          <button id="btnTipoRetirada" class="type-option" type="button" data-tipo="Retirada">− Retirar valor</button>
+        </div>
+        <div class="field field-full">
+          <label for="movimentacaoValor">Valor <span>*</span></label>
+          <div class="money-field"><span>R$</span><input id="movimentacaoValor" type="number" min="0.01" step="0.01" placeholder="0,00" required></div>
+        </div>
+        <div class="field field-full">
+          <label for="movimentacaoDescricao">Observação</label>
+          <input id="movimentacaoDescricao" maxlength="240" placeholder="Ex.: Economia do mês">
+        </div>
+        <div id="erroMovimentacao" class="form-message" role="alert" hidden></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" onclick="fecharModalMovimentacao()">Cancelar</button>
+          <button class="btn btn-success" type="submit">Confirmar</button>
+        </div>
+      </form>
+      <section class="history-section">
+        <div class="history-heading"><h3>Histórico recente</h3><span id="totalMovimentacoes"></span></div>
+        <div id="listaMovimentacoes" class="history-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="{{ url_for('static', filename='js/security.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/metas.js') }}"></script>
+</body>
+</html>

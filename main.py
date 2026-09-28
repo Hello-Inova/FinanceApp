@@ -17,15 +17,16 @@ from flask import Flask, g, jsonify, redirect, render_template, request, send_fr
 from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from database import (
-    alterar_senha_propria, alterar_senha_usuario, atualizar_compra,
+    alterar_senha_propria, alterar_senha_usuario, atualizar_compra, atualizar_meta,
     atualizar_dados_usuario, atualizar_lancamento, atualizar_status_compra,
-    atualizar_status_usuario, buscar_configuracoes, buscar_status_solicitacao,
+    atualizar_status_meta, atualizar_status_usuario, buscar_configuracoes, buscar_status_solicitacao,
     buscar_usuario, buscar_usuario_por_id, confirmar_pagamento, cpf_usuario_existe,
-    criar_admin_inicial, criar_compra, criar_lancamento, criar_ou_buscar_solicitacao,
+    criar_admin_inicial, criar_compra, criar_lancamento, criar_meta, criar_ou_buscar_solicitacao,
     criar_tabelas, criar_token_recuperacao, criar_usuario, email_usuario_existe, excluir_compra,
-    excluir_lancamento, excluir_usuario, finalizar_cadastro, healthcheck,
-    listar_compras, listar_lancamentos, listar_usuarios, rate_limit_limpar,
-    rate_limit_permitir, redefinir_senha_com_token, salvar_ou_atualizar_configuracoes,
+    excluir_lancamento, excluir_meta, excluir_usuario, finalizar_cadastro, healthcheck,
+    listar_compras, listar_lancamentos, listar_metas, listar_movimentacoes_meta,
+    listar_usuarios, rate_limit_limpar, rate_limit_permitir, redefinir_senha_com_token,
+    registrar_movimentacao_meta, salvar_ou_atualizar_configuracoes,
     salvar_pagamento_asaas, token_recuperacao_valido,
 )
 
@@ -54,6 +55,9 @@ criar_admin_inicial()
 
 PERFIS = {"Padrão", "Administrativo"}
 TIPOS_LANCAMENTO = {"Entrada", "Saída"}
+PRIORIDADES_META = {"Baixa", "Média", "Alta"}
+STATUS_META = {"Ativa", "Pausada", "Concluída"}
+TIPOS_MOVIMENTACAO_META = {"Aporte", "Retirada"}
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 PAYMENTS_ENABLED = os.getenv("PAYMENTS_ENABLED", "false").lower() == "true"
 CADASTRO_VALOR_CENTAVOS = int(os.getenv("CADASTRO_VALOR_CENTAVOS", "0"))
@@ -300,6 +304,12 @@ def data_iso(valor):
         raise ValueError("Data inválida.") from None
 
 
+def data_iso_opcional(valor):
+    if valor is None or valor == "":
+        return None
+    return data_iso(valor)
+
+
 def decimal_positivo(valor, campo, permite_zero=False):
     try:
         numero = Decimal(str(valor))
@@ -433,6 +443,11 @@ def financas():
 @app.route("/compras")
 def compras():
     return pagina_autenticada("compras.html")
+
+
+@app.route("/metas")
+def metas():
+    return pagina_autenticada("metas.html")
 
 
 @app.route("/admin")
@@ -769,6 +784,109 @@ def api_status_compra(compra_id):
 @login_obrigatorio
 def api_excluir_compra(compra_id):
     excluir_compra(usuario_atual()["id"], compra_id)
+    return jsonify({"status": "ok"})
+
+
+def validar_meta(dados, incluir_valor_atual=False):
+    prioridade = dados.get("prioridade", "Média")
+    status = dados.get("status", "Ativa")
+    if prioridade not in PRIORIDADES_META:
+        raise ValueError("Prioridade inválida.")
+    if status not in STATUS_META:
+        raise ValueError("Status inválido.")
+    valores = [
+        texto(dados.get("titulo"), "Título", 2, 120),
+        texto(dados.get("categoria"), "Categoria", 1, 60),
+        decimal_positivo(dados.get("valor_alvo"), "Valor da meta"),
+    ]
+    if incluir_valor_atual:
+        valores.append(decimal_positivo(
+            dados.get("valor_atual", 0), "Valor inicial", permite_zero=True
+        ))
+    valores.extend([
+        data_iso_opcional(dados.get("data_limite")),
+        prioridade,
+        status,
+        texto_opcional(dados.get("descricao", ""), "Descrição", 1000),
+    ])
+    return tuple(valores)
+
+
+@app.route("/api/metas", methods=["GET"])
+@login_obrigatorio
+def api_listar_metas():
+    return jsonify(listar_metas(usuario_atual()["id"]))
+
+
+@app.route("/api/metas", methods=["POST"])
+@login_obrigatorio
+def api_criar_meta():
+    try:
+        valores = list(validar_meta(json_body(), incluir_valor_atual=True))
+        if valores[3] >= valores[2]:
+            valores[6] = "Concluída"
+        elif valores[6] == "Concluída":
+            valores[6] = "Ativa"
+        meta_id = criar_meta(usuario_atual()["id"], *valores)
+        return jsonify({"status": "ok", "id": meta_id}), 201
+    except ValueError as erro:
+        return resposta_erro(str(erro))
+
+
+@app.route("/api/metas/<int:meta_id>", methods=["PUT"])
+@login_obrigatorio
+def api_atualizar_meta(meta_id):
+    try:
+        valores = validar_meta(json_body())
+        if not atualizar_meta(usuario_atual()["id"], meta_id, *valores):
+            return resposta_erro("Meta não encontrada.", 404)
+        return jsonify({"status": "ok"})
+    except ValueError as erro:
+        return resposta_erro(str(erro))
+
+
+@app.route("/api/metas/<int:meta_id>/movimentacoes", methods=["GET"])
+@login_obrigatorio
+def api_listar_movimentacoes_meta(meta_id):
+    return jsonify(listar_movimentacoes_meta(usuario_atual()["id"], meta_id))
+
+
+@app.route("/api/metas/<int:meta_id>/movimentacoes", methods=["POST"])
+@login_obrigatorio
+def api_registrar_movimentacao_meta(meta_id):
+    dados = json_body()
+    try:
+        tipo = dados.get("tipo")
+        if tipo not in TIPOS_MOVIMENTACAO_META:
+            raise ValueError("Tipo de movimentação inválido.")
+        valor = decimal_positivo(dados.get("valor"), "Valor")
+        descricao = texto_opcional(dados.get("descricao", ""), "Descrição", 240)
+        novo_valor = registrar_movimentacao_meta(
+            usuario_atual()["id"], meta_id, tipo, valor, descricao
+        )
+        if novo_valor is None:
+            return resposta_erro("Meta não encontrada.", 404)
+        return jsonify({"status": "ok", "valor_atual": str(novo_valor)}), 201
+    except ValueError as erro:
+        return resposta_erro(str(erro))
+
+
+@app.route("/api/metas/<int:meta_id>/status", methods=["PUT"])
+@login_obrigatorio
+def api_status_meta(meta_id):
+    status = json_body().get("status")
+    if status not in {"Ativa", "Pausada"}:
+        return resposta_erro("Status inválido.")
+    if not atualizar_status_meta(usuario_atual()["id"], meta_id, status):
+        return resposta_erro("Meta não encontrada.", 404)
+    return jsonify({"status": "ok"})
+
+
+@app.route("/api/metas/<int:meta_id>", methods=["DELETE"])
+@login_obrigatorio
+def api_excluir_meta(meta_id):
+    if not excluir_meta(usuario_atual()["id"], meta_id):
+        return resposta_erro("Meta não encontrada.", 404)
     return jsonify({"status": "ok"})
 
 

@@ -42,6 +42,7 @@ function marcarPaginaAtual() {
 
       if (destino === caminho) {
         btn.classList.add("active");
+        btn.setAttribute("aria-current", "page");
       }
     });
 }

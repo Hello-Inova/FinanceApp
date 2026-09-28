@@ -17,16 +17,16 @@
       <button onclick="toggleMenu(event)" class="hamburger" id="btnMenuin">☰</button>      <h3>Menu</h3>
     </div>
 
-    <button id="btnAdmin" onclick="location.href='/admin'" style="display: none;">🖊️ Administrativo</button>
+    <button id="btnAdmin" data-url="/admin" onclick="location.href='/admin'" style="display: none;">🖊️ Administrativo</button>
     <button id="btnCadUser" onclick="abrirModalCadUser()" style="display: none;">🧑‍💻 Cadastro de Usuário</button>
     <hr style="margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
 
-    <button id="btnDashboard" onclick="location.href='/home'">💰 Finanças</button>
-    <button id="btnMetas" onclick="location.href='/metas'">🎯 Metas</button>
-    <button id="btnFinancas" onclick="location.href='/financas'">📈 Gráfico Financeiro</button>
-    <button id="btnAgenda" onclick="location.href='/agenda'">📅 Agenda</button>
+    <button id="btnDashboard" data-url="/home" onclick="location.href='/home'">💰 Finanças</button>
+    <button id="btnMetas" data-url="/metas" onclick="location.href='/metas'">🎯 Metas</button>
+    <button id="btnFinancas" data-url="/financas" onclick="location.href='/financas'">📈 Gráfico Financeiro</button>
+    <button id="btnAgenda" data-url="/agenda" onclick="location.href='/agenda'">📅 Agenda</button>
     <!--<button id="btnManutencao" onclick="location.href='/manutenção'">🚗 Manutenção</button>-->
-    <button id="btnCompras" onclick="location.href='/compras'">🛒 Compras</button>
+    <button id="btnCompras" data-url="/compras" onclick="location.href='/compras'">🛒 Compras</button>
     <!--<button id="btnMedicamentos" onclick="location.href='/medicamentos'">💊 Medicamentos</button>-->
     <button onclick="logout()">🚪 Sair</button>
 

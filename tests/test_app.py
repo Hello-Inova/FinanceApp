@@ -241,6 +241,83 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert lancamentos[0]["valor"] == 125.5 or lancamentos[0]["valor"] == "125.5"
 
 
+def test_crud_metas_com_aportes_e_retiradas(client, csrf):
+    login_admin(client, csrf)
+    trocar_senha(client, csrf)
+    pagina = client.get("/metas")
+    assert pagina.status_code == 200
+    assert b"Minhas metas" in pagina.data
+    token = csrf(pagina)
+
+    criada = client.post(
+        "/api/metas",
+        json={
+            "titulo": "Viagem de férias",
+            "categoria": "Viagem",
+            "valor_alvo": "5000.00",
+            "valor_atual": "500.00",
+            "data_limite": "2027-01-15",
+            "prioridade": "Alta",
+            "status": "Ativa",
+            "descricao": "Planejamento das férias",
+        },
+        headers={"X-CSRFToken": token},
+    )
+    assert criada.status_code == 201, criada.json
+    meta_id = criada.json["id"]
+
+    lista = client.get("/api/metas")
+    assert lista.status_code == 200
+    assert len(lista.json) == 1
+    assert lista.json[0]["titulo"] == "Viagem de férias"
+    assert float(lista.json[0]["valor_atual"]) == 500
+
+    aporte = client.post(
+        f"/api/metas/{meta_id}/movimentacoes",
+        json={"tipo": "Aporte", "valor": "4500.00", "descricao": "Bônus"},
+        headers={"X-CSRFToken": token},
+    )
+    assert aporte.status_code == 201, aporte.json
+    assert float(aporte.json["valor_atual"]) == 5000
+    assert client.get("/api/metas").json[0]["status"] == "Concluída"
+
+    pausa_concluida = client.put(
+        f"/api/metas/{meta_id}/status",
+        json={"status": "Pausada"},
+        headers={"X-CSRFToken": token},
+    )
+    assert pausa_concluida.status_code == 200
+    assert client.get("/api/metas").json[0]["status"] == "Concluída"
+
+    retirada = client.post(
+        f"/api/metas/{meta_id}/movimentacoes",
+        json={"tipo": "Retirada", "valor": "250.00", "descricao": "Ajuste"},
+        headers={"X-CSRFToken": token},
+    )
+    assert retirada.status_code == 201
+    meta = client.get("/api/metas").json[0]
+    assert float(meta["valor_atual"]) == 4750
+    assert meta["status"] == "Ativa"
+
+    invalida = client.post(
+        f"/api/metas/{meta_id}/movimentacoes",
+        json={"tipo": "Retirada", "valor": "99999.00"},
+        headers={"X-CSRFToken": token},
+    )
+    assert invalida.status_code == 400
+    assert "maior que o valor acumulado" in invalida.json["mensagem"]
+
+    historico = client.get(f"/api/metas/{meta_id}/movimentacoes")
+    assert historico.status_code == 200
+    assert len(historico.json) == 3
+
+    excluida = client.delete(
+        f"/api/metas/{meta_id}", headers={"X-CSRFToken": token}
+    )
+    assert excluida.status_code == 200
+    assert client.get("/api/metas").json == []
+
+
 def test_recuperacao_senha_com_token_unico(app, client, csrf, monkeypatch):
     import main
 

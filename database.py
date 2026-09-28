@@ -182,6 +182,33 @@ def executar_migracoes():
             )
         """)
         cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS metas (
+                id {identity},
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                titulo TEXT NOT NULL,
+                categoria TEXT NOT NULL,
+                valor_alvo {money} NOT NULL,
+                valor_atual {money} NOT NULL DEFAULT 0,
+                data_limite {date_type},
+                prioridade TEXT NOT NULL DEFAULT 'Média',
+                status TEXT NOT NULL DEFAULT 'Ativa',
+                descricao TEXT,
+                criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS meta_movimentacoes (
+                id {identity},
+                meta_id INTEGER NOT NULL REFERENCES metas(id) ON DELETE CASCADE,
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                tipo TEXT NOT NULL,
+                valor {money} NOT NULL,
+                descricao TEXT,
+                criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS configuracoes (
                 id {identity},
                 tipo_pix TEXT NOT NULL,
@@ -319,6 +346,14 @@ def executar_migracoes():
             "ON compras(usuario_id, data)"
         )
         cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_metas_usuario_status "
+            "ON metas(usuario_id, status)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_meta_movimentacoes_meta "
+            "ON meta_movimentacoes(meta_id, criado_em)"
+        )
+        cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_solicitacoes_status "
             "ON solicitacoes_cadastro(status)"
         )
@@ -384,6 +419,11 @@ def executar_migracoes():
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
             (7,),
+        )
+        cursor.execute(
+            "INSERT INTO schema_migrations(version) VALUES (?) "
+            "ON CONFLICT(version) DO NOTHING",
+            (8,),
         )
         conn.commit()
     except Exception:
@@ -1032,6 +1072,167 @@ def excluir_compra(usuario_id, id):
     )
     conn.commit()
     conn.close()
+
+
+def listar_metas(usuario_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM metas WHERE usuario_id = ? ORDER BY "
+        "CASE status WHEN 'Ativa' THEN 0 WHEN 'Pausada' THEN 1 ELSE 2 END, "
+        "CASE prioridade WHEN 'Alta' THEN 0 WHEN 'Média' THEN 1 ELSE 2 END, "
+        "CASE WHEN data_limite IS NULL THEN 1 ELSE 0 END, data_limite, id DESC",
+        (usuario_id,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def criar_meta(
+    usuario_id, titulo, categoria, valor_alvo, valor_atual,
+    data_limite, prioridade, status, descricao
+):
+    valor_alvo = Decimal(str(valor_alvo))
+    valor_atual = Decimal(str(valor_atual))
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO metas (usuario_id, titulo, categoria, valor_alvo, "
+            "valor_atual, data_limite, prioridade, status, descricao) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+            (
+                usuario_id, titulo, categoria, valor_alvo, valor_atual,
+                data_limite, prioridade, status, descricao,
+            ),
+        )
+        meta_id = cursor.fetchone()["id"]
+        if valor_atual > 0:
+            cursor.execute(
+                "INSERT INTO meta_movimentacoes "
+                "(meta_id, usuario_id, tipo, valor, descricao) "
+                "VALUES (?, ?, 'Aporte', ?, 'Valor inicial')",
+                (meta_id, usuario_id, valor_atual),
+            )
+        conn.commit()
+        return meta_id
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def atualizar_meta(
+    usuario_id, meta_id, titulo, categoria, valor_alvo,
+    data_limite, prioridade, status, descricao
+):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE metas SET titulo = ?, categoria = ?, valor_alvo = ?, "
+        "data_limite = ?, prioridade = ?, "
+        "status = CASE WHEN valor_atual >= ? THEN 'Concluída' "
+        "WHEN ? = 'Concluída' THEN 'Ativa' ELSE ? END, descricao = ?, "
+        "atualizado_em = CURRENT_TIMESTAMP WHERE id = ? AND usuario_id = ?",
+        (
+            titulo, categoria, Decimal(str(valor_alvo)), data_limite, prioridade,
+            Decimal(str(valor_alvo)), status, status, descricao, meta_id, usuario_id,
+        ),
+    )
+    alterada = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return alterada
+
+
+def registrar_movimentacao_meta(usuario_id, meta_id, tipo, valor, descricao):
+    valor = Decimal(str(valor))
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        lock = " FOR UPDATE" if conn.postgres else ""
+        cursor.execute(
+            "SELECT valor_atual, valor_alvo, status FROM metas "
+            "WHERE id = ? AND usuario_id = ?" + lock,
+            (meta_id, usuario_id),
+        )
+        meta = cursor.fetchone()
+        if not meta:
+            conn.rollback()
+            return None
+        atual = Decimal(str(meta["valor_atual"]))
+        alvo = Decimal(str(meta["valor_alvo"]))
+        novo_valor = atual + valor if tipo == "Aporte" else atual - valor
+        if novo_valor < 0:
+            conn.rollback()
+            raise ValueError("A retirada não pode ser maior que o valor acumulado.")
+        status = meta["status"]
+        if novo_valor >= alvo:
+            status = "Concluída"
+        elif status == "Concluída":
+            status = "Ativa"
+        cursor.execute(
+            "UPDATE metas SET valor_atual = ?, status = ?, "
+            "atualizado_em = CURRENT_TIMESTAMP WHERE id = ? AND usuario_id = ?",
+            (novo_valor, status, meta_id, usuario_id),
+        )
+        cursor.execute(
+            "INSERT INTO meta_movimentacoes "
+            "(meta_id, usuario_id, tipo, valor, descricao) VALUES (?, ?, ?, ?, ?)",
+            (meta_id, usuario_id, tipo, valor, descricao),
+        )
+        conn.commit()
+        return novo_valor
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def listar_movimentacoes_meta(usuario_id, meta_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT mm.id, mm.tipo, mm.valor, mm.descricao, mm.criado_em "
+        "FROM meta_movimentacoes mm JOIN metas m ON m.id = mm.meta_id "
+        "WHERE mm.meta_id = ? AND mm.usuario_id = ? AND m.usuario_id = ? "
+        "ORDER BY mm.id DESC LIMIT 100",
+        (meta_id, usuario_id, usuario_id),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def atualizar_status_meta(usuario_id, meta_id, status):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE metas SET status = CASE WHEN valor_atual >= valor_alvo "
+        "THEN 'Concluída' ELSE ? END, atualizado_em = CURRENT_TIMESTAMP "
+        "WHERE id = ? AND usuario_id = ?",
+        (status, meta_id, usuario_id),
+    )
+    alterada = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return alterada
+
+
+def excluir_meta(usuario_id, meta_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "DELETE FROM metas WHERE id = ? AND usuario_id = ?",
+        (meta_id, usuario_id),
+    )
+    excluida = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return excluida
 
 
 def healthcheck():
