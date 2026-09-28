@@ -10,7 +10,7 @@ Aplicativo financeiro em Flask, com PostgreSQL em produção e SQLite apenas par
 - Autorização administrativa consultada no banco; alterações de perfil, status e senha invalidam sessões antigas.
 - Valores monetários armazenados como `NUMERIC`, validação de datas/CPF/e-mail e transações atômicas.
 - Solicitações públicas usam tokens aleatórios. A antiga simulação de pagamento foi removida.
-- O cadastro pago permanece desativado até a integração de um gateway real.
+- Cadastro pago integrado à Asaas com cobrança PIX dinâmica e confirmação por webhook autenticado.
 
 ## Desenvolvimento
 
@@ -29,9 +29,11 @@ Copie `.env.example` para `.env`, use `APP_ENV=development` e configure uma `SEC
 - `SECRET_KEY`: segredo aleatório longo; nunca versionar.
 - `APP_ENV=production`.
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: somente para o primeiro acesso. Remova `ADMIN_PASSWORD` depois da troca da senha.
-- `PAYMENTS_ENABLED=false`: mantenha assim até configurar o gateway.
+- `PAYMENTS_ENABLED=false`: mantenha assim até validar todo o fluxo no Sandbox da Asaas.
 - `CADASTRO_VALOR_CENTAVOS`: preço exato em centavos.
-- `PAYMENT_WEBHOOK_SECRET`: segredo compartilhado pelo gateway.
+- `ASAAS_ENVIRONMENT`: `sandbox` durante os testes ou `production` na operação real.
+- `ASAAS_API_KEY`: chave secreta do mesmo ambiente configurado acima.
+- `ASAAS_WEBHOOK_TOKEN`: token aleatório enviado pela Asaas no cabeçalho `asaas-access-token`.
 - `APP_BASE_URL`: URL pública canônica, usada nos links de recuperação.
 - `RESEND_API_KEY`: chave de envio criada no Resend.
 - `RESEND_FROM_EMAIL`: remetente verificado, por exemplo `FinanceApp <nao-responda@seudominio.com>`.
@@ -42,18 +44,16 @@ O fluxo usa tokens aleatórios de uso único, armazena apenas o hash SHA-256 no 
 
 ## Webhook de pagamento
 
-`POST /api/payments/webhook`, com o HMAC SHA-256 do corpo bruto no cabeçalho `X-Webhook-Signature`:
+Configure na Asaas um webhook `POST` apontando para
+`https://seu-dominio/api/payments/webhook`, com os eventos
+`PAYMENT_CONFIRMED` e `PAYMENT_RECEIVED`. O token configurado na Asaas deve ser
+idêntico a `ASAAS_WEBHOOK_TOKEN`; ele será recebido no cabeçalho
+`asaas-access-token`.
 
-```json
-{
-  "status": "approved",
-  "solicitacao_token": "token-publico",
-  "external_id": "id-unico-do-gateway",
-  "valor_centavos": 1000
-}
-```
-
-Adapte e valide esse contrato com a documentação oficial do provedor antes de ativar pagamentos.
+O backend aceita somente os eventos confirmados, confere ID, referência externa e
+valor exato antes de liberar o cadastro. Eventos repetidos são tratados de forma
+idempotente. Teste primeiro no Sandbox e só então troque a chave, o ambiente e
+ative `PAYMENTS_ENABLED=true` em produção.
 
 ## Operação
 

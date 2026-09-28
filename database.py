@@ -196,12 +196,16 @@ def executar_migracoes():
             CREATE TABLE IF NOT EXISTS solicitacoes_cadastro (
                 id {identity},
                 public_token TEXT UNIQUE,
+                nome TEXT NOT NULL,
                 cpf TEXT NOT NULL,
                 email TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'pendente',
                 usuario_criado INTEGER NOT NULL DEFAULT 0,
                 valor_centavos INTEGER NOT NULL DEFAULT 0,
+                asaas_customer_id TEXT,
                 external_payment_id TEXT UNIQUE,
+                pix_payload TEXT,
+                pix_expiration TEXT,
                 criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 pago_em TIMESTAMP
@@ -236,8 +240,12 @@ def executar_migracoes():
             "compras": {"criado_em": timestamp_addition},
             "solicitacoes_cadastro": {
                 "public_token": "TEXT",
+                "nome": "TEXT",
                 "valor_centavos": "INTEGER NOT NULL DEFAULT 0",
+                "asaas_customer_id": "TEXT",
                 "external_payment_id": "TEXT",
+                "pix_payload": "TEXT",
+                "pix_expiration": "TEXT",
                 "atualizado_em": timestamp_addition,
             },
         }
@@ -686,30 +694,52 @@ def cpf_usuario_existe(cpf):
     return existe
 
 
-def criar_ou_buscar_solicitacao(cpf, email, valor_centavos):
+def criar_ou_buscar_solicitacao(nome, cpf, email, valor_centavos):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT public_token, status FROM solicitacoes_cadastro "
-        "WHERE cpf = ? AND email = ? ORDER BY id DESC LIMIT 1",
-        (cpf, email),
+        "SELECT public_token, nome, status, asaas_customer_id, external_payment_id, "
+        "pix_payload, pix_expiration FROM solicitacoes_cadastro "
+        "WHERE cpf = ? AND email = ? AND valor_centavos = ? "
+        "ORDER BY id DESC LIMIT 1",
+        (cpf, email, valor_centavos),
     )
     existente = cursor.fetchone()
     if existente:
+        if not existente.get("nome"):
+            cursor.execute(
+                "UPDATE solicitacoes_cadastro SET nome = ?, atualizado_em = CURRENT_TIMESTAMP "
+                "WHERE public_token = ?",
+                (nome, existente["public_token"]),
+            )
+            existente["nome"] = nome
+            conn.commit()
         conn.close()
         return existente
 
     token = secrets.token_urlsafe(32)
-    returning = " RETURNING public_token, status" if conn.postgres else ""
+    returning = (
+        " RETURNING public_token, nome, status, asaas_customer_id, "
+        "external_payment_id, pix_payload, pix_expiration"
+        if conn.postgres else ""
+    )
     cursor.execute(
         "INSERT INTO solicitacoes_cadastro "
-        "(public_token, cpf, email, valor_centavos) VALUES (?, ?, ?, ?)" + returning,
-        (token, cpf, email, valor_centavos),
+        "(public_token, nome, cpf, email, valor_centavos) VALUES (?, ?, ?, ?, ?)" + returning,
+        (token, nome, cpf, email, valor_centavos),
     )
     if conn.postgres:
         row = cursor.fetchone()
     else:
-        row = {"public_token": token, "status": "pendente"}
+        row = {
+            "public_token": token,
+            "nome": nome,
+            "status": "pendente",
+            "asaas_customer_id": None,
+            "external_payment_id": None,
+            "pix_payload": None,
+            "pix_expiration": None,
+        }
     conn.commit()
     conn.close()
     return row
@@ -719,7 +749,9 @@ def buscar_status_solicitacao(token):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT public_token, status, usuario_criado FROM solicitacoes_cadastro "
+        "SELECT public_token, nome, status, usuario_criado, valor_centavos, "
+        "external_payment_id, pix_payload, pix_expiration "
+        "FROM solicitacoes_cadastro "
         "WHERE public_token = ?",
         (token,),
     )
@@ -728,16 +760,40 @@ def buscar_status_solicitacao(token):
     return row
 
 
+def salvar_pagamento_asaas(token, customer_id, payment_id, pix_payload, pix_expiration):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE solicitacoes_cadastro SET asaas_customer_id = ?, external_payment_id = ?, "
+        "pix_payload = ?, pix_expiration = ?, atualizado_em = CURRENT_TIMESTAMP "
+        "WHERE public_token = ? AND status = 'pendente'",
+        (customer_id, payment_id, pix_payload, pix_expiration, token),
+    )
+    alteradas = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return alteradas == 1
+
+
 def confirmar_pagamento(token, external_payment_id, valor_centavos):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute(
         "UPDATE solicitacoes_cadastro SET status = 'pago', pago_em = CURRENT_TIMESTAMP, "
-        "atualizado_em = CURRENT_TIMESTAMP, external_payment_id = ? "
-        "WHERE public_token = ? AND valor_centavos = ? AND status = 'pendente'",
-        (external_payment_id, token, valor_centavos),
+        "atualizado_em = CURRENT_TIMESTAMP "
+        "WHERE public_token = ? AND external_payment_id = ? "
+        "AND valor_centavos = ? AND status = 'pendente'",
+        (token, external_payment_id, valor_centavos),
     )
     alteradas = cursor.rowcount
+    if alteradas == 0:
+        cursor.execute(
+            "SELECT 1 AS confirmado FROM solicitacoes_cadastro "
+            "WHERE public_token = ? AND external_payment_id = ? "
+            "AND valor_centavos = ? AND status = 'pago'",
+            (token, external_payment_id, valor_centavos),
+        )
+        alteradas = 1 if cursor.fetchone() else 0
     conn.commit()
     conn.close()
     return alteradas == 1
@@ -749,7 +805,7 @@ def finalizar_cadastro(token, nome, email, senha):
     try:
         lock = " FOR UPDATE" if conn.postgres else ""
         cursor.execute(
-            "SELECT cpf, email, status, usuario_criado FROM solicitacoes_cadastro "
+            "SELECT nome, cpf, email, status, usuario_criado FROM solicitacoes_cadastro "
             "WHERE public_token = ?" + lock,
             (token,),
         )
@@ -762,12 +818,14 @@ def finalizar_cadastro(token, nome, email, senha):
             return "ja_criado"
         if solicitacao["email"].lower() != email.lower():
             return "email_invalido"
+        if (solicitacao.get("nome") or "").strip() != nome.strip():
+            return "nome_invalido"
 
         cursor.execute(
             "INSERT INTO usuarios (nome, cpf, email, senha, perfil) "
             "VALUES (?, ?, ?, ?, ?)",
             (
-                nome,
+                solicitacao["nome"].strip(),
                 solicitacao["cpf"],
                 email.lower(),
                 generate_password_hash(senha),

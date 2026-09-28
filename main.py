@@ -5,6 +5,7 @@ import os
 import re
 import secrets
 import urllib.error
+import urllib.parse
 import urllib.request
 from html import escape
 import json
@@ -25,7 +26,7 @@ from database import (
     excluir_lancamento, excluir_usuario, finalizar_cadastro, healthcheck,
     listar_compras, listar_lancamentos, listar_usuarios, rate_limit_limpar,
     rate_limit_permitir, redefinir_senha_com_token, salvar_ou_atualizar_configuracoes,
-    token_recuperacao_valido,
+    salvar_pagamento_asaas, token_recuperacao_valido,
 )
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -57,6 +58,126 @@ EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 PAYMENTS_ENABLED = os.getenv("PAYMENTS_ENABLED", "false").lower() == "true"
 CADASTRO_VALOR_CENTAVOS = int(os.getenv("CADASTRO_VALOR_CENTAVOS", "0"))
 RESET_TOKEN_TTL = 30 * 60
+ASAAS_URLS = {
+    "sandbox": "https://api-sandbox.asaas.com/v3",
+    "production": "https://api.asaas.com/v3",
+}
+ASAAS_PAYMENT_STATUSES = {"CONFIRMED", "RECEIVED"}
+
+
+class AsaasError(RuntimeError):
+    pass
+
+
+def asaas_configurado():
+    ambiente = os.getenv("ASAAS_ENVIRONMENT", "sandbox").strip().lower()
+    return bool(
+        ambiente in ASAAS_URLS
+        and os.getenv("ASAAS_API_KEY", "").strip()
+        and os.getenv("ASAAS_WEBHOOK_TOKEN", "").strip()
+    )
+
+
+def asaas_request(method, path, payload=None, query=None):
+    ambiente = os.getenv("ASAAS_ENVIRONMENT", "sandbox").strip().lower()
+    api_key = os.getenv("ASAAS_API_KEY", "").strip()
+    if ambiente not in ASAAS_URLS or not api_key:
+        raise AsaasError("Integração Asaas não configurada.")
+    url = ASAAS_URLS[ambiente] + path
+    if query:
+        url += "?" + urllib.parse.urlencode(query)
+    corpo = json.dumps(payload).encode("utf-8") if payload is not None else None
+    requisicao = urllib.request.Request(
+        url,
+        data=corpo,
+        method=method,
+        headers={
+            "accept": "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": f"FinanceApp/1.0 (Python; {ambiente})",
+            "access_token": api_key,
+        },
+    )
+    try:
+        with urllib.request.urlopen(requisicao, timeout=15) as resposta:
+            return json.loads(resposta.read().decode("utf-8"))
+    except urllib.error.HTTPError as erro:
+        logger.warning("Asaas respondeu HTTP %s em %s %s", erro.code, method, path)
+        raise AsaasError("A Asaas recusou a operação.") from erro
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as erro:
+        logger.warning("Falha de comunicação com a Asaas em %s %s", method, path)
+        raise AsaasError("Não foi possível comunicar com a Asaas.") from erro
+
+
+def valor_asaas_em_centavos(valor):
+    try:
+        return int((Decimal(str(valor)) * 100).quantize(Decimal("1")))
+    except (InvalidOperation, TypeError, ValueError):
+        raise AsaasError("Valor inválido retornado pela Asaas.")
+
+
+def garantir_cobranca_asaas(solicitacao, nome, cpf, email):
+    token = solicitacao["public_token"]
+    payment_id = solicitacao.get("external_payment_id")
+    customer_id = solicitacao.get("asaas_customer_id")
+
+    if not payment_id:
+        encontrados = asaas_request(
+            "GET", "/payments", query={"externalReference": token, "limit": 1}
+        ).get("data", [])
+        if encontrados:
+            pagamento = encontrados[0]
+            if valor_asaas_em_centavos(pagamento.get("value")) != CADASTRO_VALOR_CENTAVOS:
+                raise AsaasError("Cobrança divergente encontrada na Asaas.")
+            payment_id = pagamento.get("id")
+            customer_id = customer_id or pagamento.get("customer")
+
+    if not customer_id:
+        clientes = asaas_request(
+            "GET", "/customers", query={"cpfCnpj": cpf, "limit": 1}
+        ).get("data", [])
+        if clientes:
+            customer_id = clientes[0].get("id")
+        else:
+            cliente = asaas_request("POST", "/customers", {
+                "name": nome,
+                "cpfCnpj": cpf,
+                "email": email,
+                "externalReference": f"financeapp-cpf-{cpf}",
+                "notificationDisabled": True,
+            })
+            customer_id = cliente.get("id")
+
+    if not customer_id:
+        raise AsaasError("A Asaas não retornou o cliente criado.")
+
+    if not payment_id:
+        pagamento = asaas_request("POST", "/payments", {
+            "customer": customer_id,
+            "billingType": "PIX",
+            "value": float(Decimal(CADASTRO_VALOR_CENTAVOS) / 100),
+            "dueDate": (date.today() + timedelta(days=1)).isoformat(),
+            "description": "Liberação de cadastro no FinanceApp",
+            "externalReference": token,
+        })
+        payment_id = pagamento.get("id")
+    if not payment_id:
+        raise AsaasError("A Asaas não retornou a cobrança criada.")
+
+    qr_code = asaas_request("GET", f"/payments/{payment_id}/pixQrCode")
+    pix_payload = qr_code.get("payload")
+    if not pix_payload:
+        raise AsaasError("A Asaas não retornou o PIX da cobrança.")
+    pix_expiration = qr_code.get("expirationDate")
+    if not salvar_pagamento_asaas(
+        token, customer_id, payment_id, pix_payload, pix_expiration
+    ):
+        raise AsaasError("Não foi possível vincular a cobrança à solicitação.")
+    return {
+        "payload": pix_payload,
+        "expiration_date": pix_expiration,
+        "valor_centavos": CADASTRO_VALOR_CENTAVOS,
+    }
 
 
 def resposta_erro(mensagem, status=400):
@@ -183,7 +304,11 @@ def usuario_atual():
         return g.usuario_atual
     usuario_id = session.get("usuario_id")
     usuario = buscar_usuario_por_id(usuario_id) if usuario_id else None
-    if not usuario or usuario["ativo"] != 1 or int(usuario["session_version"]) != int(session.get("session_version", -1)):
+    if usuario_id and (
+        not usuario
+        or usuario["ativo"] != 1
+        or int(usuario["session_version"]) != int(session.get("session_version", -1))
+    ):
         session.clear()
         usuario = None
     g.usuario_atual = usuario
@@ -646,51 +771,64 @@ def api_salvar_configuracoes():
 
 @app.route("/api/public/pix", methods=["GET"])
 def api_public_pix():
-    if not PAYMENTS_ENABLED:
+    if not PAYMENTS_ENABLED or not asaas_configurado():
         return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
-    configuracao = buscar_configuracoes()
-    if not configuracao:
-        return resposta_erro("PIX não configurado.", 404)
     return jsonify({
-        "tipo_pix": configuracao["tipo_pix"], "chave_pix": configuracao["chave_pix"],
-        "nome_recebedor": configuracao["nome_recebedor"], "banco": configuracao["banco"],
+        "provider": "asaas",
         "valor_centavos": CADASTRO_VALOR_CENTAVOS,
     })
 
 
 @app.route("/api/public/cadastro", methods=["POST"])
 def api_criar_solicitacao_cadastro():
-    if not PAYMENTS_ENABLED or CADASTRO_VALOR_CENTAVOS <= 0:
+    if (
+        not PAYMENTS_ENABLED
+        or CADASTRO_VALOR_CENTAVOS <= 0
+        or not asaas_configurado()
+    ):
         return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
     chave = chave_rate_limit("cadastro", ip_cliente())
     if not rate_limit_permitir(chave, 5, 60 * 60):
         return resposta_erro("Muitas tentativas. Tente novamente mais tarde.", 429)
     try:
         dados = json_body()
+        nome = texto(dados.get("nome"), "Nome", 2, 120)
         cpf = cpf_valido(dados.get("cpf"))
         email = email_valido(dados.get("email"))
         if cpf_usuario_existe(cpf) or email_usuario_existe(email):
             return resposta_erro("Não foi possível iniciar o cadastro com esses dados.")
-        solicitacao = criar_ou_buscar_solicitacao(cpf, email, CADASTRO_VALOR_CENTAVOS)
-        configuracao = buscar_configuracoes() or {}
+        solicitacao = criar_ou_buscar_solicitacao(
+            nome, cpf, email, CADASTRO_VALOR_CENTAVOS
+        )
+        pix = None
+        if solicitacao["status"] == "pendente":
+            if solicitacao.get("pix_payload"):
+                pix = {
+                    "payload": solicitacao["pix_payload"],
+                    "expiration_date": solicitacao.get("pix_expiration"),
+                    "valor_centavos": CADASTRO_VALOR_CENTAVOS,
+                }
+            else:
+                pix = garantir_cobranca_asaas(solicitacao, nome, cpf, email)
         return jsonify({
             "status": "ok", "solicitacao_token": solicitacao["public_token"],
+            "nome": solicitacao.get("nome") or nome,
             "pagamento_status": solicitacao["status"],
-            "pix": {
-                "tipo_pix": configuracao.get("tipo_pix"),
-                "chave_pix": configuracao.get("chave_pix"),
-                "nome_recebedor": configuracao.get("nome_recebedor"),
-                "banco": configuracao.get("banco"),
-                "valor_centavos": CADASTRO_VALOR_CENTAVOS,
-            },
+            "pix": pix,
         }), 201
     except ValueError as erro:
         return resposta_erro(str(erro))
+    except AsaasError:
+        logger.exception("Falha ao criar cobrança de cadastro na Asaas")
+        return resposta_erro(
+            "Não foi possível gerar o PIX agora. Tente novamente em instantes.",
+            502,
+        )
 
 
 @app.route("/api/public/cadastro/<token>", methods=["GET"])
 def api_status_solicitacao_cadastro(token):
-    if not PAYMENTS_ENABLED:
+    if not PAYMENTS_ENABLED or not asaas_configurado():
         return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
     solicitacao = buscar_status_solicitacao(token)
     if not solicitacao:
@@ -703,7 +841,7 @@ def api_status_solicitacao_cadastro(token):
 
 @app.route("/api/public/finalizar-cadastro", methods=["POST"])
 def api_finalizar_cadastro():
-    if not PAYMENTS_ENABLED:
+    if not PAYMENTS_ENABLED or not asaas_configurado():
         return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
     dados = json_body()
     try:
@@ -719,6 +857,7 @@ def api_finalizar_cadastro():
             "nao_pago": ("Pagamento ainda não confirmado.", 403),
             "ja_criado": ("Cadastro já finalizado.", 409),
             "email_invalido": ("Dados não correspondem à solicitação.", 400),
+            "nome_invalido": ("Dados não correspondem à solicitação.", 400),
         }
         if resultado != "ok":
             mensagem, status = mensagens.get(resultado, ("Não foi possível finalizar.", 400))
@@ -734,25 +873,35 @@ def api_finalizar_cadastro():
 @app.route("/api/payments/webhook", methods=["POST"])
 @csrf.exempt
 def webhook_pagamento():
-    segredo = os.getenv("PAYMENT_WEBHOOK_SECRET", "")
-    assinatura = request.headers.get("X-Webhook-Signature", "")
-    corpo = request.get_data(cache=True)
-    esperada = hmac.new(segredo.encode(), corpo, hashlib.sha256).hexdigest() if segredo else ""
-    if not PAYMENTS_ENABLED or not segredo or not hmac.compare_digest(assinatura, esperada):
-        return resposta_erro("Assinatura inválida.", 401)
+    segredo = os.getenv("ASAAS_WEBHOOK_TOKEN", "").strip()
+    token_recebido = request.headers.get("asaas-access-token", "")
+    if (
+        not PAYMENTS_ENABLED
+        or not asaas_configurado()
+        or not segredo
+        or not hmac.compare_digest(token_recebido, segredo)
+    ):
+        return resposta_erro("Token inválido.", 401)
     dados = json_body()
     try:
-        if dados.get("status") != "approved":
+        if dados.get("event") not in {"PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"}:
             return jsonify({"status": "ignored"})
-        token = texto(dados.get("solicitacao_token"), "Solicitação", 20, 200)
-        external_id = texto(dados.get("external_id"), "Identificador", 1, 200)
-        valor_centavos = int(dados.get("valor_centavos"))
+        pagamento = dados.get("payment")
+        if not isinstance(pagamento, dict):
+            raise ValueError("Pagamento inválido.")
+        if pagamento.get("status") not in ASAAS_PAYMENT_STATUSES:
+            return jsonify({"status": "ignored"})
+        token = texto(pagamento.get("externalReference"), "Solicitação", 20, 200)
+        external_id = texto(pagamento.get("id"), "Identificador", 1, 200)
+        valor_centavos = valor_asaas_em_centavos(pagamento.get("value"))
         if valor_centavos != CADASTRO_VALOR_CENTAVOS:
-            return resposta_erro("Valor divergente.", 400)
+            logger.warning("Webhook Asaas ignorado por valor divergente para %s", external_id)
+            return jsonify({"status": "ignored"})
         confirmado = confirmar_pagamento(token, external_id, valor_centavos)
         return jsonify({"status": "ok" if confirmado else "ignored"})
-    except (TypeError, ValueError):
-        return resposta_erro("Evento inválido.")
+    except (AsaasError, TypeError, ValueError):
+        logger.warning("Webhook Asaas autenticado com evento inválido")
+        return jsonify({"status": "ignored"})
 
 
 if __name__ == "__main__":

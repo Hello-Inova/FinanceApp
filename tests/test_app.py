@@ -61,6 +61,123 @@ def test_cadastro_pago_fica_bloqueado_sem_gateway(client, csrf):
     assert response.status_code == 503
 
 
+def test_fluxo_cadastro_pix_asaas(client, csrf, monkeypatch):
+    import main
+
+    monkeypatch.setattr(main, "PAYMENTS_ENABLED", True)
+    monkeypatch.setattr(main, "CADASTRO_VALOR_CENTAVOS", 1990)
+    monkeypatch.setenv("ASAAS_ENVIRONMENT", "sandbox")
+    monkeypatch.setenv("ASAAS_API_KEY", "$aact_hmlg_teste")
+    monkeypatch.setenv("ASAAS_WEBHOOK_TOKEN", "webhook-secreto-teste")
+
+    chamadas = []
+
+    def asaas_falso(method, path, payload=None, query=None):
+        chamadas.append((method, path, payload, query))
+        if method == "GET" and path == "/payments":
+            return {"data": []}
+        if method == "GET" and path == "/customers":
+            return {"data": []}
+        if method == "POST" and path == "/customers":
+            assert payload["cpfCnpj"] == "52998224725"
+            assert payload["notificationDisabled"] is True
+            return {"id": "cus_teste"}
+        if method == "POST" and path == "/payments":
+            assert payload["customer"] == "cus_teste"
+            assert payload["billingType"] == "PIX"
+            assert payload["value"] == 19.9
+            return {"id": "pay_teste"}
+        if method == "GET" and path == "/payments/pay_teste/pixQrCode":
+            return {
+                "payload": "000201010212PIX-DINAMICO-ASAAS",
+                "expirationDate": "2026-09-29 23:59:59",
+            }
+        raise AssertionError(f"Chamada inesperada: {method} {path}")
+
+    monkeypatch.setattr(main, "asaas_request", asaas_falso)
+    token_csrf = csrf(client.get("/"))
+    response = client.post(
+        "/api/public/cadastro",
+        json={
+            "nome": "Pessoa de Teste",
+            "cpf": "52998224725",
+            "email": "novo@example.com",
+        },
+        headers={"X-CSRFToken": token_csrf},
+    )
+    assert response.status_code == 201
+    assert response.json["pix"]["payload"] == "000201010212PIX-DINAMICO-ASAAS"
+    solicitacao = response.json["solicitacao_token"]
+
+    repetida = client.post(
+        "/api/public/cadastro",
+        json={
+            "nome": "Pessoa de Teste",
+            "cpf": "52998224725",
+            "email": "novo@example.com",
+        },
+        headers={"X-CSRFToken": token_csrf},
+    )
+    assert repetida.status_code == 201, repetida.json
+    assert repetida.json["pix"]["payload"] == "000201010212PIX-DINAMICO-ASAAS"
+    assert len(chamadas) == 5
+
+    invalido = client.post(
+        "/api/payments/webhook",
+        json={"event": "PAYMENT_RECEIVED", "payment": {}},
+        headers={"asaas-access-token": "incorreto"},
+    )
+    assert invalido.status_code == 401
+
+    webhook = client.post(
+        "/api/payments/webhook",
+        json={
+            "event": "PAYMENT_RECEIVED",
+            "payment": {
+                "id": "pay_teste",
+                "externalReference": solicitacao,
+                "value": 19.90,
+                "status": "RECEIVED",
+            },
+        },
+        headers={"asaas-access-token": "webhook-secreto-teste"},
+    )
+    assert webhook.status_code == 200
+    assert webhook.json["status"] == "ok"
+
+    repetido = client.post(
+        "/api/payments/webhook",
+        json={
+            "event": "PAYMENT_RECEIVED",
+            "payment": {
+                "id": "pay_teste",
+                "externalReference": solicitacao,
+                "value": 19.90,
+                "status": "RECEIVED",
+            },
+        },
+        headers={"asaas-access-token": "webhook-secreto-teste"},
+    )
+    assert repetido.status_code == 200
+    assert repetido.json["status"] == "ok"
+
+    status = client.get(f"/api/public/cadastro/{solicitacao}")
+    assert status.json["pagamento_status"] == "pago"
+
+    finalizado = client.post(
+        "/api/public/finalizar-cadastro",
+        json={
+            "solicitacao_token": solicitacao,
+            "nome": "Pessoa de Teste",
+            "email": "novo@example.com",
+            "senha": "SenhaForte@123",
+            "confirmar_senha": "SenhaForte@123",
+        },
+        headers={"X-CSRFToken": token_csrf},
+    )
+    assert finalizado.status_code == 201
+
+
 def test_crud_financeiro_autenticado(client, csrf):
     login_admin(client, csrf)
     trocar_senha(client, csrf)

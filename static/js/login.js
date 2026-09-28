@@ -1,5 +1,6 @@
 let solicitacaoCadastroToken = null;
 let emailSolicitacaoCadastro = "";
+let nomeSolicitacaoCadastro = "";
 let intervaloPagamento = null;
 
 document.getElementById("loginForm").addEventListener("submit", async function(e) {
@@ -70,6 +71,9 @@ async function verificarPagamentoAutomatico() {
       document.getElementById(
           "cadastroEmailFinal"
       ).value = emailSolicitacaoCadastro;
+      document.getElementById(
+          "cadastroNomeFinal"
+      ).value = nomeSolicitacaoCadastro;
 
       mostrarMensagemCadastro(
         "msgPagamentoPix",
@@ -98,6 +102,7 @@ function togglePassword() {
 function abrirModalCadastro() {
   solicitacaoCadastroToken = null;
   emailSolicitacaoCadastro = "";
+  nomeSolicitacaoCadastro = "";
 
   limparModalCadastro();
 
@@ -220,6 +225,7 @@ function limparModalCadastro() {
   [
     "cadastroCpf",
     "cadastroEmail",
+    "cadastroNome",
     "cadastroNomeFinal",
     "cadastroEmailFinal",
     "cadastroSenhaFinal",
@@ -299,9 +305,10 @@ async function gerarPixCadastro() {
 
   const cpf = document.getElementById("cadastroCpf");
   const email = document.getElementById("cadastroEmail");
+  const nome = document.getElementById("cadastroNome");
 
   const valido = validarCamposObrigatorios(
-    [cpf, email],
+    [nome, cpf, email],
     "msgCadastroPix"
   );
 
@@ -339,6 +346,7 @@ async function gerarPixCadastro() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
+        nome: nome.value.trim(),
         cpf: limparCpf(cpf.value),
         email: email.value.trim()
       })
@@ -357,12 +365,15 @@ async function gerarPixCadastro() {
 
     solicitacaoCadastroToken = dados.solicitacao_token;
     emailSolicitacaoCadastro = email.value.trim();
+    nomeSolicitacaoCadastro = dados.nome || nome.value.trim();
 
     if (
       dados.pagamento_status === "pago"
     ) {
       document.getElementById("cadastroEmailFinal").value =
         emailSolicitacaoCadastro;
+      document.getElementById("cadastroNomeFinal").value =
+        nomeSolicitacaoCadastro;
 
       mostrarEtapaCadastro("etapaCriarConta");
 
@@ -371,11 +382,16 @@ async function gerarPixCadastro() {
 
     const pix = dados.pix || {};
 
-    const payloadPix = gerarPayloadPix({
-      chave: pix.chave_pix || "",
-      nome: pix.nome_recebedor || "RECEBEDOR",
-      cidade: "SAO PAULO"
-    });
+    const payloadPix = pix.payload || "";
+
+    if (!payloadPix) {
+      mostrarMensagemCadastro(
+        "msgCadastroPix",
+        "O provedor não retornou um PIX válido.",
+        "erro"
+      );
+      return;
+    }
 
     document.getElementById("pixCadastroCopiaCola").value = payloadPix;
 
@@ -432,6 +448,8 @@ async function verificarPagamentoCadastro() {
 
   document.getElementById("cadastroEmailFinal").value =
     emailSolicitacaoCadastro;
+  document.getElementById("cadastroNomeFinal").value =
+    nomeSolicitacaoCadastro;
 
   mostrarEtapaCadastro("etapaCriarConta");
 }
@@ -557,67 +575,6 @@ function limparQrCodeCadastro() {
   placeholder.style.display = "block";
 }
 
-function montarCampoPix(id, valor) {
-  const tamanho = String(valor.length).padStart(2, "0");
-  return id + tamanho + valor;
-}
-
-function gerarPayloadPix({ chave, nome, cidade }) {
-  nome = removerAcentos(nome)
-    .substring(0, 25)
-    .toUpperCase();
-
-  cidade = removerAcentos(cidade)
-    .substring(0, 15)
-    .toUpperCase();
-
-  const merchantAccountInfo =
-    montarCampoPix("00", "BR.GOV.BCB.PIX") +
-    montarCampoPix("01", chave);
-
-  const payloadSemCRC =
-    montarCampoPix("00", "01") +
-    montarCampoPix("26", merchantAccountInfo) +
-    montarCampoPix("52", "0000") +
-    montarCampoPix("53", "986") +
-    montarCampoPix("58", "BR") +
-    montarCampoPix("59", nome) +
-    montarCampoPix("60", cidade) +
-    montarCampoPix("62", montarCampoPix("05", "***")) +
-    "6304";
-
-  const crc = calcularCRC16(payloadSemCRC);
-
-  return payloadSemCRC + crc;
-}
-
-function calcularCRC16(payload) {
-  let polinomio = 0x1021;
-  let resultado = 0xffff;
-
-  for (let i = 0; i < payload.length; i++) {
-    resultado ^= payload.charCodeAt(i) << 8;
-
-    for (let bit = 0; bit < 8; bit++) {
-      if ((resultado & 0x8000) !== 0) {
-        resultado = (resultado << 1) ^ polinomio;
-      } else {
-        resultado <<= 1;
-      }
-
-      resultado &= 0xffff;
-    }
-  }
-
-  return resultado.toString(16).toUpperCase().padStart(4, "0");
-}
-
-function removerAcentos(texto) {
-  return texto
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
 const campoCpfCadastro =
   document.getElementById("cadastroCpf");
 
@@ -652,6 +609,7 @@ function toggleSenhaCadastro(idInput, botao) {
 [
   "cadastroCpf",
   "cadastroEmail",
+  "cadastroNome",
   "cadastroNomeFinal",
   "cadastroSenhaFinal",
   "cadastroConfirmarSenhaFinal"
