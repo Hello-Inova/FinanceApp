@@ -226,6 +226,14 @@ async function salvarNovoUsuario() {
     return;
   }
 
+  if (senha.value.length < 8) {
+    senha.classList.add("campo-erro");
+    erro.innerHTML =
+      "⚠️ A senha deve ter no mínimo 8 caracteres.";
+    erro.style.display = "block";
+    return;
+  }
+
   if (senha.value !== confirmar.value) {
     senha.classList.add("campo-erro");
     confirmar.classList.add("campo-erro");

@@ -237,8 +237,8 @@ def cpf_valido(valor):
 
 
 def senha_forte(senha):
-    if not isinstance(senha, str) or len(senha) < 12:
-        raise ValueError("A senha deve ter no mínimo 12 caracteres.")
+    if not isinstance(senha, str) or len(senha) < 8:
+        raise ValueError("A senha deve ter no mínimo 8 caracteres.")
     if not all(re.search(regra, senha) for regra in (r"[a-z]", r"[A-Z]", r"\d", r"[^A-Za-z0-9]")):
         raise ValueError("A senha deve conter maiúscula, minúscula, número e símbolo.")
     return senha

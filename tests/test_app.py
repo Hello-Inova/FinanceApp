@@ -1,3 +1,6 @@
+import pytest
+
+
 def login_admin(client, csrf):
     token = csrf(client.get("/"))
     response = client.post(
@@ -28,6 +31,14 @@ def test_csrf_protege_login(client):
         "/login", json={"email": "admin@example.com", "password": "Temporary@123"}
     )
     assert response.status_code == 400
+
+
+def test_politica_de_senha_aceita_oito_caracteres():
+    import main
+
+    assert main.senha_forte("Aa1@bbbb") == "Aa1@bbbb"
+    with pytest.raises(ValueError, match="mínimo 8 caracteres"):
+        main.senha_forte("Aa1@bbb")
 
 
 def test_senha_temporaria_exige_troca(client, csrf):

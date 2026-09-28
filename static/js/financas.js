@@ -233,11 +233,18 @@ function validarSenhas() {
         return false;
     }
 
+    if (senha.value.length < 8) {
+        erroSenha.textContent = "A senha deve ter no mínimo 8 caracteres";
+        erroSenha.style.display = "block";
+        return false;
+    }
+
     if (
         senha.value !==
         confirmarSenha.value
     ) {
 
+        erroSenha.textContent = "Senhas diferentes";
         erroSenha.style.display = "block";
         return false;
 

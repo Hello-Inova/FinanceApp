@@ -494,6 +494,16 @@ async function finalizarCadastro() {
 
   if (!valido) return;
 
+  if (senha.value.length < 8) {
+    senha.classList.add("campo-erro");
+    mostrarMensagemCadastro(
+      "msgCriarConta",
+      "⚠️ A senha deve ter no mínimo 8 caracteres.",
+      "erro"
+    );
+    return;
+  }
+
   if (senha.value !== confirmar.value) {
     senha.classList.add("campo-erro");
     confirmar.classList.add("campo-erro");
