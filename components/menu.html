@@ -1,38 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <div class="menu-container">
-
-      <button
-        class="hamburger" onclick="toggleMenu()"id="btnMenu"aria-label="Abrir Menu">☰</button>
-
-  <div id="sidebar" class="sidebar">
-
-    <div class="menu-header">
-      <button onclick="toggleMenu(event)" class="hamburger" id="btnMenuin">☰</button>      <h3>Menu</h3>
-    </div>
-
-    <button id="btnAdmin" data-url="/admin" onclick="location.href='/admin'" style="display: none;">🖊️ Administrativo</button>
-    <button id="btnCadUser" onclick="abrirModalCadUser()" style="display: none;">🧑‍💻 Cadastro de Usuário</button>
-    <hr style="margin-bottom: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
-
-    <button id="btnDashboard" data-url="/home" onclick="location.href='/home'">💰 Finanças</button>
-    <button id="btnMetas" data-url="/metas" onclick="location.href='/metas'">🎯 Metas</button>
-    <button id="btnFinancas" data-url="/financas" onclick="location.href='/financas'">📈 Gráfico Financeiro</button>
-    <button id="btnAgenda" data-url="/agenda" onclick="location.href='/agenda'">📅 Agenda</button>
-    <!--<button id="btnManutencao" onclick="location.href='/manutenção'">🚗 Manutenção</button>-->
-    <button id="btnCompras" data-url="/compras" onclick="location.href='/compras'">🛒 Compras</button>
-    <!--<button id="btnMedicamentos" onclick="location.href='/medicamentos'">💊 Medicamentos</button>-->
-    <button onclick="logout()">🚪 Sair</button>
-
-
+<nav id="sidebar" class="sidebar" aria-label="Menu principal">
+  <div class="menu-header">
+    <span class="menu-brand" aria-hidden="true">F</span>
+    <div><strong>FinanceApp</strong><small>Seu controle financeiro</small></div>
+    <button type="button" class="hamburger" id="btnMenuin" onclick="fecharMenu()" aria-label="Fechar menu">×</button>
   </div>
-
-</div>
-</body>
-</html>
+  <div class="menu-links">
+    <button id="btnAdmin" data-url="/admin" onclick="navegar('/admin')" hidden>🗒️ Administrativo</button>
+    <button data-url="/home" onclick="navegar('/home')">💰 Finanças</button>
+    <button data-url="/metas" onclick="navegar('/metas')">🎯 Metas</button>
+    <button data-url="/financas" onclick="navegar('/financas')">📈 Gráfico Financeiro</button>
+    <button data-url="/agenda" onclick="navegar('/agenda')">📅 Agenda</button>
+    <button data-url="/compras" onclick="navegar('/compras')">🛒 Compras</button>
+  </div>
+  <button class="menu-logout" type="button" onclick="logout()">↪ Sair</button>
+</nav>

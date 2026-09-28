@@ -17,14 +17,14 @@ from flask import Flask, g, jsonify, redirect, render_template, request, send_fr
 from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from database import (
-    alterar_senha_propria, alterar_senha_usuario, atualizar_compra, atualizar_meta,
+    alterar_senha_propria, alterar_senha_usuario, atualizar_agenda, atualizar_compra, atualizar_meta,
     atualizar_dados_usuario, atualizar_lancamento, atualizar_status_compra,
     atualizar_status_meta, atualizar_status_usuario, buscar_configuracoes, buscar_status_solicitacao,
     buscar_usuario, buscar_usuario_por_id, confirmar_pagamento, cpf_usuario_existe,
-    criar_admin_inicial, criar_compra, criar_lancamento, criar_meta, criar_ou_buscar_solicitacao,
-    criar_tabelas, criar_token_recuperacao, criar_usuario, email_usuario_existe, excluir_compra,
+    criar_admin_inicial, criar_agenda, criar_compra, criar_lancamento, criar_meta, criar_ou_buscar_solicitacao,
+    criar_tabelas, criar_token_recuperacao, criar_usuario, email_usuario_existe, excluir_agenda, excluir_compra,
     excluir_lancamento, excluir_meta, excluir_usuario, finalizar_cadastro, healthcheck,
-    listar_compras, listar_lancamentos, listar_metas, listar_movimentacoes_meta,
+    listar_agenda, listar_compras, listar_lancamentos, listar_metas, listar_movimentacoes_meta,
     listar_usuarios, rate_limit_limpar, rate_limit_permitir, redefinir_senha_com_token,
     registrar_movimentacao_meta, salvar_ou_atualizar_configuracoes,
     salvar_pagamento_asaas, token_recuperacao_valido,
@@ -57,6 +57,7 @@ PERFIS = {"Padrão", "Administrativo"}
 TIPOS_LANCAMENTO = {"Entrada", "Saída"}
 PRIORIDADES_META = {"Baixa", "Média", "Alta"}
 STATUS_META = {"Ativa", "Pausada", "Concluída"}
+STATUS_AGENDA = {"Pendente", "Concluído"}
 TIPOS_MOVIMENTACAO_META = {"Aporte", "Retirada"}
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 PAYMENTS_ENABLED = os.getenv("PAYMENTS_ENABLED", "false").lower() == "true"
@@ -440,9 +441,34 @@ def financas():
     return pagina_autenticada("financas.html")
 
 
+@app.route("/financas/<view_key>")
+def movimentacoes_financeiras(view_key):
+    views = {
+        "entradas": ("Entradas", "Valores recebidos e receitas registradas.", "↗", "Entradas no período", "↗", "summary-success"),
+        "saidas": ("Saídas", "Pagamentos, despesas e demais valores de saída.", "↘", "Saídas no período", "↘", "summary-danger"),
+        "saldo": ("Saldo e movimentações", "Consulte entradas e saídas em uma visão consolidada.", "◎", "Saldo no período", "◎", "summary-primary"),
+    }
+    if view_key not in views:
+        return redirect("/home")
+    title, description, icon, label, symbol, css_class = views[view_key]
+    usuario = usuario_atual()
+    if not usuario:
+        return redirect("/")
+    return render_template(
+        "movimentacoes.html", view_key=view_key, view_title=title,
+        view_description=description, view_icon=icon, view_label=label,
+        view_symbol=symbol, view_class=css_class,
+    )
+
+
 @app.route("/compras")
 def compras():
     return pagina_autenticada("compras.html")
+
+
+@app.route("/agenda")
+def agenda():
+    return pagina_autenticada("agenda.html")
 
 
 @app.route("/metas")
@@ -784,6 +810,56 @@ def api_status_compra(compra_id):
 @login_obrigatorio
 def api_excluir_compra(compra_id):
     excluir_compra(usuario_atual()["id"], compra_id)
+    return jsonify({"status": "ok"})
+
+
+def validar_agenda(dados):
+    status = dados.get("status", "Pendente")
+    if status not in STATUS_AGENDA:
+        raise ValueError("Status inválido.")
+    horario = texto_opcional(dados.get("horario", ""), "Horário", 5)
+    if horario and not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", horario):
+        raise ValueError("Horário inválido.")
+    return (
+        texto(dados.get("titulo"), "Título", 2, 120),
+        data_iso(dados.get("data")), horario,
+        texto(dados.get("categoria"), "Categoria", 1, 60), status,
+        texto_opcional(dados.get("descricao", ""), "Descrição", 1000),
+    )
+
+
+@app.route("/api/agenda", methods=["GET"])
+@login_obrigatorio
+def api_listar_agenda():
+    return jsonify(listar_agenda(usuario_atual()["id"]))
+
+
+@app.route("/api/agenda", methods=["POST"])
+@login_obrigatorio
+def api_criar_agenda():
+    try:
+        criar_agenda(usuario_atual()["id"], *validar_agenda(json_body()))
+        return jsonify({"status": "ok"}), 201
+    except ValueError as erro:
+        return resposta_erro(str(erro))
+
+
+@app.route("/api/agenda/<int:agenda_id>", methods=["PUT"])
+@login_obrigatorio
+def api_atualizar_agenda(agenda_id):
+    try:
+        if not atualizar_agenda(usuario_atual()["id"], agenda_id, *validar_agenda(json_body())):
+            return resposta_erro("Compromisso não encontrado.", 404)
+        return jsonify({"status": "ok"})
+    except ValueError as erro:
+        return resposta_erro(str(erro))
+
+
+@app.route("/api/agenda/<int:agenda_id>", methods=["DELETE"])
+@login_obrigatorio
+def api_excluir_agenda(agenda_id):
+    if not excluir_agenda(usuario_atual()["id"], agenda_id):
+        return resposta_erro("Compromisso não encontrado.", 404)
     return jsonify({"status": "ok"})
 
 

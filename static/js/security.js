@@ -142,6 +142,7 @@
 
   function isBackgroundRequest(url, method) {
     return (
+      method === "GET" ||
       url.pathname === "/session" ||
       url.pathname.startsWith("/components/") ||
       (method === "GET" && /^\/api\/public\/cadastro\/[^/]+$/.test(url.pathname))

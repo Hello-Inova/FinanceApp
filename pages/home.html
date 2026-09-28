@@ -6,106 +6,32 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Finanças | FinanceApp</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app-shell.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 <body>
-  <div id="menuOverlay" onclick="fecharMenu()"></div>
-  <div id="menu-container"></div>
+  <button id="btnMenu" type="button" onclick="toggleMenu()" aria-label="Abrir menu">☰</button>
+  <div id="menuOverlay" onclick="fecharMenu()"></div><div id="menu-container"></div>
 
-  <main class="finance-container">
+  <main class="finance-container finance-overview">
     <header class="page-header">
-      <div class="page-heading">
-        <span class="eyebrow">Visão geral</span>
-        <h1>💰 Minhas finanças</h1>
-        <p>Acompanhe suas movimentações e mantenha o orçamento sob controle.</p>
-      </div>
-      <button id="btnAdicionar" class="btn btn-primary" type="button" onclick="abrirModalNovoRegistro()">
-        <span aria-hidden="true">＋</span> Novo lançamento
-      </button>
+      <div class="page-heading"><span class="eyebrow">Visão geral</span><h1>💰 Minhas finanças</h1><p>Escolha um card para consultar e administrar os lançamentos correspondentes.</p></div>
+      <button class="btn btn-primary" type="button" onclick="abrirModalNovoRegistro()"><span aria-hidden="true">＋</span> Novo lançamento</button>
     </header>
 
-    <section class="summary-grid" aria-label="Resumo financeiro">
-      <button class="summary-card card summary-success" id="CardEntrada" type="button" onclick="filtrarEntradas()" aria-label="Mostrar somente entradas">
-        <span class="summary-icon" aria-hidden="true">↗</span>
-        <span class="summary-content">
-          <span>Entradas</span>
-          <strong id="totalEntradas">R$ 0,00</strong>
-          <small>Valores recebidos</small>
-        </span>
-      </button>
-
-      <button class="summary-card card summary-danger" id="CardSaida" type="button" onclick="filtrarSaidas()" aria-label="Mostrar somente saídas">
-        <span class="summary-icon" aria-hidden="true">↘</span>
-        <span class="summary-content">
-          <span>Saídas</span>
-          <strong id="totalSaidas">R$ 0,00</strong>
-          <small>Valores pagos</small>
-        </span>
-      </button>
-
-      <button class="summary-card card summary-primary" id="CardSaldo" type="button" onclick="mostrarTodos()" aria-label="Mostrar todos os lançamentos">
-        <span class="summary-icon" aria-hidden="true">◎</span>
-        <span class="summary-content">
-          <span>Saldo atual</span>
-          <strong id="saldo">R$ 0,00</strong>
-          <small>Entradas menos saídas</small>
-        </span>
-      </button>
+    <section class="summary-grid overview-grid" aria-label="Resumo financeiro">
+      <a class="summary-card card summary-success" href="/financas/entradas"><span class="summary-icon" aria-hidden="true">↗</span><span class="summary-content"><span>Entradas</span><strong id="totalEntradas" class="loading-value">R$ 0,00</strong><small>Abrir valores recebidos →</small></span></a>
+      <a class="summary-card card summary-danger" href="/financas/saidas"><span class="summary-icon" aria-hidden="true">↘</span><span class="summary-content"><span>Saídas</span><strong id="totalSaidas" class="loading-value">R$ 0,00</strong><small>Abrir valores pagos →</small></span></a>
+      <a class="summary-card card summary-primary" href="/financas/saldo"><span class="summary-icon" aria-hidden="true">◎</span><span class="summary-content"><span>Saldo atual</span><strong id="saldo" class="loading-value">R$ 0,00</strong><small>Abrir todas as movimentações →</small></span></a>
     </section>
 
-    <section class="filters" aria-label="Filtros dos lançamentos">
-      <label class="search-field" for="iptPesquisa">
-        <span aria-hidden="true">⌕</span>
-        <input id="iptPesquisa" type="search" placeholder="Buscar por descrição, valor ou observação..." autocomplete="off">
-      </label>
-      <label class="sr-only" for="filtroMes">Filtrar por mês</label>
-      <select id="filtroMes"><option value="">Todos os meses</option></select>
-      <button id="btnFiltrar" class="btn btn-ghost" type="button" onclick="filtrarPorMes()">Aplicar filtro</button>
-      <button id="btnBuscar" class="btn btn-ghost search-action" type="button" onclick="pesquisar()">Buscar</button>
-    </section>
-
-    <section class="transactions-section">
-      <div class="section-heading">
-        <div>
-          <h2>Lançamentos</h2>
-          <span id="contadorLancamentos">0 lançamentos</span>
-        </div>
-        <button id="btnLimparFiltros" class="text-button" type="button" onclick="limparFiltros()" hidden>Limpar filtros</button>
-      </div>
-
-      <div class="table-card">
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col"><button class="sort-button" type="button" onclick="ordenarTabela('data')">Data <span id="icon-data" class="sort-icon" aria-hidden="true">⇅</span></button></th>
-                <th scope="col">Tipo</th>
-                <th scope="col"><button class="sort-button" type="button" onclick="ordenarTabela('descricao')">Descrição <span id="icon-descricao" class="sort-icon" aria-hidden="true">⇅</span></button></th>
-                <th scope="col"><button class="sort-button" type="button" onclick="ordenarTabela('valor')">Valor <span id="icon-valor" class="sort-icon" aria-hidden="true">⇅</span></button></th>
-                <th scope="col" class="desktop-only"><button class="sort-button" type="button" onclick="ordenarTabela('obs')">Observação <span id="icon-obs" class="sort-icon" aria-hidden="true">⇅</span></button></th>
-                <th scope="col"><span class="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody id="tabela"></tbody>
-          </table>
-        </div>
-
-        <div class="paginacao" aria-label="Paginação dos lançamentos">
-          <button id="prevBtn" class="btn btn-ghost" type="button">← Anterior</button>
-          <span id="pageInfo">Página 1 de 1</span>
-          <button id="nextBtn" class="btn btn-ghost" type="button">Próximo →</button>
-        </div>
-      </div>
-    </section>
+    <section class="overview-tip"><span aria-hidden="true">✦</span><div><strong>Resumo limpo, detalhes sob demanda</strong><p>Os filtros por mês, a busca e a tabela ficam nas páginas específicas de cada card.</p></div></section>
   </main>
 
   <div id="modalNovoRegistro" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloNovoRegistro">
     <div class="modal-panel modal-registro">
       <button type="button" class="btn-fechar-modal" onclick="fecharModalNovoRegistro()" aria-label="Fechar">×</button>
-      <div class="modal-heading">
-        <span class="modal-heading-icon" aria-hidden="true">💰</span>
-        <div><h2 id="tituloNovoRegistro">Novo lançamento</h2><p>Registre uma entrada ou saída do seu orçamento.</p></div>
-      </div>
+      <div class="modal-heading"><span class="modal-heading-icon" aria-hidden="true">💰</span><div><h2 id="tituloNovoRegistro">Novo lançamento</h2><p>Registre uma entrada ou saída do seu orçamento.</p></div></div>
       <span id="msgNovoRegistro" class="sucesso-msg" role="status">Registro salvo com sucesso!</span>
       <div class="form-grid">
         <div class="field"><label for="novoData">Data <span>*</span></label><input type="date" id="novoData"></div>
@@ -115,40 +41,10 @@
         <div class="field field-full"><label for="novoObs">Observação</label><input type="text" id="novoObs" maxlength="1000" placeholder="Informação opcional"></div>
       </div>
       <span id="erroCamposNull" class="erro-msg" role="alert">Preencha os campos obrigatórios.</span>
-      <div class="modal-acoes">
-        <button id="btnCancelarNovoRegistro" class="btn btn-ghost" type="button" onclick="fecharModalNovoRegistro()">Cancelar</button>
-        <button id="btnRegistrarOutro" class="btn btn-secondary" type="button" onclick="registrarOutro()">Salvar e adicionar outro</button>
-        <button id="btnSalvarNovoRegistro" class="btn btn-success" type="button" onclick="salvarNovoRegistro()">Salvar lançamento</button>
-      </div>
+      <div class="modal-acoes"><button class="btn btn-ghost" type="button" onclick="fecharModalNovoRegistro()">Cancelar</button><button class="btn btn-secondary" type="button" onclick="registrarOutro()">Salvar e adicionar outro</button><button class="btn btn-success" type="button" onclick="salvarNovoRegistro()">Salvar lançamento</button></div>
     </div>
   </div>
-
-  <div id="modalEdit" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloEditarRegistro">
-    <div class="modal-panel modal-edit">
-      <button type="button" class="btn-fechar-modal" onclick="fecharModalEdit()" aria-label="Fechar">×</button>
-      <div class="modal-heading">
-        <span class="modal-heading-icon" aria-hidden="true">✏️</span>
-        <div><h2 id="tituloEditarRegistro">Editar lançamento</h2><p>Atualize as informações da movimentação.</p></div>
-      </div>
-      <div class="form-grid">
-        <div class="field"><label for="editData">Data <span>*</span></label><input id="editData" type="date"></div>
-        <div class="field"><label for="editTipo">Tipo <span>*</span></label><select id="editTipo"><option value="Entrada">Entrada</option><option value="Saída">Saída</option></select></div>
-        <div class="field field-full"><label for="editDescricao">Descrição <span>*</span></label><input id="editDescricao" maxlength="200" placeholder="Digite a descrição"></div>
-        <div class="field field-full"><label for="editValor">Valor <span>*</span></label><div class="money-field"><span>R$</span><input id="editValor" type="number" min="0.01" step="0.01" placeholder="0,00"></div></div>
-        <div class="field field-full"><label for="editObs">Observação</label><input id="editObs" maxlength="1000" placeholder="Informação opcional"></div>
-      </div>
-      <span id="erroEdicao" class="erro-msg" role="alert">Preencha os campos obrigatórios.</span>
-      <div class="modal-acoes">
-        <button id="btnCancelarEdicao" class="btn btn-ghost" type="button" onclick="fecharModalEdit()">Cancelar</button>
-        <button id="btnSalvarEdicao" class="btn btn-primary" type="button" onclick="salvarEdicao()">Salvar alterações</button>
-      </div>
-    </div>
-  </div>
-
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <script src="{{ url_for('static', filename='js/security.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/security.js') }}"></script><script src="{{ url_for('static', filename='js/menu.js') }}"></script><script src="{{ url_for('static', filename='js/home.js') }}"></script>
 </body>
 </html>

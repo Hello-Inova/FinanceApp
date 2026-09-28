@@ -8,6 +8,7 @@
   <title>Lista de Compras</title>
 
   <link rel="stylesheet" href="/static/css/compras.css">
+  <link rel="stylesheet" href="/static/css/app-shell.css">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 
@@ -20,14 +21,8 @@
   <main class="container">
 
     <header class="compras-header">
-      <div>
-        <h1>🛒 Lista de Compras</h1>
-        <p>Organize compras por categoria e acompanhe seus totais.</p>
-      </div>
-
-      <button class="btn-secondary" onclick="window.location.href='/home'">
-        ⬅ Voltar
-      </button>
+      <div><span class="eyebrow">Planejamento de compras</span><h1>🛒 Lista de compras</h1><p>Organize itens por categoria e acompanhe seus totais.</p></div>
+      <button class="btn-primary" onclick="abrirModalCompra()">➕ Novo item</button>
     </header>
 
     <section class="cards">
@@ -77,9 +72,6 @@
           <option value="1">Comprados</option>
         </select>
 
-        <button class="btn-primary" onclick="abrirModalCompra()">
-          ➕ Novo item
-        </button>
       </div>
     </section>
 
@@ -108,7 +100,7 @@
           </tr>
           </thead>
 
-          <tbody id="tabelaCompras"></tbody>
+          <tbody id="tabelaCompras"><tr><td colspan="8" class="loading-row">Carregando itens…</td></tr></tbody>
         </table>
       </div>
     </section>

@@ -33,7 +33,7 @@ function mostrarTodasCompras() {
 
 
 async function carregarCompras() {
-  const res = await fetch(`${API_URL}/api/compras`);
+  const res = await fetch(`${API_URL}/api/compras`, { loading: false });
 
   if (!res.ok) {
     console.error("Erro ao carregar compras");
@@ -105,6 +105,16 @@ function renderizarCompras() {
 
   const pagina =
     lista.slice(inicio, inicio + itensPorPagina);
+
+  if (!pagina.length) {
+    const row = tbody.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 8;
+    cell.className = "loading-row";
+    cell.textContent = comprasGlobais.length
+      ? "Nenhum item corresponde aos filtros selecionados."
+      : "Sua lista está vazia. Use “Novo item” para começar.";
+  }
 
   pagina.forEach(compra => {
     const row = tbody.insertRow();
@@ -424,7 +434,7 @@ function editarCompra(id) {
 
 async function alternarStatus(id, statusAtual) {
   const novoStatus =
-    Number(statusAtual) === 1 ? 0 : 1;
+    Number(statusAtual) !== 1;
 
   await fetch(`${API_URL}/api/compras/${id}/status`, {
     method: "PUT",

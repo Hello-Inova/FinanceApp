@@ -198,6 +198,19 @@ def executar_migracoes():
             )
         """)
         cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS agenda (
+                id {identity},
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                titulo TEXT NOT NULL,
+                data {date_type} NOT NULL,
+                horario TEXT,
+                categoria TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Pendente',
+                descricao TEXT,
+                criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS meta_movimentacoes (
                 id {identity},
                 meta_id INTEGER NOT NULL REFERENCES metas(id) ON DELETE CASCADE,
@@ -342,12 +355,24 @@ def executar_migracoes():
             "ON lancamentos(usuario_id, data)"
         )
         cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_lancamentos_usuario_id "
+            "ON lancamentos(usuario_id, id DESC)"
+        )
+        cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_compras_usuario_data "
             "ON compras(usuario_id, data)"
         )
         cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_compras_usuario_id "
+            "ON compras(usuario_id, id DESC)"
+        )
+        cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_metas_usuario_status "
             "ON metas(usuario_id, status)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_agenda_usuario_data "
+            "ON agenda(usuario_id, data)"
         )
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_meta_movimentacoes_meta "
@@ -685,6 +710,7 @@ def excluir_usuario(usuario_id):
     try:
         cursor.execute("DELETE FROM lancamentos WHERE usuario_id = ?", (usuario_id,))
         cursor.execute("DELETE FROM compras WHERE usuario_id = ?", (usuario_id,))
+        cursor.execute("DELETE FROM agenda WHERE usuario_id = ?", (usuario_id,))
         cursor.execute("DELETE FROM usuarios WHERE id = ?", (usuario_id,))
         conn.commit()
     except Exception:
@@ -1072,6 +1098,54 @@ def excluir_compra(usuario_id, id):
     )
     conn.commit()
     conn.close()
+
+
+def listar_agenda(usuario_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM agenda WHERE usuario_id = ? ORDER BY data ASC, horario ASC, id DESC",
+        (usuario_id,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def criar_agenda(usuario_id, titulo, data, horario, categoria, status, descricao):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO agenda (usuario_id, titulo, data, horario, categoria, status, descricao) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (usuario_id, titulo, data, horario, categoria, status, descricao),
+    )
+    conn.commit()
+    conn.close()
+
+
+def atualizar_agenda(usuario_id, agenda_id, titulo, data, horario, categoria, status, descricao):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE agenda SET titulo = ?, data = ?, horario = ?, categoria = ?, status = ?, descricao = ? "
+        "WHERE id = ? AND usuario_id = ?",
+        (titulo, data, horario, categoria, status, descricao, agenda_id, usuario_id),
+    )
+    alterada = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return alterada
+
+
+def excluir_agenda(usuario_id, agenda_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM agenda WHERE id = ? AND usuario_id = ?", (agenda_id, usuario_id))
+    excluida = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return excluida
 
 
 def listar_metas(usuario_id):

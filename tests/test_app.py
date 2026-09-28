@@ -50,6 +50,7 @@ def test_senha_temporaria_exige_troca(client, csrf):
 
 def test_rotas_privadas_exigem_login(client):
     assert client.get("/api/financas").status_code == 401
+    assert client.get("/api/agenda").status_code == 401
     assert client.get("/admin/usuarios").status_code == 401
 
 
@@ -239,6 +240,45 @@ def test_crud_financeiro_autenticado(client, csrf):
     lancamentos = client.get("/api/financas").json
     assert len(lancamentos) == 1
     assert lancamentos[0]["valor"] == 125.5 or lancamentos[0]["valor"] == "125.5"
+    for rota in ("/financas/entradas", "/financas/saidas", "/financas/saldo"):
+        assert client.get(rota).status_code == 200
+
+
+def test_crud_agenda_autenticada(client, csrf):
+    login_admin(client, csrf)
+    trocar_senha(client, csrf)
+    pagina = client.get("/agenda")
+    assert pagina.status_code == 200
+    assert "Minha agenda" in pagina.get_data(as_text=True)
+    token = csrf(pagina)
+
+    criada = client.post(
+        "/api/agenda",
+        json={
+            "titulo": "Pagar internet",
+            "data": "2026-10-05",
+            "horario": "09:30",
+            "categoria": "Financeiro",
+            "status": "Pendente",
+            "descricao": "Vencimento mensal",
+        },
+        headers={"X-CSRFToken": token},
+    )
+    assert criada.status_code == 201
+    itens = client.get("/api/agenda").json
+    assert len(itens) == 1
+    agenda_id = itens[0]["id"]
+
+    atualizada = client.put(
+        f"/api/agenda/{agenda_id}",
+        json={**itens[0], "status": "Concluído"},
+        headers={"X-CSRFToken": token},
+    )
+    assert atualizada.status_code == 200
+    assert client.get("/api/agenda").json[0]["status"] == "Concluído"
+    excluida = client.delete(f"/api/agenda/{agenda_id}", headers={"X-CSRFToken": token})
+    assert excluida.status_code == 200
+    assert client.get("/api/agenda").json == []
 
 
 def test_crud_metas_com_aportes_e_retiradas(client, csrf):

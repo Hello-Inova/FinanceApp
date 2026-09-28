@@ -61,7 +61,7 @@ async function respostaJson(resposta) {
 
 async function carregarMetas() {
   try {
-    const resposta = await fetch(API_METAS);
+    const resposta = await fetch(API_METAS, { loading: false });
     metas = await respostaJson(resposta);
     atualizarCategorias();
     renderizar();
