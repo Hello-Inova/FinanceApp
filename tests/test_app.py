@@ -129,17 +129,73 @@ def test_admin_configura_valor_do_cadastro(client, csrf, monkeypatch):
             "nome_recebedor": "",
             "banco": "",
             "valor_cadastro_centavos": 2590,
+            "periodo_teste_dias": 14,
         },
         headers={"X-CSRFToken": token},
     )
     assert response.status_code == 200
     assert client.get("/api/configuracoes").json["valor_cadastro_centavos"] == 2590
+    assert client.get("/api/configuracoes").json["periodo_teste_dias"] == 14
 
     monkeypatch.setattr(main, "PAYMENTS_ENABLED", True)
     monkeypatch.setenv("ASAAS_ENVIRONMENT", "sandbox")
     monkeypatch.setenv("ASAAS_API_KEY", "$aact_hmlg_teste")
     monkeypatch.setenv("ASAAS_WEBHOOK_TOKEN", "webhook-secreto-teste")
     assert client.get("/api/public/pix").json["valor_centavos"] == 2590
+
+
+def test_periodo_teste_configuravel_e_exibido_na_sessao(client, csrf):
+    login_admin(client, csrf)
+    trocar_senha(client, csrf)
+    pagina_admin = client.get("/admin")
+    assert 'id="periodoTesteDias"' in pagina_admin.get_data(as_text=True)
+
+    token = csrf(pagina_admin)
+    configuracao = client.post(
+        "/api/configuracoes",
+        json={
+            "tipo_pix": "",
+            "chave_pix": "",
+            "nome_recebedor": "",
+            "banco": "",
+            "valor_cadastro_centavos": 1990,
+            "periodo_teste_dias": 10,
+        },
+        headers={"X-CSRFToken": token},
+    )
+    assert configuracao.status_code == 200
+
+    criado = client.post(
+        "/usuarios",
+        json={
+            "nome": "Usuário em Teste",
+            "cpf": "11144477735",
+            "email": "trial@example.com",
+            "senha": "Teste@123",
+            "perfil": "Padrão",
+        },
+        headers={"X-CSRFToken": token},
+    )
+    assert criado.status_code == 201
+
+    client.post("/logout", headers={"X-CSRFToken": token})
+    token_login = csrf(client.get("/"))
+    login = client.post(
+        "/login",
+        json={"email": "trial@example.com", "password": "Teste@123"},
+        headers={"X-CSRFToken": token_login},
+    )
+    assert login.status_code == 200
+    teste = client.get("/session").json["teste"]
+    assert teste["ativo"] is True
+    assert teste["expirado"] is False
+    assert teste["dias_restantes"] == 10
+
+    menu_script = client.get("/static/js/menu.js").get_data(as_text=True)
+    security_script = client.get("/static/js/security.js").get_data(as_text=True)
+    assert "Teste gratuito" in menu_script
+    assert "trialBanner" in menu_script
+    assert 'removeItem("financeapp-session-v2")' in security_script
 
 
 def test_fluxo_cadastro_pix_asaas(client, csrf, monkeypatch):

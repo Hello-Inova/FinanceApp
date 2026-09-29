@@ -9,7 +9,8 @@ import urllib.parse
 import urllib.request
 from html import escape
 import json
-from datetime import date, timedelta
+import math
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 
@@ -62,6 +63,7 @@ TIPOS_MOVIMENTACAO_META = {"Aporte", "Retirada"}
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 PAYMENTS_ENABLED = os.getenv("PAYMENTS_ENABLED", "false").lower() == "true"
 CADASTRO_VALOR_CENTAVOS = int(os.getenv("CADASTRO_VALOR_CENTAVOS", "0"))
+PERIODO_TESTE_DIAS_PADRAO = int(os.getenv("PERIODO_TESTE_DIAS", "7"))
 RESET_TOKEN_TTL = 30 * 60
 ASAAS_URLS = {
     "sandbox": "https://api-sandbox.asaas.com/v3",
@@ -81,6 +83,33 @@ def valor_cadastro_atual_centavos():
     except (TypeError, ValueError):
         valor = 0
     return valor if valor > 0 else CADASTRO_VALOR_CENTAVOS
+
+
+def periodo_teste_atual_dias():
+    configuracoes = buscar_configuracoes() or {}
+    try:
+        dias = int(configuracoes.get("periodo_teste_dias", PERIODO_TESTE_DIAS_PADRAO))
+    except (TypeError, ValueError):
+        dias = PERIODO_TESTE_DIAS_PADRAO
+    return max(0, min(dias, 365))
+
+
+def resumo_periodo_teste(usuario):
+    if not usuario or usuario.get("perfil") == "Administrativo" or not usuario.get("teste_fim"):
+        return None
+    try:
+        fim = datetime.fromisoformat(str(usuario["teste_fim"]))
+        agora = datetime.now(fim.tzinfo) if fim.tzinfo else datetime.now(timezone.utc).replace(tzinfo=None)
+        segundos_restantes = (fim - agora).total_seconds()
+        dias_restantes = max(0, math.ceil(segundos_restantes / 86400))
+        return {
+            "ativo": segundos_restantes > 0,
+            "expirado": segundos_restantes <= 0,
+            "dias_restantes": dias_restantes,
+            "termina_em": fim.date().isoformat(),
+        }
+    except (TypeError, ValueError):
+        return None
 
 
 def asaas_configurado():
@@ -540,7 +569,13 @@ def verificar_sessao():
     usuario = usuario_atual()
     if not usuario:
         return jsonify({"logado": False})
-    return jsonify({"logado": True, "nome": usuario["nome"], "perfil": usuario["perfil"], "must_change_password": bool(usuario["must_change_password"])})
+    return jsonify({
+        "logado": True,
+        "nome": usuario["nome"],
+        "perfil": usuario["perfil"],
+        "must_change_password": bool(usuario["must_change_password"]),
+        "teste": resumo_periodo_teste(usuario),
+    })
 
 
 @app.route("/login", methods=["POST"])
@@ -647,7 +682,10 @@ def usuarios():
         perfil = dados.get("perfil")
         if perfil not in PERFIS:
             raise ValueError("Perfil inválido.")
-        criar_usuario(nome, cpf, email, senha, perfil, must_change_password=1)
+        criar_usuario(
+            nome, cpf, email, senha, perfil, must_change_password=1,
+            periodo_teste_dias=periodo_teste_atual_dias(),
+        )
         return jsonify({"status": "ok"}), 201
     except ValueError as erro:
         return resposta_erro(str(erro))
@@ -982,6 +1020,7 @@ def api_excluir_meta(meta_id):
 def api_buscar_configuracoes():
     configuracoes = buscar_configuracoes() or {}
     configuracoes["valor_cadastro_centavos"] = valor_cadastro_atual_centavos()
+    configuracoes["periodo_teste_dias"] = periodo_teste_atual_dias()
     return jsonify(configuracoes)
 
 
@@ -999,12 +1038,22 @@ def api_salvar_configuracoes():
             raise ValueError("Informe o valor do cadastro.")
         if not 1 <= valor_cadastro_centavos <= 100_000_000:
             raise ValueError("O valor do cadastro deve ficar entre R$ 0,01 e R$ 1.000.000,00.")
+        periodo_teste_dias = dados.get("periodo_teste_dias")
+        if isinstance(periodo_teste_dias, bool):
+            raise ValueError("Período de teste inválido.")
+        try:
+            periodo_teste_dias = int(periodo_teste_dias)
+        except (TypeError, ValueError):
+            raise ValueError("Informe a duração do teste gratuito.")
+        if not 0 <= periodo_teste_dias <= 365:
+            raise ValueError("O teste gratuito deve ter entre 0 e 365 dias.")
         salvar_ou_atualizar_configuracoes(
             texto_opcional(dados.get("tipo_pix"), "Tipo PIX", 30),
             texto_opcional(dados.get("chave_pix"), "Chave PIX", 140),
             texto_opcional(dados.get("nome_recebedor"), "Recebedor", 140),
             texto_opcional(dados.get("banco"), "Banco", 140),
             valor_cadastro_centavos,
+            periodo_teste_dias,
         )
         return jsonify({"status": "ok", "mensagem": "Configurações salvas."})
     except ValueError as erro:
@@ -1097,7 +1146,9 @@ def api_finalizar_cadastro():
         senha = senha_forte(dados.get("senha"))
         if senha != dados.get("confirmar_senha"):
             raise ValueError("As senhas não coincidem.")
-        resultado = finalizar_cadastro(token, nome, email, senha)
+        resultado = finalizar_cadastro(
+            token, nome, email, senha, periodo_teste_atual_dias()
+        )
         mensagens = {
             "nao_encontrada": ("Solicitação não encontrada.", 404),
             "nao_pago": ("Pagamento ainda não confirmado.", 403),

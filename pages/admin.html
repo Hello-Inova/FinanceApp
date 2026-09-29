@@ -7,8 +7,8 @@
 
   <title>Administração</title>
 
-  <link rel="stylesheet" href="/static/css/admin.css">
-  <link rel="stylesheet" href="/static/css/app-shell.css?v=3">
+  <link rel="stylesheet" href="/static/css/admin.css?v=2">
+  <link rel="stylesheet" href="/static/css/app-shell.css?v=4">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 
@@ -84,9 +84,32 @@
       <div class="section-header">
         <div>
           <h2>⚙️ Configurações comerciais</h2>
-          <p>Defina o preço do cadastro e, se necessário, os dados do PIX manual.</p>
+          <p>Defina o teste gratuito, o preço do cadastro e os dados comerciais.</p>
         </div>
       </div>
+
+      <h3 class="config-subtitle">🎁 Teste gratuito</h3>
+
+      <div class="payment-settings trial-settings">
+        <div class="form-group">
+          <label for="periodoTesteDias">Duração do teste gratuito</label>
+          <div class="days-input">
+            <input
+              id="periodoTesteDias"
+              type="number"
+              inputmode="numeric"
+              min="0"
+              max="365"
+              step="1"
+              value="7"
+              aria-describedby="periodoTesteAjuda">
+            <span>dias</span>
+          </div>
+          <small id="periodoTesteAjuda">Use 0 para desativar. A alteração vale somente para novas contas padrão.</small>
+        </div>
+      </div>
+
+      <h3 class="config-subtitle">💳 Cobrança de cadastro</h3>
 
       <div class="payment-settings">
         <div class="form-group">
@@ -295,9 +318,9 @@
     </div>
 
   </div>
-  <script src="/static/js/security.js"></script>
+  <script src="/static/js/security.js?v=2"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script src="/static/js/menu.js"></script>
-  <script src="/static/js/admin.js"></script>
+  <script src="/static/js/menu.js?v=7"></script>
+  <script src="/static/js/admin.js?v=2"></script>
 </body>
 </html>

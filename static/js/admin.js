@@ -487,6 +487,9 @@ async function carregarConfiguracoes() {
     valorCadastro.value = dados.valor_cadastro_centavos
       ? (Number(dados.valor_cadastro_centavos) / 100).toFixed(2)
       : "";
+    periodoTesteDias.value = Number.isInteger(Number(dados.periodo_teste_dias))
+      ? String(Number(dados.periodo_teste_dias))
+      : "7";
 
     gerarQrCodePix();
 
@@ -496,7 +499,7 @@ async function carregarConfiguracoes() {
 }
 
 function limparValidacoesConfiguracoes() {
-  [tipoPix, chavePix, nomeRecebedor, banco, valorCadastro].forEach(campo => {
+  [tipoPix, chavePix, nomeRecebedor, banco, valorCadastro, periodoTesteDias].forEach(campo => {
     campo.classList.remove("campo-erro");
   });
 
@@ -525,6 +528,17 @@ async function salvarConfiguracoes() {
 
   const valorNumerico = Number(valorCadastro.value);
   const valorCadastroCentavos = Math.round(valorNumerico * 100);
+  const diasTeste = Number(periodoTesteDias.value);
+
+  if (!Number.isInteger(diasTeste) || diasTeste < 0 || diasTeste > 365) {
+    periodoTesteDias.classList.add("campo-erro");
+    mostrarMensagemConfiguracoes(
+      "⚠️ Informe um período de teste entre 0 e 365 dias.",
+      "erro"
+    );
+    periodoTesteDias.focus();
+    return;
+  }
 
   if (
     !Number.isFinite(valorNumerico) ||
@@ -544,7 +558,8 @@ async function salvarConfiguracoes() {
     chave_pix: chavePix.value.trim(),
     nome_recebedor: nomeRecebedor.value.trim(),
     banco: banco.value.trim(),
-    valor_cadastro_centavos: valorCadastroCentavos
+    valor_cadastro_centavos: valorCadastroCentavos,
+    periodo_teste_dias: diasTeste
   };
 
   const res = await fetch(`${API_URL}/api/configuracoes`, {
@@ -691,7 +706,7 @@ function copiarPixCopiaCola() {
 }
 
 function configurarEventosConfiguracoes() {
-  [tipoPix, chavePix, nomeRecebedor, banco, valorCadastro].forEach(campo => {
+  [tipoPix, chavePix, nomeRecebedor, banco, valorCadastro, periodoTesteDias].forEach(campo => {
     if (!campo) return;
 
     campo.addEventListener("input", () => {

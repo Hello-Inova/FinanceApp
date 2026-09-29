@@ -1,5 +1,5 @@
-const MENU_CACHE_KEY = "financeapp-menu-v6";
-const SESSION_CACHE_KEY = "financeapp-session-v1";
+const MENU_CACHE_KEY = "financeapp-menu-v7";
+const SESSION_CACHE_KEY = "financeapp-session-v2";
 const SESSION_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function renderizarMenu(html) {
@@ -8,6 +8,43 @@ function renderizarMenu(html) {
   container.innerHTML = html;
   marcarPaginaAtual();
   return true;
+}
+
+function renderizarFaixaTeste(usuario) {
+  document.getElementById("trialBanner")?.remove();
+  const teste = usuario?.teste;
+  if (!teste || usuario.perfil === "Administrativo") return;
+
+  const faixa = document.createElement("section");
+  faixa.id = "trialBanner";
+  faixa.className = `trial-banner${teste.expirado ? " trial-banner-expired" : ""}`;
+  faixa.setAttribute("role", "status");
+  faixa.setAttribute("aria-live", "polite");
+
+  const icone = document.createElement("span");
+  icone.className = "trial-banner-icon";
+  icone.setAttribute("aria-hidden", "true");
+  icone.textContent = teste.expirado ? "⌛" : "🎁";
+
+  const conteudo = document.createElement("div");
+  const titulo = document.createElement("strong");
+  const detalhe = document.createElement("span");
+  if (teste.expirado) {
+    titulo.textContent = "Seu período de teste terminou";
+    detalhe.textContent = "Entre em contato com o administrador para regularizar seu acesso.";
+  } else {
+    const dias = Number(teste.dias_restantes || 0);
+    titulo.textContent = `Teste gratuito · ${dias} dia${dias === 1 ? "" : "s"} restante${dias === 1 ? "" : "s"}`;
+    const data = new Date(`${teste.termina_em}T12:00:00`);
+    const dataFormatada = Number.isNaN(data.getTime())
+      ? teste.termina_em
+      : new Intl.DateTimeFormat("pt-BR").format(data);
+    detalhe.textContent = `Seu período termina em ${dataFormatada}.`;
+  }
+
+  conteudo.append(titulo, detalhe);
+  faixa.append(icone, conteudo);
+  document.querySelector("main")?.prepend(faixa);
 }
 
 async function obterSessaoCompartilhada() {
@@ -42,7 +79,7 @@ async function carregarMenu() {
   const cache = sessionStorage.getItem(MENU_CACHE_KEY);
   if (cache) renderizarMenu(cache);
   try {
-    const res = await fetch("/components/menu.html?v=6", { loading: false, cache: "force-cache" });
+    const res = await fetch("/components/menu.html?v=7", { loading: false, cache: "force-cache" });
     if (!res.ok) throw new Error("Menu indisponível");
     const html = await res.text();
     sessionStorage.setItem(MENU_CACHE_KEY, html);
@@ -51,6 +88,7 @@ async function carregarMenu() {
     if (!cache) console.error("Erro ao carregar menu:", erro);
   }
   const usuario = await obterSessaoCompartilhada();
+  renderizarFaixaTeste(usuario);
   const btnAdmin = document.getElementById("btnAdmin");
   if (btnAdmin) btnAdmin.hidden = !(usuario.logado && usuario.perfil === "Administrativo");
 }

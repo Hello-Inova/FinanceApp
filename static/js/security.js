@@ -199,6 +199,7 @@
   window.logout = async () => {
     await window.fetch("/logout", { method: "POST" });
     sessionStorage.removeItem("financeapp-session-v1");
+    sessionStorage.removeItem("financeapp-session-v2");
     window.location.href = "/";
   };
 })();

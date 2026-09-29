@@ -4,7 +4,7 @@ import secrets
 import sqlite3
 import threading
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -179,6 +179,8 @@ def executar_migracoes():
                 ativo INTEGER NOT NULL DEFAULT 1,
                 session_version INTEGER NOT NULL DEFAULT 1,
                 must_change_password INTEGER NOT NULL DEFAULT 0,
+                teste_inicio TIMESTAMP,
+                teste_fim TIMESTAMP,
                 criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -257,6 +259,7 @@ def executar_migracoes():
                 nome_recebedor TEXT NOT NULL,
                 banco TEXT NOT NULL,
                 valor_cadastro_centavos INTEGER NOT NULL DEFAULT 0,
+                periodo_teste_dias INTEGER NOT NULL DEFAULT 7,
                 criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
@@ -303,12 +306,15 @@ def executar_migracoes():
             "usuarios": {
                 "session_version": "INTEGER NOT NULL DEFAULT 1",
                 "must_change_password": "INTEGER NOT NULL DEFAULT 0",
+                "teste_inicio": timestamp_addition,
+                "teste_fim": timestamp_addition,
                 "criado_em": timestamp_addition,
             },
             "lancamentos": {"criado_em": timestamp_addition},
             "compras": {"criado_em": timestamp_addition},
             "configuracoes": {
                 "valor_cadastro_centavos": "INTEGER NOT NULL DEFAULT 0",
+                "periodo_teste_dias": "INTEGER NOT NULL DEFAULT 7",
             },
             "solicitacoes_cadastro": {
                 "public_token": "TEXT",
@@ -525,7 +531,7 @@ def buscar_usuario(email, senha):
     cursor = conn.cursor()
     cursor.execute(
         "SELECT id, nome, email, senha, perfil, ativo, session_version, "
-        "must_change_password FROM usuarios WHERE email = ?",
+        "must_change_password, teste_inicio, teste_fim FROM usuarios WHERE email = ?",
         (email.strip().lower(),),
     )
     usuario = cursor.fetchone()
@@ -543,7 +549,7 @@ def buscar_usuario_por_id(usuario_id):
     cursor = conn.cursor()
     cursor.execute(
         "SELECT id, nome, email, perfil, ativo, session_version, "
-        "must_change_password FROM usuarios WHERE id = ?",
+        "must_change_password, teste_inicio, teste_fim FROM usuarios WHERE id = ?",
         (usuario_id,),
     )
     usuario = cursor.fetchone()
@@ -563,13 +569,31 @@ def listar_usuarios():
     return rows
 
 
-def criar_usuario(nome, cpf, email, senha, perfil, must_change_password=0):
+def _datas_periodo_teste(periodo_teste_dias):
+    try:
+        dias = int(periodo_teste_dias or 0)
+    except (TypeError, ValueError):
+        dias = 0
+    if dias <= 0:
+        return None, None
+    inicio = datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
+    return inicio, inicio + timedelta(days=dias)
+
+
+def criar_usuario(
+    nome, cpf, email, senha, perfil, must_change_password=0, periodo_teste_dias=0
+):
     conn = conectar()
     cursor = conn.cursor()
+    teste_inicio, teste_fim = (
+        _datas_periodo_teste(periodo_teste_dias)
+        if perfil == "Padrão"
+        else (None, None)
+    )
     cursor.execute(
         "INSERT INTO usuarios "
-        "(nome, cpf, email, senha, perfil, must_change_password) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
+        "(nome, cpf, email, senha, perfil, must_change_password, teste_inicio, teste_fim) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (
             nome,
             cpf,
@@ -577,6 +601,8 @@ def criar_usuario(nome, cpf, email, senha, perfil, must_change_password=0):
             generate_password_hash(senha),
             perfil,
             must_change_password,
+            teste_inicio,
+            teste_fim,
         ),
     )
     conn.commit()
@@ -758,7 +784,8 @@ def buscar_configuracoes():
 
 
 def salvar_ou_atualizar_configuracoes(
-    tipo_pix, chave_pix, nome_recebedor, banco, valor_cadastro_centavos
+    tipo_pix, chave_pix, nome_recebedor, banco, valor_cadastro_centavos,
+    periodo_teste_dias=7,
 ):
     conn = conectar()
     cursor = conn.cursor()
@@ -768,6 +795,7 @@ def salvar_ou_atualizar_configuracoes(
         cursor.execute(
             "UPDATE configuracoes SET tipo_pix = ?, chave_pix = ?, "
             "nome_recebedor = ?, banco = ?, valor_cadastro_centavos = ?, "
+            "periodo_teste_dias = ?, "
             "atualizado_em = CURRENT_TIMESTAMP "
             "WHERE id = ?",
             (
@@ -776,20 +804,22 @@ def salvar_ou_atualizar_configuracoes(
                 nome_recebedor,
                 banco,
                 valor_cadastro_centavos,
+                periodo_teste_dias,
                 existente["id"],
             ),
         )
     else:
         cursor.execute(
             "INSERT INTO configuracoes "
-            "(tipo_pix, chave_pix, nome_recebedor, banco, valor_cadastro_centavos) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "(tipo_pix, chave_pix, nome_recebedor, banco, valor_cadastro_centavos, periodo_teste_dias) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
             (
                 tipo_pix,
                 chave_pix,
                 nome_recebedor,
                 banco,
                 valor_cadastro_centavos,
+                periodo_teste_dias,
             ),
         )
     conn.commit()
@@ -920,7 +950,7 @@ def confirmar_pagamento(token, external_payment_id, valor_centavos):
     return alteradas == 1
 
 
-def finalizar_cadastro(token, nome, email, senha):
+def finalizar_cadastro(token, nome, email, senha, periodo_teste_dias=0):
     conn = conectar()
     cursor = conn.cursor()
     try:
@@ -942,15 +972,19 @@ def finalizar_cadastro(token, nome, email, senha):
         if (solicitacao.get("nome") or "").strip() != nome.strip():
             return "nome_invalido"
 
+        teste_inicio, teste_fim = _datas_periodo_teste(periodo_teste_dias)
         cursor.execute(
-            "INSERT INTO usuarios (nome, cpf, email, senha, perfil) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO usuarios "
+            "(nome, cpf, email, senha, perfil, teste_inicio, teste_fim) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 solicitacao["nome"].strip(),
                 solicitacao["cpf"],
                 email.lower(),
                 generate_password_hash(senha),
                 "Padrão",
+                teste_inicio,
+                teste_fim,
             ),
         )
         cursor.execute(

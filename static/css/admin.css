@@ -544,6 +544,36 @@ th {
   background: rgba(37,99,235,.08);
 }
 
+.trial-settings {
+  border-color: rgba(99, 102, 241, .38);
+  background: rgba(79, 70, 229, .09);
+}
+
+.days-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #020617;
+  overflow: hidden;
+}
+
+.days-input:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .2);
+}
+
+.days-input input {
+  border: 0;
+  box-shadow: none;
+}
+
+.days-input span {
+  padding-right: 14px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
 .payment-settings .form-group {
   display: flex;
   flex-direction: column;
