@@ -115,6 +115,11 @@ body.menu-open #btnMenu {
 .three-background canvas { display: block; width: 100%; height: 100%; }
 body > main { position: relative; z-index: 1; }
 
+.page-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; flex-wrap: wrap; }
+.empty-table { display: grid; min-height: 110px; place-content: center; gap: 5px; color: var(--on-surface-muted, #94a3b8); text-align: center; }
+.empty-table strong { display: block; color: var(--on-surface, #f8fafc); font-size: .95rem; }
+.empty-table span { display: block; font-size: .84rem; }
+
 #menu-container .menu-header strong,
 #menu-container .menu-header small { display: block; margin: 0; }
 #menu-container .menu-header strong { color: #fff; font-size: 1rem; line-height: 1.2; }
@@ -195,18 +200,109 @@ body > main { position: relative; z-index: 1; }
 }
 
 @media (min-width: 1100px) {
-  body { padding-left: calc(var(--sidebar-width) + 24px) !important; }
+  body {
+    padding: 16px 18px 16px calc(var(--sidebar-width) + 18px) !important;
+  }
   #btnMenu, #menuOverlay, #menu-container #btnMenuin { display: none !important; }
   #menu-container .sidebar {
     left: 0 !important;
     transform: none;
     box-shadow: 12px 0 36px rgba(0, 0, 0, .2);
   }
+
+  /* Densidade de desktop: mantém leitura confortável e reduz rolagem ociosa. */
+  body .finance-container,
+  body .metas-container,
+  body > .container {
+    width: min(1280px, 100%);
+    padding: 20px 22px;
+    border-radius: 18px;
+  }
+
+  body .admin-main { width: min(1280px, 100%); padding: 16px 20px; }
+  body .finance-overview { min-height: 0; }
+
+  body .page-header,
+  body .compras-header,
+  body .admin-header { margin-bottom: 14px; }
+
+  body .page-heading h1,
+  body .compras-header h1,
+  body .admin-header h1 { margin: 3px 0; font-size: 1.75rem; }
+
+  body .page-heading p,
+  body .compras-header p,
+  body .admin-header p { font-size: .9rem; line-height: 1.35; }
+
+  body .btn { min-height: 40px; padding: 8px 13px; border-radius: 10px; }
+
+  body .summary-grid,
+  body .cards { gap: 11px; margin-bottom: 14px; }
+
+  body .summary-card,
+  body .cards .card {
+    min-height: 82px;
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+
+  body .summary-icon { width: 38px; height: 38px; flex-basis: 38px; border-radius: 10px; font-size: 1.05rem; }
+  body .summary-content strong,
+  body .cards .card strong { font-size: 1.2rem; }
+  body .summary-content > span,
+  body .cards .card span { margin-bottom: 2px; font-size: .78rem; }
+  body .summary-content small { margin-top: 2px; }
+  body .overview-tip { margin-top: 14px; padding: 13px 15px; }
+  body .overview-tip p { margin-top: 3px; font-size: .88rem; }
+
+  body .filters,
+  body .toolbar-card,
+  body .admin-card { margin-bottom: 14px; padding: 12px 14px; border-radius: 14px; }
+  body .filters { gap: 9px; }
+  body input,
+  body select { min-height: 38px; padding: 8px 10px; }
+
+  body .section-heading,
+  body .results-heading { margin-bottom: 8px; }
+  body .section-heading h2,
+  body .results-heading h2 { font-size: 1.08rem; }
+
+  body .table-card { padding: 0; margin-bottom: 12px; border-radius: 14px; }
+  body th,
+  body td { padding: 9px 12px; font-size: .88rem; line-height: 1.25; }
+  body th { font-size: .72rem; }
+  body .btn-acao { width: 32px; height: 32px; border-radius: 8px; }
+  body .acoes button { min-height: 32px; padding: 6px 9px; }
+  body .paginacao { gap: 10px; padding: 9px; }
+  body #prevBtn,
+  body #nextBtn { min-width: 105px; }
+
+  body .admin-tabs { margin-bottom: 12px; padding: 4px; }
+  body .admin-tabs .menu-item { min-height: 36px; padding: 7px 12px; }
+  body .section-header { margin-bottom: 14px; }
+  body .toolbar { margin-bottom: 12px; }
+
+  body .goals-grid { gap: 12px; }
+  body .goal-card { min-height: 255px; border-radius: 15px; }
+  body .goal-main { padding: 14px; }
+  body .goal-description { min-height: 30px; margin: 10px 0; }
+  body .goal-tags { margin-top: 10px; }
+  body .goal-actions { padding: 9px 14px 12px; }
+
+  body .agenda-list { gap: 8px; }
+  body .agenda-item { grid-template-columns: 74px minmax(0,1fr) auto; gap: 12px; padding: 10px 14px; }
+  body .agenda-date { min-height: 56px; }
+
+  body .chart-panel { padding: 12px; }
+  body .chart-box { min-height: 300px; padding: 10px; }
+  body .chart-box canvas { height: 280px !important; }
 }
 
 @media (max-width: 1099px) {
   body { padding-top: 76px !important; }
   #menu-container .sidebar { width: min(86vw, 292px); }
+  .page-header-actions { width: 100%; }
+  .page-header-actions .btn { flex: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

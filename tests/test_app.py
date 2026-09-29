@@ -283,7 +283,11 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert len(lancamentos) == 1
     assert lancamentos[0]["valor"] == 125.5 or lancamentos[0]["valor"] == "125.5"
     for rota in ("/financas/entradas", "/financas/saidas", "/financas/saldo"):
-        assert client.get(rota).status_code == 200
+        pagina = client.get(rota)
+        assert pagina.status_code == 200
+        conteudo = pagina.get_data(as_text=True)
+        assert "Novo lançamento" in conteudo
+        assert 'id="modalNovoLancamento"' in conteudo
 
 
 def test_menu_compartilhado_em_todas_as_telas_autenticadas(client, csrf):
