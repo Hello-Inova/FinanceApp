@@ -33,7 +33,7 @@ function mostrarTodasCompras() {
 
 
 async function carregarCompras() {
-  const res = await fetch(`${API_URL}/api/compras`, { loading: false });
+  const res = await fetch(`${API_URL}/api/compras`, { loadingMessage: "Carregando suas compras..." });
 
   if (!res.ok) {
     console.error("Erro ao carregar compras");

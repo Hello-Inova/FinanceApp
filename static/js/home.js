@@ -8,7 +8,7 @@ function mostrarToast(mensagem, erro = false) { const toast = document.getElemen
 
 async function carregarResumo() {
   try {
-    const dados = await respostaJson(await fetch("/lancamentos", { loading: false }));
+    const dados = await respostaJson(await fetch("/lancamentos", { loadingMessage: "Carregando suas finanças..." }));
     const entradas = dados.filter(i => i.tipo === "Entrada").reduce((s, i) => s + Number(i.valor || 0), 0);
     const saidas = dados.filter(i => i.tipo === "Saída").reduce((s, i) => s + Number(i.valor || 0), 0);
     document.getElementById("totalEntradas").textContent = formatarMoeda(entradas);

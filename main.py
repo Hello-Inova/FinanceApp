@@ -370,6 +370,15 @@ def admin_obrigatorio(funcao):
 
 @app.before_request
 def exigir_troca_de_senha():
+    # Arquivos estáticos e endpoints públicos não precisam consultar a sessão.
+    # Em produção, cada chamada a usuario_atual() pode abrir uma conexão remota
+    # com o Postgres; fazer isso para CSS, JS, imagens e o menu tornava uma única
+    # página responsável por várias conexões desnecessárias.
+    if (
+        request.endpoint in {"static", "components", "health", "webhook_pagamento"}
+        or request.path.startswith("/api/public/")
+    ):
+        return None
     usuario = usuario_atual()
     if not usuario or not usuario["must_change_password"]:
         return None
@@ -393,6 +402,8 @@ def cabecalhos_seguranca(response):
     )
     if request.path.startswith("/api/") or request.path == "/session":
         response.headers["Cache-Control"] = "no-store"
+    elif request.endpoint in {"static", "components"}:
+        response.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=86400"
     if request.path.startswith("/redefinir-senha/"):
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Cache-Control"] = "no-store"

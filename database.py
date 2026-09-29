@@ -2,6 +2,7 @@ import hashlib
 import os
 import secrets
 import sqlite3
+import threading
 import time
 from datetime import date, datetime
 from decimal import Decimal
@@ -11,6 +12,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 DB_NAME = os.getenv("SQLITE_PATH", "financeiro.db")
 DATABASE_URL = os.getenv("DATABASE_URL")
+_POSTGRES_POOL = None
+_POSTGRES_POOL_URL = None
+_POSTGRES_POOL_LOCK = threading.Lock()
 
 
 def _normalizar_valor(valor):
@@ -69,9 +73,11 @@ class CursorAdapter:
 
 
 class ConnectionAdapter:
-    def __init__(self, connection, postgres=False):
+    def __init__(self, connection, postgres=False, release=None):
         self._connection = connection
         self.postgres = postgres
+        self._release = release
+        self._closed = False
 
     def cursor(self):
         return CursorAdapter(self._connection.cursor(), self.postgres)
@@ -83,20 +89,42 @@ class ConnectionAdapter:
         self._connection.rollback()
 
     def close(self):
-        self._connection.close()
+        if self._closed:
+            return
+        self._closed = True
+        if self._release:
+            self._release(self._connection)
+        else:
+            self._connection.close()
 
 
 def conectar():
     if DATABASE_URL:
-        import psycopg
+        global _POSTGRES_POOL, _POSTGRES_POOL_URL
         from psycopg.rows import dict_row
+        from psycopg_pool import ConnectionPool
 
-        connection = psycopg.connect(
-            DATABASE_URL,
-            row_factory=dict_row,
-            connect_timeout=10,
+        if _POSTGRES_POOL is None or _POSTGRES_POOL_URL != DATABASE_URL:
+            with _POSTGRES_POOL_LOCK:
+                if _POSTGRES_POOL is None or _POSTGRES_POOL_URL != DATABASE_URL:
+                    if _POSTGRES_POOL is not None:
+                        _POSTGRES_POOL.close()
+                    _POSTGRES_POOL = ConnectionPool(
+                        conninfo=DATABASE_URL,
+                        min_size=0,
+                        max_size=max(1, int(os.getenv("DATABASE_POOL_SIZE", "4"))),
+                        timeout=10,
+                        max_idle=60,
+                        kwargs={"row_factory": dict_row, "connect_timeout": 10},
+                        check=ConnectionPool.check_connection,
+                        open=True,
+                        name="financeapp",
+                    )
+                    _POSTGRES_POOL_URL = DATABASE_URL
+        connection = _POSTGRES_POOL.getconn()
+        return ConnectionAdapter(
+            connection, postgres=True, release=_POSTGRES_POOL.putconn
         )
-        return ConnectionAdapter(connection, postgres=True)
 
     connection = sqlite3.connect(DB_NAME, timeout=10)
     connection.row_factory = sqlite3.Row

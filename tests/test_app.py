@@ -54,6 +54,27 @@ def test_rotas_privadas_exigem_login(client):
     assert client.get("/admin/usuarios").status_code == 401
 
 
+def test_arquivos_estaticos_nao_consultam_banco_de_sessao(client, monkeypatch):
+    import main
+
+    chamadas = []
+    monkeypatch.setattr(main, "buscar_usuario_por_id", lambda usuario_id: chamadas.append(usuario_id))
+    with client.session_transaction() as sessao:
+        sessao["usuario_id"] = 123
+        sessao["session_version"] = 1
+
+    resposta = client.get("/static/js/menu.js")
+    assert resposta.status_code == 200
+    assert chamadas == []
+    assert "max-age=300" in resposta.headers["Cache-Control"]
+
+
+def test_loading_cobre_requisicoes_e_navegacao(client):
+    script = client.get("/static/js/security.js").get_data(as_text=True)
+    assert 'method === "GET" ||' not in script
+    assert 'showLoading("Abrindo página...")' in script
+
+
 def test_pagamento_simulado_foi_removido(client, csrf):
     token = csrf(client.get("/"))
     response = client.post(

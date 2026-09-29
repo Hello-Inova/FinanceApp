@@ -142,7 +142,6 @@
 
   function isBackgroundRequest(url, method) {
     return (
-      method === "GET" ||
       url.pathname === "/session" ||
       url.pathname.startsWith("/components/") ||
       (method === "GET" && /^\/api\/public\/cadastro\/[^/]+$/.test(url.pathname))
@@ -181,11 +180,25 @@
   window.appLoading = {
     show: showLoading,
     hide: hideLoading,
-    setMessage: setLoadingMessage
+    setMessage: setLoadingMessage,
+    page: (message = "Abrindo página...") => showLoading(message)
   };
+
+  // A navegação tradicional não passa por fetch. Mostra feedback enquanto o
+  // próximo documento é baixado, inclusive nos cards que usam links comuns.
+  document.addEventListener("click", event => {
+    const link = event.target.closest("a[href]");
+    if (!link || event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (link.target === "_blank" || link.hasAttribute("download")) return;
+    const destino = new URL(link.href, window.location.href);
+    if (destino.origin !== window.location.origin || destino.pathname === window.location.pathname && destino.hash) return;
+    showLoading("Abrindo página...");
+  });
 
   window.logout = async () => {
     await window.fetch("/logout", { method: "POST" });
+    sessionStorage.removeItem("financeapp-session-v1");
     window.location.href = "/";
   };
 })();

@@ -1,4 +1,6 @@
 const MENU_CACHE_KEY = "financeapp-menu-v5";
+const SESSION_CACHE_KEY = "financeapp-session-v1";
+const SESSION_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function renderizarMenu(html) {
   const container = document.getElementById("menu-container");
@@ -9,9 +11,26 @@ function renderizarMenu(html) {
 }
 
 async function obterSessaoCompartilhada() {
+  const cache = sessionStorage.getItem(SESSION_CACHE_KEY);
+  if (cache) {
+    try {
+      const registro = JSON.parse(cache);
+      if (Date.now() - registro.salvoEm < SESSION_CACHE_TTL_MS && registro.usuario?.logado) {
+        return registro.usuario;
+      }
+    } catch (_) {
+      sessionStorage.removeItem(SESSION_CACHE_KEY);
+    }
+  }
   if (!window.financeAppSessionPromise) {
     window.financeAppSessionPromise = fetch("/session", { loading: false })
       .then(res => res.json())
+      .then(usuario => {
+        if (usuario.logado) {
+          sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({ usuario, salvoEm: Date.now() }));
+        }
+        return usuario;
+      })
       .catch(() => ({ logado: false }));
   }
   return window.financeAppSessionPromise;
@@ -62,6 +81,7 @@ function fecharMenu() {
 }
 function navegar(url) {
   fecharMenu();
+  window.appLoading?.page("Abrindo página...");
   window.location.assign(url);
 }
 

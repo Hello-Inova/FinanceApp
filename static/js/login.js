@@ -62,6 +62,7 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     const resultado = await response.json();
 
     if (resultado.success) {
+      sessionStorage.removeItem("financeapp-session-v1");
       window.location.href = resultado.must_change_password ? "/trocar-senha" : "/home";
     } else {
       errorMessage.style.display = "block";
