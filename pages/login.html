@@ -7,7 +7,7 @@
 
   <title>Login</title>
 
-  <link rel="stylesheet" href="/static/css/login.css?v=2">
+  <link rel="stylesheet" href="/static/css/login.css?v=3">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
@@ -16,8 +16,11 @@
 <body>
 
   <div class="login-container">
-
-    <h2>FinanceApp</h2>
+    <header class="auth-brand">
+      <img src="/static/img/favicon.png" alt="Logo FinanceApp" width="78" height="78">
+      <h1>FinanceApp</h1>
+      <p>Seu controle financeiro, simples e inteligente.</p>
+    </header>
 
     <form id="loginForm">
 
@@ -239,5 +242,6 @@
 
   <script src="/static/js/security.js"></script>
   <script src="/static/js/login.js?v=2"></script>
+  <script type="module" src="/static/js/three-scene.js?v=1"></script>
 </body>
 </html>

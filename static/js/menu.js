@@ -1,4 +1,4 @@
-const MENU_CACHE_KEY = "financeapp-menu-v5";
+const MENU_CACHE_KEY = "financeapp-menu-v6";
 const SESSION_CACHE_KEY = "financeapp-session-v1";
 const SESSION_CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -42,7 +42,7 @@ async function carregarMenu() {
   const cache = sessionStorage.getItem(MENU_CACHE_KEY);
   if (cache) renderizarMenu(cache);
   try {
-    const res = await fetch("/components/menu.html?v=5", { loading: false, cache: "force-cache" });
+    const res = await fetch("/components/menu.html?v=6", { loading: false, cache: "force-cache" });
     if (!res.ok) throw new Error("Menu indisponível");
     const html = await res.text();
     sessionStorage.setItem(MENU_CACHE_KEY, html);
@@ -90,6 +90,11 @@ window.toggleMenu = toggleMenu;
 window.fecharMenu = fecharMenu;
 window.navegar = navegar;
 window.addEventListener("DOMContentLoaded", carregarMenu);
+window.addEventListener("load", () => {
+  const carregarCena = () => import("/static/js/three-scene.js?v=1").catch(() => {});
+  if ("requestIdleCallback" in window) window.requestIdleCallback(carregarCena, { timeout: 1500 });
+  else window.setTimeout(carregarCena, 400);
+});
 window.addEventListener("resize", () => {
   if (window.matchMedia("(min-width: 1100px)").matches) fecharMenu();
 });

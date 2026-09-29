@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Recuperar senha | FinanceApp</title>
-  <link rel="stylesheet" href="/static/css/login.css">
+  <link rel="stylesheet" href="/static/css/login.css?v=3">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 <body>
   <main class="login-container">
+    <header class="auth-brand"><img src="/static/img/favicon.png" alt="Logo FinanceApp" width="78" height="78"><p>FinanceApp</p></header>
     <h2>Recuperar senha</h2>
     <p class="auth-description">Informe seu e-mail para receber um link seguro de redefinição.</p>
     <form id="recoveryForm">
@@ -24,5 +25,6 @@
   </main>
   <script src="/static/js/security.js"></script>
   <script src="/static/js/recuperar-senha.js"></script>
+  <script type="module" src="/static/js/three-scene.js?v=1"></script>
 </body>
 </html>

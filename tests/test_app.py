@@ -75,6 +75,17 @@ def test_loading_cobre_requisicoes_e_navegacao(client):
     assert 'showLoading("Abrindo página...")' in script
 
 
+def test_identidade_visual_e_threejs_presentes(client):
+    login = client.get("/").get_data(as_text=True)
+    cena = client.get("/static/js/three-scene.js").get_data(as_text=True)
+    menu = client.get("/components/menu.html").get_data(as_text=True)
+
+    assert 'class="auth-brand"' in login
+    assert 'type="module" src="/static/js/three-scene.js?v=1"' in login
+    assert "three@0.186.0" in cena
+    assert 'src="/static/img/favicon.png"' in menu
+
+
 def test_pagamento_simulado_foi_removido(client, csrf):
     token = csrf(client.get("/"))
     response = client.post(
