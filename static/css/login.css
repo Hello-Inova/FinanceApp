@@ -290,6 +290,9 @@ button:active {
 }
 
 .cadastro-price-payment { margin-top: -4px; }
+.trial-offer { border-color: rgba(34, 197, 94, .35); background: rgba(22, 101, 52, .14); }
+.trial-offer strong { color: #86efac; }
+.signup-note { display: block; margin-top: 12px; color: #94a3b8; font-size: 12px; line-height: 1.45; text-align: center; }
 
 .etapa-cadastro label {
   display: block;

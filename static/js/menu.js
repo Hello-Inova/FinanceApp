@@ -13,7 +13,7 @@ function renderizarMenu(html) {
 function renderizarFaixaTeste(usuario) {
   document.getElementById("trialBanner")?.remove();
   const teste = usuario?.teste;
-  if (!teste || usuario.perfil === "Administrativo") return;
+  if (!teste || usuario.perfil === "Administrativo" || ["ativo", "legado"].includes(usuario.assinatura_status)) return;
 
   const faixa = document.createElement("section");
   faixa.id = "trialBanner";
@@ -79,7 +79,7 @@ async function carregarMenu() {
   const cache = sessionStorage.getItem(MENU_CACHE_KEY);
   if (cache) renderizarMenu(cache);
   try {
-    const res = await fetch("/components/menu.html?v=7", { loading: false, cache: "force-cache" });
+    const res = await fetch("/components/menu.html?v=8", { loading: false, cache: "force-cache" });
     if (!res.ok) throw new Error("Menu indisponível");
     const html = await res.text();
     sessionStorage.setItem(MENU_CACHE_KEY, html);

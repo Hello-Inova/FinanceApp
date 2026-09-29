@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Assinatura | FinanceApp</title>
+  <link rel="stylesheet" href="/static/css/assinatura.css?v=1">
+  <link rel="icon" type="image/png" href="/static/img/favicon.png">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+  <main class="subscription-shell">
+    <header class="subscription-brand">
+      <img src="/static/img/favicon.png" alt="Logo FinanceApp" width="58" height="58">
+      <div><span>FinanceApp</span><strong>Continue cuidando das suas finanças</strong></div>
+      <button type="button" class="logout-link" onclick="logout()">Sair</button>
+    </header>
+
+    <section class="subscription-card">
+      <div class="plan-intro">
+        <span class="eyebrow">PLANO MENSAL</span>
+        <h1>Seu período gratuito terminou</h1>
+        <p>Escolha como deseja pagar para continuar usando Finanças, Metas, Agenda e Compras.</p>
+        <div class="plan-price"><strong id="planPrice">—</strong><span>/mês</span></div>
+      </div>
+
+      <div id="subscriptionSuccess" class="subscription-success" hidden>
+        <span>✓</span><h2>Assinatura ativa</h2><p>Seu acesso ao FinanceApp está liberado.</p>
+        <a href="/home" class="primary-link">Acessar o sistema</a>
+      </div>
+
+      <form id="subscriptionForm">
+        <fieldset class="payment-methods">
+          <legend>Forma de pagamento</legend>
+          <button type="button" class="method-card active" data-method="CREDIT_CARD"><span>💳</span><strong>Cartão de crédito</strong><small>Cobrança automática mensal</small></button>
+          <button type="button" class="method-card" data-method="PIX"><span>◈</span><strong>PIX</strong><small>Pagamento mensal manual</small></button>
+          <button type="button" class="method-card" data-method="BOLETO"><span>▤</span><strong>Boleto</strong><small>Pagamento mensal manual</small></button>
+        </fieldset>
+
+        <div id="cardFields" class="card-fields">
+          <p class="security-note">🔒 Os dados do cartão são enviados com segurança à Asaas e não ficam armazenados no FinanceApp.</p>
+          <label for="cardHolder">Nome impresso no cartão</label><input id="cardHolder" autocomplete="cc-name">
+          <label for="cardNumber">Número do cartão</label><input id="cardNumber" inputmode="numeric" autocomplete="cc-number" maxlength="23" placeholder="0000 0000 0000 0000">
+          <div class="form-row">
+            <div><label for="cardExpiry">Validade</label><input id="cardExpiry" inputmode="numeric" autocomplete="cc-exp" maxlength="7" placeholder="MM/AAAA"></div>
+            <div><label for="cardCcv">CVV</label><input id="cardCcv" type="password" inputmode="numeric" autocomplete="cc-csc" maxlength="4" placeholder="000"></div>
+          </div>
+          <div class="form-row">
+            <div><label for="holderCep">CEP do titular</label><input id="holderCep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000"></div>
+            <div><label for="holderNumber">Número</label><input id="holderNumber" autocomplete="address-line2" maxlength="20"></div>
+          </div>
+          <label for="holderPhone">Telefone do titular</label><input id="holderPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="(00) 00000-0000">
+        </div>
+
+        <div id="paymentResult" class="payment-result" hidden>
+          <div id="pixResult" hidden><div class="qr-box"><canvas id="pixQrCode"></canvas></div><label for="pixPayload">PIX Copia e Cola</label><textarea id="pixPayload" readonly></textarea><button type="button" class="secondary-button" id="copyPix">Copiar PIX</button></div>
+          <div id="boletoResult" hidden><p>Seu boleto foi gerado. O acesso será liberado após a confirmação do pagamento.</p><a id="boletoLink" class="primary-link" target="_blank" rel="noopener">Abrir boleto</a></div>
+          <p class="waiting-payment">Aguardando a confirmação da Asaas. Esta página pode ser atualizada após o pagamento.</p>
+        </div>
+
+        <p id="subscriptionMessage" class="form-message" role="alert"></p>
+        <button id="subscribeButton" type="submit" class="primary-button">Assinar com cartão</button>
+      </form>
+    </section>
+  </main>
+  <script src="/static/js/security.js?v=2"></script>
+  <script src="/static/js/assinatura.js?v=1"></script>
+</body>
+</html>

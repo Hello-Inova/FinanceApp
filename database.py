@@ -181,6 +181,12 @@ def executar_migracoes():
                 must_change_password INTEGER NOT NULL DEFAULT 0,
                 teste_inicio TIMESTAMP,
                 teste_fim TIMESTAMP,
+                assinatura_status TEXT NOT NULL DEFAULT 'legado',
+                assinatura_metodo TEXT,
+                asaas_customer_id TEXT,
+                asaas_subscription_id TEXT UNIQUE,
+                assinatura_proximo_vencimento TEXT,
+                assinatura_ultimo_pagamento_id TEXT,
                 criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -300,6 +306,13 @@ def executar_migracoes():
                 criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS asaas_webhook_eventos (
+                event_id TEXT PRIMARY KEY,
+                event_type TEXT NOT NULL,
+                processado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
         timestamp_addition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP" if postgres else "TIMESTAMP"
         additions = {
@@ -308,6 +321,12 @@ def executar_migracoes():
                 "must_change_password": "INTEGER NOT NULL DEFAULT 0",
                 "teste_inicio": timestamp_addition,
                 "teste_fim": timestamp_addition,
+                "assinatura_status": "TEXT NOT NULL DEFAULT 'legado'",
+                "assinatura_metodo": "TEXT",
+                "asaas_customer_id": "TEXT",
+                "asaas_subscription_id": "TEXT",
+                "assinatura_proximo_vencimento": "TEXT",
+                "assinatura_ultimo_pagamento_id": "TEXT",
                 "criado_em": timestamp_addition,
             },
             "lancamentos": {"criado_em": timestamp_addition},
@@ -420,6 +439,15 @@ def executar_migracoes():
             "CREATE INDEX IF NOT EXISTS idx_password_reset_usuario "
             "ON password_reset_tokens(usuario_id, expires_at)"
         )
+        cursor.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_asaas_subscription "
+            "ON usuarios(asaas_subscription_id) WHERE asaas_subscription_id IS NOT NULL"
+        )
+        cursor.execute(
+            "UPDATE usuarios SET assinatura_status = 'trial' "
+            "WHERE perfil <> 'Administrativo' AND teste_fim IS NOT NULL "
+            "AND assinatura_status = 'legado'"
+        )
 
         cursor.execute("SELECT version FROM schema_migrations WHERE version = ?", (4,))
         migration_4_aplicada = cursor.fetchone() is not None
@@ -484,6 +512,11 @@ def executar_migracoes():
             "ON CONFLICT(version) DO NOTHING",
             (8,),
         )
+        cursor.execute(
+            "INSERT INTO schema_migrations(version) VALUES (?) "
+            "ON CONFLICT(version) DO NOTHING",
+            (9,),
+        )
         conn.commit()
     except Exception:
         conn.rollback()
@@ -531,7 +564,10 @@ def buscar_usuario(email, senha):
     cursor = conn.cursor()
     cursor.execute(
         "SELECT id, nome, email, senha, perfil, ativo, session_version, "
-        "must_change_password, teste_inicio, teste_fim FROM usuarios WHERE email = ?",
+        "must_change_password, teste_inicio, teste_fim, assinatura_status, "
+        "assinatura_metodo, asaas_customer_id, asaas_subscription_id, "
+        "assinatura_proximo_vencimento, assinatura_ultimo_pagamento_id "
+        "FROM usuarios WHERE email = ?",
         (email.strip().lower(),),
     )
     usuario = cursor.fetchone()
@@ -548,8 +584,11 @@ def buscar_usuario_por_id(usuario_id):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, nome, email, perfil, ativo, session_version, "
-        "must_change_password, teste_inicio, teste_fim FROM usuarios WHERE id = ?",
+        "SELECT id, nome, cpf, email, perfil, ativo, session_version, "
+        "must_change_password, teste_inicio, teste_fim, assinatura_status, "
+        "assinatura_metodo, asaas_customer_id, asaas_subscription_id, "
+        "assinatura_proximo_vencimento, assinatura_ultimo_pagamento_id "
+        "FROM usuarios WHERE id = ?",
         (usuario_id,),
     )
     usuario = cursor.fetchone()
@@ -592,8 +631,8 @@ def criar_usuario(
     )
     cursor.execute(
         "INSERT INTO usuarios "
-        "(nome, cpf, email, senha, perfil, must_change_password, teste_inicio, teste_fim) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "(nome, cpf, email, senha, perfil, must_change_password, teste_inicio, teste_fim, assinatura_status) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             nome,
             cpf,
@@ -603,6 +642,7 @@ def criar_usuario(
             must_change_password,
             teste_inicio,
             teste_fim,
+            "trial" if perfil == "Padrão" and teste_fim else ("pendente" if perfil == "Padrão" else "legado"),
         ),
     )
     conn.commit()
@@ -631,6 +671,71 @@ def atualizar_status_usuario(usuario_id, ativo):
     )
     conn.commit()
     conn.close()
+
+
+def salvar_cliente_asaas_usuario(usuario_id, customer_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE usuarios SET asaas_customer_id = ? WHERE id = ?",
+        (customer_id, usuario_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def salvar_assinatura_usuario(
+    usuario_id, subscription_id, metodo, status, proximo_vencimento=None,
+    payment_id=None,
+):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE usuarios SET asaas_subscription_id = ?, assinatura_metodo = ?, "
+        "assinatura_status = ?, assinatura_proximo_vencimento = ?, "
+        "assinatura_ultimo_pagamento_id = ? WHERE id = ?",
+        (
+            subscription_id, metodo, status, proximo_vencimento,
+            payment_id, usuario_id,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def atualizar_assinatura_por_subscription(
+    subscription_id, status, payment_id=None, proximo_vencimento=None
+):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE usuarios SET assinatura_status = ?, "
+        "assinatura_ultimo_pagamento_id = COALESCE(?, assinatura_ultimo_pagamento_id), "
+        "assinatura_proximo_vencimento = COALESCE(?, assinatura_proximo_vencimento) "
+        "WHERE asaas_subscription_id = ?",
+        (status, payment_id, proximo_vencimento, subscription_id),
+    )
+    alteradas = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return alteradas > 0
+
+
+def registrar_evento_asaas(event_id, event_type):
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        command = "INSERT INTO" if conn.postgres else "INSERT OR IGNORE INTO"
+        suffix = " ON CONFLICT (event_id) DO NOTHING" if conn.postgres else ""
+        cursor.execute(
+            f"{command} asaas_webhook_eventos (event_id, event_type) VALUES (?, ?)" + suffix,
+            (event_id, event_type),
+        )
+        inserido = cursor.rowcount > 0
+        conn.commit()
+        return inserido
+    finally:
+        conn.close()
 
 
 def alterar_senha_usuario(usuario_id, nova_senha, force_change=1):
@@ -975,8 +1080,8 @@ def finalizar_cadastro(token, nome, email, senha, periodo_teste_dias=0):
         teste_inicio, teste_fim = _datas_periodo_teste(periodo_teste_dias)
         cursor.execute(
             "INSERT INTO usuarios "
-            "(nome, cpf, email, senha, perfil, teste_inicio, teste_fim) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "(nome, cpf, email, senha, perfil, teste_inicio, teste_fim, assinatura_status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 solicitacao["nome"].strip(),
                 solicitacao["cpf"],
@@ -985,6 +1090,7 @@ def finalizar_cadastro(token, nome, email, senha, periodo_teste_dias=0):
                 "Padrão",
                 teste_inicio,
                 teste_fim,
+                "trial" if teste_fim else "pendente",
             ),
         )
         cursor.execute(

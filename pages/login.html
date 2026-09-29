@@ -7,10 +7,9 @@
 
   <title>Login</title>
 
-  <link rel="stylesheet" href="/static/css/login.css?v=3">
+  <link rel="stylesheet" href="/static/css/login.css?v=4">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -67,48 +66,19 @@
 
   </div>
 
-  <!-- MODAL CADASTRO PIX -->
+  <!-- MODAL CADASTRO GRATUITO -->
   <div id="modalCadastroPix" class="modal-cadastro">
-
     <div class="modal-content-cadastro">
+      <button type="button" class="btn-fechar-modal" onclick="fecharModalCadastro()" aria-label="Fechar cadastro">✕</button>
 
-      <div class="steps-cadastro">
-        <div id="stepDados" class="step active">
-          <span>1</span>
-          <p>Dados</p>
-        </div>
+      <form id="cadastroForm" class="etapa-cadastro">
+        <h2>Crie sua conta grátis</h2>
+        <p class="modal-subtitle">Comece agora e use todos os recursos durante o período de teste.</p>
 
-        <div id="stepPagamento" class="step">
-          <span>2</span>
-          <p>Pagamento</p>
-        </div>
-
-        <div id="stepConta" class="step">
-          <span>3</span>
-          <p>Conta</p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        class="btn-fechar-modal"
-        onclick="fecharModalCadastro()">
-        ✕
-      </button>
-
-      <!-- ETAPA 1 -->
-      <div id="etapaSolicitacao" class="etapa-cadastro">
-
-        <h2>Solicitar cadastro</h2>
-
-        <p class="modal-subtitle">
-          Informe seus dados para gerar o PIX de liberação.
-        </p>
-
-        <div class="cadastro-price" aria-live="polite">
-          <span>Valor do cadastro</span>
-          <strong id="valorCadastroPix">Consultando...</strong>
-          <small>Cobrança única para liberar a criação da conta.</small>
+        <div class="cadastro-price trial-offer" aria-live="polite">
+          <span>Teste gratuito</span>
+          <strong id="periodoTesteCadastro">7 dias</strong>
+          <small>Nenhuma cobrança agora. O pagamento será solicitado somente após o teste.</small>
         </div>
 
         <label for="cadastroNome">Nome completo</label>
@@ -130,83 +100,6 @@
           type="email"
           placeholder="Digite seu e-mail">
 
-        <span id="msgCadastroPix" class="msg-modal"></span>
-
-        <button
-          type="button"
-          class="btn-primary"
-          onclick="gerarPixCadastro()">
-          Gerar PIX
-        </button>
-
-      </div>
-
-      <!-- ETAPA 2 -->
-      <div id="etapaPagamento" class="etapa-cadastro" style="display:none;">
-
-        <h2>Pagamento PIX</h2>
-
-        <p class="modal-subtitle">
-          Escaneie o QR Code ou copie o código PIX abaixo.
-        </p>
-
-        <div class="cadastro-price cadastro-price-payment" aria-live="polite">
-          <span>Valor a pagar</span>
-          <strong id="valorPagamentoPix">—</strong>
-          <small>Confira o valor antes de concluir o pagamento.</small>
-        </div>
-
-        <div class="qrcode-box-login">
-          <canvas id="pixCadastroQrCode"></canvas>
-
-          <div id="pixCadastroPlaceholder" class="qrcode-placeholder-login">
-            Gerando QR Code...
-          </div>
-        </div>
-        <div class="status-pagamento">
-          <div class="spinner"></div>
-          <p>Aguardando confirmação automática do pagamento...</p>
-        </div>
-
-        <label for="pixCadastroCopiaCola">PIX Copia e Cola</label>
-
-        <textarea
-          id="pixCadastroCopiaCola"
-          readonly>
-        </textarea>
-
-        <button
-          type="button"
-          class="btn-secondary"
-          onclick="copiarPixCadastro()">
-          📋 Copiar PIX
-        </button>
-
-        <span id="msgPagamentoPix" class="msg-modal"></span>
-
-      </div>
-
-      <!-- ETAPA 3 -->
-      <div id="etapaCriarConta" class="etapa-cadastro" style="display:none;">
-
-        <h2>Criar conta</h2>
-
-        <p class="modal-subtitle">
-          Pagamento confirmado. Finalize seu cadastro.
-        </p>
-
-        <label for="cadastroNomeFinal">Nome</label>
-        <input
-          id="cadastroNomeFinal"
-          type="text" class="menu-item disabled"
-          readonly>
-
-        <label for="cadastroEmailFinal">E-mail</label>
-        <input
-          id="cadastroEmailFinal"
-          type="email" class="menu-item disabled"
-          readonly >
-
         <label for="cadastroSenhaFinal">Senha</label>
         <div class="senha-wrapper-modal">
           <input id="cadastroSenhaFinal" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
@@ -226,22 +119,14 @@
         </div>
 
         <span id="msgCriarConta" class="msg-modal"></span>
-
-        <button
-          type="button"
-          class="btn-primary"
-          onclick="finalizarCadastro()">
-          Criar conta
-        </button>
-
-      </div>
-
+        <button type="submit" class="btn-primary">Criar conta e iniciar teste</button>
+        <small class="signup-note">Ao continuar, você concorda em escolher um plano ao final do período gratuito para manter o acesso.</small>
+      </form>
     </div>
-
   </div>
 
   <script src="/static/js/security.js"></script>
-  <script src="/static/js/login.js?v=2"></script>
+  <script src="/static/js/login.js?v=4"></script>
   <script type="module" src="/static/js/three-scene.js?v=1"></script>
 </body>
 </html>

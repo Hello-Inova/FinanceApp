@@ -547,7 +547,7 @@ async function salvarConfiguracoes() {
   ) {
     valorCadastro.classList.add("campo-erro");
     mostrarMensagemConfiguracoes(
-      "⚠️ Informe um valor de cadastro entre R$ 0,01 e R$ 1.000.000,00.",
+      "⚠️ Informe um valor mensal entre R$ 0,01 e R$ 1.000.000,00.",
       "erro"
     );
     return;

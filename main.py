@@ -19,7 +19,7 @@ from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from database import (
     alterar_senha_propria, alterar_senha_usuario, atualizar_agenda, atualizar_compra, atualizar_meta,
-    atualizar_dados_usuario, atualizar_lancamento, atualizar_status_compra,
+    atualizar_assinatura_por_subscription, atualizar_dados_usuario, atualizar_lancamento, atualizar_status_compra,
     atualizar_status_meta, atualizar_status_usuario, buscar_configuracoes, buscar_status_solicitacao,
     buscar_usuario, buscar_usuario_por_id, confirmar_pagamento, cpf_usuario_existe,
     criar_admin_inicial, criar_agenda, criar_compra, criar_lancamento, criar_meta, criar_ou_buscar_solicitacao,
@@ -27,7 +27,8 @@ from database import (
     excluir_lancamento, excluir_meta, excluir_usuario, finalizar_cadastro, healthcheck,
     listar_agenda, listar_compras, listar_lancamentos, listar_metas, listar_movimentacoes_meta,
     listar_usuarios, rate_limit_limpar, rate_limit_permitir, redefinir_senha_com_token,
-    registrar_movimentacao_meta, salvar_ou_atualizar_configuracoes,
+    registrar_evento_asaas, registrar_movimentacao_meta, salvar_assinatura_usuario,
+    salvar_cliente_asaas_usuario, salvar_ou_atualizar_configuracoes,
     salvar_pagamento_asaas, token_recuperacao_valido,
 )
 
@@ -112,6 +113,15 @@ def resumo_periodo_teste(usuario):
         return None
 
 
+def acesso_liberado(usuario):
+    if not usuario or usuario.get("perfil") == "Administrativo":
+        return bool(usuario)
+    if usuario.get("assinatura_status") in {"ativo", "legado"}:
+        return True
+    teste = resumo_periodo_teste(usuario)
+    return bool(teste and teste["ativo"])
+
+
 def asaas_configurado():
     ambiente = os.getenv("ASAAS_ENVIRONMENT", "sandbox").strip().lower()
     return bool(
@@ -121,7 +131,7 @@ def asaas_configurado():
     )
 
 
-def asaas_request(method, path, payload=None, query=None):
+def asaas_request(method, path, payload=None, query=None, timeout=15):
     ambiente = os.getenv("ASAAS_ENVIRONMENT", "sandbox").strip().lower()
     api_key = os.getenv("ASAAS_API_KEY", "").strip()
     if ambiente not in ASAAS_URLS or not api_key:
@@ -142,7 +152,7 @@ def asaas_request(method, path, payload=None, query=None):
         },
     )
     try:
-        with urllib.request.urlopen(requisicao, timeout=15) as resposta:
+        with urllib.request.urlopen(requisicao, timeout=timeout) as resposta:
             return json.loads(resposta.read().decode("utf-8"))
     except urllib.error.HTTPError as erro:
         logger.warning("Asaas respondeu HTTP %s em %s %s", erro.code, method, path)
@@ -222,6 +232,36 @@ def garantir_cobranca_asaas(solicitacao, nome, cpf, email):
         "expiration_date": pix_expiration,
         "valor_centavos": valor_centavos,
     }
+
+
+def garantir_cliente_asaas_usuario(usuario):
+    customer_id = usuario.get("asaas_customer_id")
+    if customer_id:
+        return customer_id
+    clientes = asaas_request(
+        "GET", "/customers", query={"cpfCnpj": usuario["cpf"], "limit": 1}
+    ).get("data", [])
+    if clientes:
+        customer_id = clientes[0].get("id")
+    else:
+        cliente = asaas_request("POST", "/customers", {
+            "name": usuario["nome"],
+            "cpfCnpj": usuario["cpf"],
+            "email": usuario["email"],
+            "externalReference": f"financeapp-usuario-{usuario['id']}",
+            "notificationDisabled": False,
+        })
+        customer_id = cliente.get("id")
+    if not customer_id:
+        raise AsaasError("A Asaas não retornou o cliente criado.")
+    salvar_cliente_asaas_usuario(usuario["id"], customer_id)
+    return customer_id
+
+
+def primeiro_pagamento_assinatura(subscription_id):
+    resposta = asaas_request("GET", f"/subscriptions/{subscription_id}/payments")
+    pagamentos = resposta.get("data", [])
+    return pagamentos[0] if pagamentos else None
 
 
 def resposta_erro(mensagem, status=400):
@@ -418,6 +458,27 @@ def exigir_troca_de_senha():
     return redirect("/trocar-senha")
 
 
+@app.before_request
+def exigir_assinatura_ativa():
+    if (
+        request.endpoint in {"static", "components", "health", "webhook_pagamento"}
+        or request.path.startswith("/api/public/")
+    ):
+        return None
+    usuario = usuario_atual()
+    if not usuario or usuario.get("must_change_password") or acesso_liberado(usuario):
+        return None
+    permitidos = {
+        "assinatura_pagina", "api_assinatura", "logout", "verificar_sessao",
+        "trocar_senha_pagina", "alterar_senha_conta",
+    }
+    if request.endpoint in permitidos:
+        return None
+    if request.path.startswith("/api/") or request.accept_mimetypes.best == "application/json":
+        return resposta_erro("Seu período de teste terminou. Escolha um plano para continuar.", 402)
+    return redirect("/assinatura")
+
+
 @app.after_request
 def cabecalhos_seguranca(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -526,6 +587,13 @@ def configuracoes():
     return redirect("/admin")
 
 
+@app.route("/assinatura")
+def assinatura_pagina():
+    if not usuario_atual():
+        return redirect("/")
+    return render_template("assinatura.html")
+
+
 @app.route("/trocar-senha")
 def trocar_senha_pagina():
     if not usuario_atual():
@@ -575,6 +643,9 @@ def verificar_sessao():
         "perfil": usuario["perfil"],
         "must_change_password": bool(usuario["must_change_password"]),
         "teste": resumo_periodo_teste(usuario),
+        "assinatura_status": usuario.get("assinatura_status"),
+        "assinatura_metodo": usuario.get("assinatura_metodo"),
+        "acesso_liberado": acesso_liberado(usuario),
     })
 
 
@@ -597,7 +668,12 @@ def login():
     session.permanent = True
     session["usuario_id"] = usuario["id"]
     session["session_version"] = usuario["session_version"]
-    return jsonify({"success": True, "must_change_password": bool(usuario["must_change_password"])})
+    destino = "/home" if acesso_liberado(usuario) else "/assinatura"
+    return jsonify({
+        "success": True,
+        "must_change_password": bool(usuario["must_change_password"]),
+        "redirect": destino,
+    })
 
 
 @app.route("/api/public/password-reset/request", methods=["POST"])
@@ -1024,6 +1100,126 @@ def api_buscar_configuracoes():
     return jsonify(configuracoes)
 
 
+@app.route("/api/assinatura", methods=["GET", "POST"])
+@login_obrigatorio
+def api_assinatura():
+    usuario = usuario_atual()
+    if request.method == "GET":
+        return jsonify({
+            "status": usuario.get("assinatura_status"),
+            "metodo": usuario.get("assinatura_metodo"),
+            "proximo_vencimento": usuario.get("assinatura_proximo_vencimento"),
+            "valor_centavos": valor_cadastro_atual_centavos(),
+            "teste": resumo_periodo_teste(usuario),
+            "gateway_disponivel": bool(PAYMENTS_ENABLED and asaas_configurado()),
+        })
+
+    if usuario.get("perfil") == "Administrativo":
+        return resposta_erro("Administradores não precisam contratar um plano.")
+    if not PAYMENTS_ENABLED or not asaas_configurado():
+        return resposta_erro("Pagamentos temporariamente indisponíveis.", 503)
+    valor_centavos = valor_cadastro_atual_centavos()
+    if valor_centavos <= 0:
+        return resposta_erro("O valor mensal do plano ainda não foi configurado.", 503)
+
+    dados = json_body()
+    metodo = dados.get("metodo")
+    if metodo not in {"CREDIT_CARD", "PIX", "BOLETO"}:
+        return resposta_erro("Escolha uma forma de pagamento válida.")
+    try:
+        customer_id = garantir_cliente_asaas_usuario(usuario)
+        referencia = f"financeapp-assinatura-{usuario['id']}"
+        existentes = asaas_request(
+            "GET", "/subscriptions",
+            query={"externalReference": referencia, "limit": 1},
+        ).get("data", [])
+        assinatura = existentes[0] if existentes else None
+        if assinatura:
+            metodo = assinatura.get("billingType") or metodo
+        if not assinatura:
+            payload = {
+                "customer": customer_id,
+                "billingType": metodo,
+                "value": float(Decimal(valor_centavos) / 100),
+                "nextDueDate": date.today().isoformat(),
+                "cycle": "MONTHLY",
+                "description": "Plano mensal FinanceApp",
+                "externalReference": referencia,
+            }
+            if metodo == "CREDIT_CARD":
+                numero = re.sub(r"\D", "", str(dados.get("numero_cartao") or ""))
+                mes = re.sub(r"\D", "", str(dados.get("validade_mes") or ""))
+                ano = re.sub(r"\D", "", str(dados.get("validade_ano") or ""))
+                ccv = re.sub(r"\D", "", str(dados.get("ccv") or ""))
+                cep = re.sub(r"\D", "", str(dados.get("cep") or ""))
+                telefone = re.sub(r"\D", "", str(dados.get("telefone") or ""))
+                if not 13 <= len(numero) <= 19 or len(ccv) not in {3, 4}:
+                    raise ValueError("Confira o número do cartão e o código de segurança.")
+                if len(mes) not in {1, 2} or len(ano) not in {2, 4} or not 1 <= int(mes) <= 12:
+                    raise ValueError("Informe uma validade de cartão válida.")
+                if len(ano) == 2:
+                    ano = "20" + ano
+                if len(cep) != 8 or len(telefone) not in {10, 11}:
+                    raise ValueError("Informe CEP e telefone válidos para o titular.")
+                payload.update({
+                    "creditCard": {
+                        "holderName": texto(dados.get("titular"), "Titular", 2, 120),
+                        "number": numero,
+                        "expiryMonth": mes.zfill(2),
+                        "expiryYear": ano,
+                        "ccv": ccv,
+                    },
+                    "creditCardHolderInfo": {
+                        "name": texto(dados.get("titular"), "Titular", 2, 120),
+                        "email": usuario["email"],
+                        "cpfCnpj": usuario["cpf"],
+                        "postalCode": cep,
+                        "addressNumber": texto(dados.get("numero_endereco"), "Número do endereço", 1, 20),
+                        "phone": telefone,
+                        "mobilePhone": telefone,
+                    },
+                    "remoteIp": ip_cliente(),
+                })
+            assinatura = asaas_request(
+                "POST", "/subscriptions", payload,
+                timeout=70 if metodo == "CREDIT_CARD" else 20,
+            )
+
+        subscription_id = texto(assinatura.get("id"), "Assinatura", 1, 200)
+        pagamento = primeiro_pagamento_assinatura(subscription_id)
+        payment_status = (pagamento or {}).get("status")
+        status_local = "ativo" if payment_status in ASAAS_PAYMENT_STATUSES else "aguardando_pagamento"
+        payment_id = (pagamento or {}).get("id")
+        proximo = assinatura.get("nextDueDate") or (pagamento or {}).get("dueDate")
+        salvar_assinatura_usuario(
+            usuario["id"], subscription_id, metodo, status_local, proximo, payment_id
+        )
+        resposta = {
+            "status": status_local,
+            "metodo": metodo,
+            "subscription_id": subscription_id,
+            "payment_status": payment_status,
+            "proximo_vencimento": proximo,
+        }
+        if pagamento:
+            resposta["invoice_url"] = pagamento.get("invoiceUrl")
+            if metodo == "BOLETO":
+                resposta["bank_slip_url"] = pagamento.get("bankSlipUrl")
+            if metodo == "PIX" and payment_id:
+                pix = asaas_request("GET", f"/payments/{payment_id}/pixQrCode")
+                resposta["pix"] = {
+                    "payload": pix.get("payload"),
+                    "encoded_image": pix.get("encodedImage"),
+                    "expiration_date": pix.get("expirationDate"),
+                }
+        return jsonify(resposta), 201
+    except ValueError as erro:
+        return resposta_erro(str(erro))
+    except AsaasError as erro:
+        logger.exception("Falha ao criar assinatura recorrente na Asaas")
+        return resposta_erro(str(erro), 502)
+
+
 @app.route("/api/configuracoes", methods=["POST"])
 @admin_obrigatorio
 def api_salvar_configuracoes():
@@ -1037,7 +1233,7 @@ def api_salvar_configuracoes():
         except (TypeError, ValueError):
             raise ValueError("Informe o valor do cadastro.")
         if not 1 <= valor_cadastro_centavos <= 100_000_000:
-            raise ValueError("O valor do cadastro deve ficar entre R$ 0,01 e R$ 1.000.000,00.")
+            raise ValueError("O valor mensal deve ficar entre R$ 0,01 e R$ 1.000.000,00.")
         periodo_teste_dias = dados.get("periodo_teste_dias")
         if isinstance(periodo_teste_dias, bool):
             raise ValueError("Período de teste inválido.")
@@ -1062,26 +1258,17 @@ def api_salvar_configuracoes():
 
 @app.route("/api/public/pix", methods=["GET"])
 def api_public_pix():
-    if not PAYMENTS_ENABLED or not asaas_configurado():
-        return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
     valor_centavos = valor_cadastro_atual_centavos()
-    if valor_centavos <= 0:
-        return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
     return jsonify({
         "provider": "asaas",
         "valor_centavos": valor_centavos,
+        "periodo_teste_dias": periodo_teste_atual_dias(),
+        "metodos": ["CREDIT_CARD", "PIX", "BOLETO"],
     })
 
 
 @app.route("/api/public/cadastro", methods=["POST"])
 def api_criar_solicitacao_cadastro():
-    valor_centavos = valor_cadastro_atual_centavos()
-    if (
-        not PAYMENTS_ENABLED
-        or valor_centavos <= 0
-        or not asaas_configurado()
-    ):
-        return resposta_erro("Cadastro por pagamento temporariamente indisponível.", 503)
     chave = chave_rate_limit("cadastro", ip_cliente())
     if not rate_limit_permitir(chave, 5, 60 * 60):
         return resposta_erro("Muitas tentativas. Tente novamente mais tarde.", 429)
@@ -1090,35 +1277,33 @@ def api_criar_solicitacao_cadastro():
         nome = texto(dados.get("nome"), "Nome", 2, 120)
         cpf = cpf_valido(dados.get("cpf"))
         email = email_valido(dados.get("email"))
+        senha = senha_forte(dados.get("senha"))
+        if senha != dados.get("confirmar_senha"):
+            raise ValueError("As senhas não coincidem.")
         if cpf_usuario_existe(cpf) or email_usuario_existe(email):
-            return resposta_erro("Não foi possível iniciar o cadastro com esses dados.")
-        solicitacao = criar_ou_buscar_solicitacao(
-            nome, cpf, email, valor_centavos
+            return resposta_erro("Não foi possível criar a conta com esses dados.")
+        dias_teste = periodo_teste_atual_dias()
+        criar_usuario(
+            nome, cpf, email, senha, "Padrão",
+            periodo_teste_dias=dias_teste,
         )
-        pix = None
-        if solicitacao["status"] == "pendente":
-            if solicitacao.get("pix_payload"):
-                pix = {
-                    "payload": solicitacao["pix_payload"],
-                    "expiration_date": solicitacao.get("pix_expiration"),
-                    "valor_centavos": int(solicitacao["valor_centavos"]),
-                }
-            else:
-                pix = garantir_cobranca_asaas(solicitacao, nome, cpf, email)
+        usuario = buscar_usuario(email, senha)
+        session.clear()
+        session.permanent = True
+        session["usuario_id"] = usuario["id"]
+        session["session_version"] = usuario["session_version"]
+        rate_limit_limpar(chave)
         return jsonify({
-            "status": "ok", "solicitacao_token": solicitacao["public_token"],
-            "nome": solicitacao.get("nome") or nome,
-            "pagamento_status": solicitacao["status"],
-            "pix": pix,
+            "status": "ok",
+            "mensagem": "Conta criada. Seu teste gratuito começou.",
+            "redirect": "/home" if dias_teste > 0 else "/assinatura",
+            "periodo_teste_dias": dias_teste,
         }), 201
     except ValueError as erro:
         return resposta_erro(str(erro))
-    except AsaasError:
-        logger.exception("Falha ao criar cobrança de cadastro na Asaas")
-        return resposta_erro(
-            "Não foi possível gerar o PIX agora. Tente novamente em instantes.",
-            502,
-        )
+    except Exception:
+        logger.exception("Falha ao criar conta de teste")
+        return resposta_erro("Não foi possível criar a conta. Verifique CPF e e-mail.")
 
 
 @app.route("/api/public/cadastro/<token>", methods=["GET"])
@@ -1181,15 +1366,43 @@ def webhook_pagamento():
         return resposta_erro("Token inválido.", 401)
     dados = json_body()
     try:
-        if dados.get("event") not in {"PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"}:
+        evento = str(dados.get("event") or "")
+        eventos_sucesso = {"PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"}
+        eventos_pendentes = {
+            "PAYMENT_OVERDUE", "PAYMENT_CREDIT_CARD_CAPTURE_REFUSED",
+            "PAYMENT_REFUNDED", "PAYMENT_CHARGEBACK_REQUESTED",
+        }
+        eventos_assinatura_inativa = {"SUBSCRIPTION_INACTIVATED", "SUBSCRIPTION_DELETED"}
+        if evento not in eventos_sucesso | eventos_pendentes | eventos_assinatura_inativa:
             return jsonify({"status": "ignored"})
+        event_id = str(dados.get("id") or "").strip()
+
+        if evento in eventos_assinatura_inativa:
+            assinatura = dados.get("subscription") or {}
+            subscription_id = assinatura.get("id")
+            if subscription_id:
+                atualizado = atualizar_assinatura_por_subscription(subscription_id, "pendente")
+                if atualizado and event_id and not registrar_evento_asaas(event_id, evento):
+                    return jsonify({"status": "duplicate"})
+            return jsonify({"status": "ok"})
+
         pagamento = dados.get("payment")
         if not isinstance(pagamento, dict):
             raise ValueError("Pagamento inválido.")
-        if pagamento.get("status") not in ASAAS_PAYMENT_STATUSES:
+        external_id = texto(pagamento.get("id"), "Identificador", 1, 200)
+        subscription_id = pagamento.get("subscription")
+        if subscription_id:
+            status_local = "ativo" if evento in eventos_sucesso else "pendente"
+            atualizado = atualizar_assinatura_por_subscription(
+                subscription_id, status_local, external_id, pagamento.get("dueDate")
+            )
+            if atualizado and event_id and not registrar_evento_asaas(event_id, evento):
+                return jsonify({"status": "duplicate"})
+            return jsonify({"status": "ok" if atualizado else "ignored"})
+
+        if evento not in eventos_sucesso or pagamento.get("status") not in ASAAS_PAYMENT_STATUSES:
             return jsonify({"status": "ignored"})
         token = texto(pagamento.get("externalReference"), "Solicitação", 20, 200)
-        external_id = texto(pagamento.get("id"), "Identificador", 1, 200)
         valor_centavos = valor_asaas_em_centavos(pagamento.get("value"))
         solicitacao = buscar_status_solicitacao(token)
         if (
@@ -1200,6 +1413,8 @@ def webhook_pagamento():
             logger.warning("Webhook Asaas ignorado por valor divergente para %s", external_id)
             return jsonify({"status": "ignored"})
         confirmado = confirmar_pagamento(token, external_id, valor_centavos)
+        if confirmado and event_id and not registrar_evento_asaas(event_id, evento):
+            return jsonify({"status": "duplicate"})
         return jsonify({"status": "ok" if confirmado else "ignored"})
     except (AsaasError, TypeError, ValueError):
         logger.warning("Webhook Asaas autenticado com evento inválido")

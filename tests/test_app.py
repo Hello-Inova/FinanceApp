@@ -95,24 +95,36 @@ def test_pagamento_simulado_foi_removido(client, csrf):
     assert response.status_code == 404
 
 
-def test_cadastro_exibe_valor_da_cobranca(client):
+def test_cadastro_exibe_oferta_de_teste_sem_pagamento(client):
     pagina = client.get("/")
     conteudo = pagina.get_data(as_text=True)
     assert pagina.status_code == 200
-    assert 'id="valorCadastroPix"' in conteudo
-    assert 'id="valorPagamentoPix"' in conteudo
-    assert "Valor do cadastro" in conteudo
-    assert "Valor a pagar" in conteudo
+    assert 'id="periodoTesteCadastro"' in conteudo
+    assert "Nenhuma cobrança agora" in conteudo
+    assert "Gerar PIX" not in conteudo
 
 
-def test_cadastro_pago_fica_bloqueado_sem_gateway(client, csrf):
+def test_cadastro_gratuito_funciona_sem_gateway(client, csrf):
     token = csrf(client.get("/"))
     response = client.post(
         "/api/public/cadastro",
-        json={"cpf": "52998224725", "email": "novo@example.com"},
+        json={
+            "nome": "Nova Pessoa",
+            "cpf": "52998224725",
+            "email": "novo@example.com",
+            "senha": "Senha@123",
+            "confirmar_senha": "Senha@123",
+        },
         headers={"X-CSRFToken": token},
     )
-    assert response.status_code == 503
+    assert response.status_code == 201, response.json
+    assert response.json["redirect"] == "/home"
+    sessao = client.get("/session").json
+    assert sessao["logado"] is True
+    assert sessao["teste"]["ativo"] is True
+    assert sessao["assinatura_status"] == "trial"
+    assert sessao["acesso_liberado"] is True
+    assert client.get("/home").status_code == 200
 
 
 def test_admin_configura_valor_do_cadastro(client, csrf, monkeypatch):
@@ -198,33 +210,65 @@ def test_periodo_teste_configuravel_e_exibido_na_sessao(client, csrf):
     assert 'removeItem("financeapp-session-v2")' in security_script
 
 
-def test_fluxo_cadastro_pix_asaas(client, csrf, monkeypatch):
+def test_assinatura_pix_apos_teste_e_webhook(client, csrf, monkeypatch):
     import main
     import database
 
+    token_csrf = csrf(client.get("/"))
+    cadastro = client.post(
+        "/api/public/cadastro",
+        json={
+            "nome": "Pessoa de Teste",
+            "cpf": "52998224725",
+            "email": "novo@example.com",
+            "senha": "SenhaForte@123",
+            "confirmar_senha": "SenhaForte@123",
+        },
+        headers={"X-CSRFToken": token_csrf},
+    )
+    assert cadastro.status_code == 201
+
+    conn = database.conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE usuarios SET teste_fim = ?, assinatura_status = 'trial' WHERE email = ?",
+        ("2020-01-01T00:00:00+00:00", "novo@example.com"),
+    )
+    conn.commit()
+    conn.close()
+    assert client.get("/home").headers["Location"].endswith("/assinatura")
+    pagina_assinatura = client.get("/assinatura")
+    assert pagina_assinatura.status_code == 200
+
+    database.salvar_ou_atualizar_configuracoes("", "", "", "", 1990, 7)
     monkeypatch.setattr(main, "PAYMENTS_ENABLED", True)
-    monkeypatch.setattr(main, "CADASTRO_VALOR_CENTAVOS", 1990)
     monkeypatch.setenv("ASAAS_ENVIRONMENT", "sandbox")
     monkeypatch.setenv("ASAAS_API_KEY", "$aact_hmlg_teste")
     monkeypatch.setenv("ASAAS_WEBHOOK_TOKEN", "webhook-secreto-teste")
 
     chamadas = []
 
-    def asaas_falso(method, path, payload=None, query=None):
-        chamadas.append((method, path, payload, query))
-        if method == "GET" and path == "/payments":
-            return {"data": []}
+    def asaas_falso(method, path, payload=None, query=None, timeout=15):
+        chamadas.append((method, path, payload, query, timeout))
         if method == "GET" and path == "/customers":
             return {"data": []}
         if method == "POST" and path == "/customers":
             assert payload["cpfCnpj"] == "52998224725"
-            assert payload["notificationDisabled"] is True
+            assert payload["notificationDisabled"] is False
             return {"id": "cus_teste"}
-        if method == "POST" and path == "/payments":
+        if method == "GET" and path == "/subscriptions":
+            return {"data": []}
+        if method == "POST" and path == "/subscriptions":
             assert payload["customer"] == "cus_teste"
             assert payload["billingType"] == "PIX"
             assert payload["value"] == 19.9
-            return {"id": "pay_teste"}
+            assert payload["cycle"] == "MONTHLY"
+            return {"id": "sub_teste", "billingType": "PIX", "nextDueDate": "2026-09-29"}
+        if method == "GET" and path == "/subscriptions/sub_teste/payments":
+            return {"data": [{
+                "id": "pay_teste", "status": "PENDING", "dueDate": "2026-09-29",
+                "invoiceUrl": "https://sandbox.asaas.com/i/pay_teste",
+            }]}
         if method == "GET" and path == "/payments/pay_teste/pixQrCode":
             return {
                 "payload": "000201010212PIX-DINAMICO-ASAAS",
@@ -233,35 +277,15 @@ def test_fluxo_cadastro_pix_asaas(client, csrf, monkeypatch):
         raise AssertionError(f"Chamada inesperada: {method} {path}")
 
     monkeypatch.setattr(main, "asaas_request", asaas_falso)
-    token_csrf = csrf(client.get("/"))
+    token_csrf = csrf(pagina_assinatura)
     response = client.post(
-        "/api/public/cadastro",
-        json={
-            "nome": "Pessoa de Teste",
-            "cpf": "52998224725",
-            "email": "novo@example.com",
-        },
+        "/api/assinatura",
+        json={"metodo": "PIX"},
         headers={"X-CSRFToken": token_csrf},
     )
     assert response.status_code == 201
     assert response.json["pix"]["payload"] == "000201010212PIX-DINAMICO-ASAAS"
-    solicitacao = response.json["solicitacao_token"]
-
-    repetida = client.post(
-        "/api/public/cadastro",
-        json={
-            "nome": "Pessoa de Teste",
-            "cpf": "52998224725",
-            "email": "novo@example.com",
-        },
-        headers={"X-CSRFToken": token_csrf},
-    )
-    assert repetida.status_code == 201, repetida.json
-    assert repetida.json["pix"]["payload"] == "000201010212PIX-DINAMICO-ASAAS"
-    assert len(chamadas) == 5
-
-    # Uma mudança de preço não pode invalidar a cobrança já emitida.
-    database.salvar_ou_atualizar_configuracoes("", "", "", "", 2990)
+    assert response.json["status"] == "aguardando_pagamento"
 
     invalido = client.post(
         "/api/payments/webhook",
@@ -273,12 +297,13 @@ def test_fluxo_cadastro_pix_asaas(client, csrf, monkeypatch):
     webhook = client.post(
         "/api/payments/webhook",
         json={
+            "id": "evt_asaas_1",
             "event": "PAYMENT_RECEIVED",
             "payment": {
                 "id": "pay_teste",
-                "externalReference": solicitacao,
-                "value": 19.90,
+                "subscription": "sub_teste",
                 "status": "RECEIVED",
+                "dueDate": "2026-10-29",
             },
         },
         headers={"asaas-access-token": "webhook-secreto-teste"},
@@ -289,34 +314,88 @@ def test_fluxo_cadastro_pix_asaas(client, csrf, monkeypatch):
     repetido = client.post(
         "/api/payments/webhook",
         json={
+            "id": "evt_asaas_1",
             "event": "PAYMENT_RECEIVED",
             "payment": {
                 "id": "pay_teste",
-                "externalReference": solicitacao,
-                "value": 19.90,
+                "subscription": "sub_teste",
                 "status": "RECEIVED",
+                "dueDate": "2026-10-29",
             },
         },
         headers={"asaas-access-token": "webhook-secreto-teste"},
     )
     assert repetido.status_code == 200
-    assert repetido.json["status"] == "ok"
+    assert repetido.json["status"] == "duplicate"
+    sessao = client.get("/session").json
+    assert sessao["assinatura_status"] == "ativo"
+    assert sessao["acesso_liberado"] is True
+    assert client.get("/home").status_code == 200
 
-    status = client.get(f"/api/public/cadastro/{solicitacao}")
-    assert status.json["pagamento_status"] == "pago"
 
-    finalizado = client.post(
-        "/api/public/finalizar-cadastro",
+def test_cartao_cria_assinatura_mensal_sem_armazenar_dados(client, csrf, monkeypatch):
+    import main
+    import database
+
+    token = csrf(client.get("/"))
+    cadastro = client.post(
+        "/api/public/cadastro",
         json={
-            "solicitacao_token": solicitacao,
-            "nome": "Pessoa de Teste",
-            "email": "novo@example.com",
-            "senha": "SenhaForte@123",
-            "confirmar_senha": "SenhaForte@123",
+            "nome": "Cliente Cartão",
+            "cpf": "11144477735",
+            "email": "cartao@example.com",
+            "senha": "Cartao@123",
+            "confirmar_senha": "Cartao@123",
         },
-        headers={"X-CSRFToken": token_csrf},
+        headers={"X-CSRFToken": token},
     )
-    assert finalizado.status_code == 201
+    assert cadastro.status_code == 201
+    database.salvar_ou_atualizar_configuracoes("", "", "", "", 2990, 7)
+    monkeypatch.setattr(main, "PAYMENTS_ENABLED", True)
+    monkeypatch.setenv("ASAAS_ENVIRONMENT", "sandbox")
+    monkeypatch.setenv("ASAAS_API_KEY", "$aact_hmlg_teste")
+    monkeypatch.setenv("ASAAS_WEBHOOK_TOKEN", "webhook-secreto-teste")
+
+    payload_assinatura = {}
+
+    def asaas_falso(method, path, payload=None, query=None, timeout=15):
+        if method == "GET" and path == "/customers":
+            return {"data": [{"id": "cus_cartao"}]}
+        if method == "GET" and path == "/subscriptions":
+            return {"data": []}
+        if method == "POST" and path == "/subscriptions":
+            payload_assinatura.update(payload)
+            assert timeout == 70
+            return {"id": "sub_cartao", "billingType": "CREDIT_CARD", "nextDueDate": "2026-09-29"}
+        if method == "GET" and path == "/subscriptions/sub_cartao/payments":
+            return {"data": [{"id": "pay_cartao", "status": "CONFIRMED", "dueDate": "2026-09-29"}]}
+        raise AssertionError(f"Chamada inesperada: {method} {path}")
+
+    monkeypatch.setattr(main, "asaas_request", asaas_falso)
+    token = csrf(client.get("/home"))
+    response = client.post(
+        "/api/assinatura",
+        json={
+            "metodo": "CREDIT_CARD",
+            "titular": "Cliente Cartão",
+            "numero_cartao": "4111111111111111",
+            "validade_mes": "12",
+            "validade_ano": "2030",
+            "ccv": "123",
+            "cep": "01001000",
+            "numero_endereco": "100",
+            "telefone": "11999999999",
+        },
+        headers={"X-CSRFToken": token},
+    )
+    assert response.status_code == 201, response.json
+    assert response.json["status"] == "ativo"
+    assert payload_assinatura["billingType"] == "CREDIT_CARD"
+    assert payload_assinatura["cycle"] == "MONTHLY"
+    assert payload_assinatura["value"] == 29.9
+    assert payload_assinatura["creditCard"]["number"] == "4111111111111111"
+    assert payload_assinatura["remoteIp"]
+    assert "4111111111111111" not in response.get_data(as_text=True)
 
 
 def test_crud_financeiro_autenticado(client, csrf):
