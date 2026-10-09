@@ -423,6 +423,13 @@ def test_crud_financeiro_autenticado(client, csrf):
         conteudo = pagina.get_data(as_text=True)
         assert "Novo lançamento" in conteudo
         assert 'id="modalNovoLancamento"' in conteudo
+        assert 'id="filtroData"' in conteudo
+        assert "Todas as datas" in conteudo
+
+    script = client.get("/static/js/movimentacoes.js").get_data(as_text=True)
+    assert "String(i.data)===data" in script
+    assert "const total=lista.reduce" in script
+    assert "dataLocal(filtroData.value)" in script
 
 
 def test_menu_compartilhado_em_todas_as_telas_autenticadas(client, csrf):
