@@ -417,6 +417,15 @@ def test_crud_financeiro_autenticado(client, csrf):
     lancamentos = client.get("/api/financas").json
     assert len(lancamentos) == 1
     assert lancamentos[0]["valor"] == 125.5 or lancamentos[0]["valor"] == "125.5"
+    home = client.get("/home")
+    conteudo_home = home.get_data(as_text=True)
+    assert home.status_code == 200
+    assert 'class="home-desktop-table"' in conteudo_home
+    assert 'id="tabelaDesktop"' in conteudo_home
+    assert 'id="iptPesquisaDesktop"' in conteudo_home
+    assert 'id="filtroMesDesktop"' in conteudo_home
+    assert 'id="filtroDataDesktop"' in conteudo_home
+    assert 'id="totalFiltradoDesktop"' in conteudo_home
     for rota in ("/financas/entradas", "/financas/saidas", "/financas/saldo"):
         pagina = client.get(rota)
         assert pagina.status_code == 200
@@ -432,9 +441,16 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert "datasSelecionadas.size>1" in script
     assert "const total=lista.reduce" in script
     assert "datas selecionadas" in script
+    script_home = client.get("/static/js/home.js").get_data(as_text=True)
+    assert "datasSelecionadasDesktop" in script_home
+    assert "filtrarLancamentosDesktop" in script_home
+    assert "renderizarTabelaDesktop" in script_home
+    assert "itensPorPaginaDesktop = 5" in script_home
     estilos = client.get("/static/css/home.css").get_data(as_text=True)
     assert ".date-filter-options input" in estilos
     assert "tbody tr { display: grid" in estilos
+    assert ".home-desktop-table { display: none; }" in estilos
+    assert "@media (min-width: 1100px)" in estilos
 
 
 def test_menu_compartilhado_em_todas_as_telas_autenticadas(client, csrf):
