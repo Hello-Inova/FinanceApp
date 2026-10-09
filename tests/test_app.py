@@ -427,9 +427,14 @@ def test_crud_financeiro_autenticado(client, csrf):
         assert "Todas as datas" in conteudo
 
     script = client.get("/static/js/movimentacoes.js").get_data(as_text=True)
-    assert "String(i.data)===data" in script
+    assert "datasSelecionadas.has(String(i.data))" in script
+    assert 'input.type="checkbox"' in script
+    assert "datasSelecionadas.size>1" in script
     assert "const total=lista.reduce" in script
-    assert "dataLocal(filtroData.value)" in script
+    assert "datas selecionadas" in script
+    estilos = client.get("/static/css/home.css").get_data(as_text=True)
+    assert ".date-filter-options input" in estilos
+    assert "tbody tr { display: grid" in estilos
 
 
 def test_menu_compartilhado_em_todas_as_telas_autenticadas(client, csrf):

@@ -287,6 +287,7 @@ body > main { position: relative; z-index: 1; }
   body .filters { gap: 9px; }
   body input,
   body select { min-height: 38px; padding: 8px 10px; }
+  body .date-filter summary { min-height: 38px; padding-top: 8px; padding-bottom: 8px; }
 
   body .section-heading,
   body .results-heading { margin-bottom: 8px; }
