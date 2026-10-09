@@ -444,7 +444,7 @@ def exigir_troca_de_senha():
     # com o Postgres; fazer isso para CSS, JS, imagens e o menu tornava uma única
     # página responsável por várias conexões desnecessárias.
     if (
-        request.endpoint in {"static", "components", "health", "webhook_pagamento"}
+        request.endpoint in {"static", "components", "service_worker", "health", "webhook_pagamento"}
         or request.path.startswith("/api/public/")
     ):
         return None
@@ -461,7 +461,7 @@ def exigir_troca_de_senha():
 @app.before_request
 def exigir_assinatura_ativa():
     if (
-        request.endpoint in {"static", "components", "health", "webhook_pagamento"}
+        request.endpoint in {"static", "components", "service_worker", "health", "webhook_pagamento"}
         or request.path.startswith("/api/public/")
     ):
         return None
@@ -490,7 +490,10 @@ def cabecalhos_seguranca(response):
         "style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; "
         "object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
     )
-    if request.path.startswith("/api/") or request.path == "/session":
+    if request.path == "/service-worker.js":
+        response.headers["Cache-Control"] = "no-cache"
+        response.headers["Service-Worker-Allowed"] = "/"
+    elif request.path.startswith("/api/") or request.path == "/session":
         response.headers["Cache-Control"] = "no-store"
     elif request.endpoint in {"static", "components"}:
         response.headers["Cache-Control"] = "public, max-age=300, stale-while-revalidate=86400"
@@ -513,6 +516,11 @@ def payload_grande(_error):
 @app.route("/components/<path:filename>")
 def components(filename):
     return send_from_directory("components", filename)
+
+
+@app.route("/service-worker.js")
+def service_worker():
+    return send_from_directory("static", "service-worker.js", mimetype="application/javascript")
 
 
 @app.route("/")

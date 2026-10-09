@@ -1,0 +1,24 @@
+.pwa-install-button {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9000;
+  display: inline-flex;
+  min-height: 42px;
+  padding: 9px 14px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(129, 140, 248, .5);
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #6366f1);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, .45);
+  font: 750 .86rem/1.2 "Segoe UI", system-ui, sans-serif;
+  cursor: pointer;
+}
+.pwa-install-button:hover { transform: translateY(-2px); }
+.pwa-install-button:focus-visible { outline: 3px solid rgba(56, 189, 248, .6); outline-offset: 2px; }
+.pwa-install-button:disabled { opacity: .65; cursor: wait; }
+@media (max-width: 640px) { .pwa-install-button { right: 12px; bottom: 12px; } }
+@media (display-mode: standalone) { .pwa-install-button { display: none !important; } }
+@media (prefers-reduced-motion: reduce) { .pwa-install-button { transition: none; } }

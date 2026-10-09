@@ -453,6 +453,35 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert "@media (min-width: 1100px)" in estilos
 
 
+def test_pwa_instalavel_e_sem_cache_de_dados_autenticados(client, csrf):
+    login = client.get("/")
+    conteudo = login.get_data(as_text=True)
+    assert login.status_code == 200
+    assert 'rel="manifest" href="/static/manifest.webmanifest"' in conteudo
+    assert 'rel="apple-touch-icon"' in conteudo
+    assert '/static/js/pwa.js?v=1' in conteudo
+
+    manifest = client.get("/static/manifest.webmanifest")
+    assert manifest.status_code == 200
+    dados = manifest.get_json()
+    assert dados["name"] == "FinanceApp"
+    assert dados["display"] == "standalone"
+    assert dados["scope"] == "/"
+    assert {icone["sizes"] for icone in dados["icons"]} >= {"192x192", "512x512"}
+    assert any(icone.get("purpose") == "maskable" for icone in dados["icons"])
+
+    worker = client.get("/service-worker.js")
+    script = worker.get_data(as_text=True)
+    assert worker.status_code == 200
+    assert worker.headers["Service-Worker-Allowed"] == "/"
+    assert worker.headers["Cache-Control"] == "no-cache"
+    assert 'request.mode === "navigate"' in script
+    assert 'url.pathname.startsWith("/api/")' in script
+    assert 'url.pathname === "/lancamentos"' in script
+    for arquivo in ("pwa-icon-192.png", "pwa-icon-512.png", "pwa-maskable-512.png", "apple-touch-icon.png"):
+        assert client.get(f"/static/img/{arquivo}").status_code == 200
+
+
 def test_menu_compartilhado_em_todas_as_telas_autenticadas(client, csrf):
     login_admin(client, csrf)
     trocar_senha(client, csrf)
