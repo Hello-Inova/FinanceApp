@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Finanças | FinanceApp</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css', v=8) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css', v=9) }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app-shell.css', v=4) }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
@@ -29,7 +29,11 @@
     <section class="home-desktop-table" aria-labelledby="tituloLancamentosDesktop">
       <header class="home-table-header">
         <div><span class="eyebrow">Movimentações</span><h2 id="tituloLancamentosDesktop">Lançamentos recentes</h2><p id="contadorLancamentosDesktop">Carregando lançamentos...</p></div>
-        <div class="home-filter-total" aria-live="polite"><span>Saldo filtrado</span><strong id="totalFiltradoDesktop">R$ 0,00</strong></div>
+        <div class="selection-totals" aria-live="polite">
+          <div class="home-filter-total"><span>Total da tabela</span><strong id="totalFiltradoDesktop">R$ 0,00</strong></div>
+          <div class="home-filter-total"><span id="selecionadosResumoDesktop">0 selecionados</span><strong id="totalSelecionadoDesktop">R$ 0,00</strong></div>
+          <div class="home-filter-total remaining-total"><span>Total restante</span><strong id="totalRestanteDesktop">R$ 0,00</strong></div>
+        </div>
       </header>
 
       <section class="filters home-finance-filters" aria-label="Filtros dos lançamentos">
@@ -42,8 +46,8 @@
       <div class="table-card home-table-card">
         <div class="table-wrapper">
           <table aria-label="Lançamentos financeiros">
-            <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Observação</th><th>Ações</th></tr></thead>
-            <tbody id="tabelaDesktop"><tr><td colspan="6"><div class="table-loading"><span></span>Carregando lançamentos...</div></td></tr></tbody>
+            <thead><tr><th><span class="sr-only">Selecionar</span></th><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Observação</th><th>Ações</th></tr></thead>
+            <tbody id="tabelaDesktop"><tr><td colspan="7"><div class="table-loading"><span></span>Carregando lançamentos...</div></td></tr></tbody>
           </table>
         </div>
         <nav class="paginacao home-pagination" aria-label="Paginação dos lançamentos"><button id="paginaAnteriorDesktop" class="btn btn-ghost" type="button">← Anterior</button><span id="paginaInfoDesktop">Página 1 de 1</span><button id="proximaPaginaDesktop" class="btn btn-ghost" type="button">Próxima →</button></nav>
@@ -69,6 +73,6 @@
     </div>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="{{ url_for('static', filename='js/security.js', v=2) }}"></script><script src="{{ url_for('static', filename='js/menu.js', v=8) }}"></script><script src="{{ url_for('static', filename='js/home.js', v=2) }}"></script>
+  <script src="{{ url_for('static', filename='js/security.js', v=2) }}"></script><script src="{{ url_for('static', filename='js/menu.js', v=8) }}"></script><script src="{{ url_for('static', filename='js/home.js', v=3) }}"></script>
 </body>
 </html>

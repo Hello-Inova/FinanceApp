@@ -5,6 +5,7 @@ let lancamentos = [];
 let paginaDesktop = 1;
 const itensPorPaginaDesktop = 5;
 const datasSelecionadasDesktop = new Set();
+const lancamentosSelecionadosDesktop = new Set();
 
 function formatarMoeda(valor) { return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
 function dataIso(valor) { return String(valor || "").slice(0, 10); }
@@ -81,6 +82,20 @@ function filtrarLancamentosDesktop() {
 }
 
 function celula(texto, classe = "") { const td = document.createElement("td"); td.textContent = texto; if (classe) td.className = classe; return td; }
+function criarCheckboxLancamentoDesktop(item) {
+  const td = celula("", "selection-cell");
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.className = "item-checkbox";
+  input.checked = lancamentosSelecionadosDesktop.has(item.id);
+  input.setAttribute("aria-label", `Selecionar ${item.descricao || "lançamento"}`);
+  input.addEventListener("change", () => {
+    input.checked ? lancamentosSelecionadosDesktop.add(item.id) : lancamentosSelecionadosDesktop.delete(item.id);
+    renderizarTabelaDesktop();
+  });
+  td.appendChild(input);
+  return td;
+}
 
 function renderizarTabelaDesktop() {
   const tabela = document.getElementById("tabelaDesktop");
@@ -89,14 +104,19 @@ function renderizarTabelaDesktop() {
   const totalPaginas = Math.ceil(filtrados.length / itensPorPaginaDesktop) || 1;
   paginaDesktop = Math.min(paginaDesktop, totalPaginas);
   const pagina = filtrados.slice((paginaDesktop - 1) * itensPorPaginaDesktop, paginaDesktop * itensPorPaginaDesktop);
-  const saldo = filtrados.reduce((total, item) => total + (item.tipo === "Entrada" ? Number(item.valor || 0) : -Number(item.valor || 0)), 0);
+  const totalTabela = filtrados.reduce((total, item) => total + Number(item.valor || 0), 0);
+  const selecionados = filtrados.filter(item => lancamentosSelecionadosDesktop.has(item.id));
+  const valorSelecionado = selecionados.reduce((total, item) => total + Number(item.valor || 0), 0);
+  const totalRestante = totalTabela - valorSelecionado;
   tabela.replaceChildren();
   if (!pagina.length) {
-    const tr = tabela.insertRow(); const td = tr.insertCell(); td.colSpan = 6;
+    const tr = tabela.insertRow(); const td = tr.insertCell(); td.colSpan = 7;
     td.innerHTML = '<div class="empty-table"><strong>Nenhum lançamento encontrado</strong><span>Ajuste os filtros ou crie um novo lançamento.</span></div>';
   }
   pagina.forEach(item => {
     const tr = document.createElement("tr");
+    if (lancamentosSelecionadosDesktop.has(item.id)) tr.classList.add("item-selected");
+    tr.appendChild(criarCheckboxLancamentoDesktop(item));
     tr.appendChild(celula(formatarData(item.data)));
     const tipo = celula("", "type-column"); const badge = document.createElement("span");
     badge.className = `tipo-badge ${item.tipo === "Entrada" ? "tipo-entrada" : "tipo-saida"}`; badge.textContent = item.tipo; tipo.appendChild(badge); tr.appendChild(tipo);
@@ -108,7 +128,10 @@ function renderizarTabelaDesktop() {
     link.setAttribute("aria-label", `Abrir detalhes de ${item.descricao || "lançamento"}`); acoes.appendChild(link); tr.appendChild(acoes); tabela.appendChild(tr);
   });
   document.getElementById("contadorLancamentosDesktop").textContent = `${filtrados.length} ${filtrados.length === 1 ? "lançamento encontrado" : "lançamentos encontrados"}`;
-  document.getElementById("totalFiltradoDesktop").textContent = formatarMoeda(saldo);
+  document.getElementById("totalFiltradoDesktop").textContent = formatarMoeda(totalTabela);
+  document.getElementById("selecionadosResumoDesktop").textContent = `${selecionados.length} ${selecionados.length === 1 ? "selecionado" : "selecionados"}`;
+  document.getElementById("totalSelecionadoDesktop").textContent = formatarMoeda(valorSelecionado);
+  document.getElementById("totalRestanteDesktop").textContent = formatarMoeda(totalRestante);
   document.getElementById("paginaInfoDesktop").textContent = `Página ${paginaDesktop} de ${totalPaginas}`;
   document.getElementById("paginaAnteriorDesktop").disabled = paginaDesktop === 1;
   document.getElementById("proximaPaginaDesktop").disabled = paginaDesktop === totalPaginas;
@@ -122,6 +145,8 @@ function limparFiltrosDesktop() {
 async function carregarResumo() {
   try {
     lancamentos = await respostaJson(await fetch("/lancamentos", { loadingMessage: "Carregando suas finanças..." }));
+    const idsAtuais = new Set(lancamentos.map(item => item.id));
+    [...lancamentosSelecionadosDesktop].forEach(id => { if (!idsAtuais.has(id)) lancamentosSelecionadosDesktop.delete(id); });
     const entradas = lancamentos.filter(i => i.tipo === "Entrada").reduce((s, i) => s + Number(i.valor || 0), 0);
     const saidas = lancamentos.filter(i => i.tipo === "Saída").reduce((s, i) => s + Number(i.valor || 0), 0);
     document.getElementById("totalEntradas").textContent = formatarMoeda(entradas); document.getElementById("totalSaidas").textContent = formatarMoeda(saidas); document.getElementById("saldo").textContent = formatarMoeda(entradas - saidas);
@@ -131,7 +156,7 @@ async function carregarResumo() {
     if (tabela) {
       tabela.replaceChildren();
       const tr = tabela.insertRow(); const td = tr.insertCell(); const vazio = document.createElement("div"); const titulo = document.createElement("strong"); const mensagem = document.createElement("span");
-      td.colSpan = 6; vazio.className = "empty-table"; titulo.textContent = "Erro ao carregar"; mensagem.textContent = erro.message; vazio.append(titulo, mensagem); td.appendChild(vazio);
+      td.colSpan = 7; vazio.className = "empty-table"; titulo.textContent = "Erro ao carregar"; mensagem.textContent = erro.message; vazio.append(titulo, mensagem); td.appendChild(vazio);
     }
     mostrarToast(erro.message, true);
   } finally { document.querySelectorAll(".loading-value").forEach(el => el.classList.remove("loading-value")); }

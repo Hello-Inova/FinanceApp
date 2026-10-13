@@ -426,6 +426,8 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert 'id="filtroMesDesktop"' in conteudo_home
     assert 'id="filtroDataDesktop"' in conteudo_home
     assert 'id="totalFiltradoDesktop"' in conteudo_home
+    assert 'id="totalSelecionadoDesktop"' in conteudo_home
+    assert 'id="totalRestanteDesktop"' in conteudo_home
     for rota in ("/financas/entradas", "/financas/saidas", "/financas/saldo"):
         pagina = client.get(rota)
         assert pagina.status_code == 200
@@ -433,6 +435,8 @@ def test_crud_financeiro_autenticado(client, csrf):
         assert "Novo lançamento" in conteudo
         assert 'id="modalNovoLancamento"' in conteudo
         assert 'id="filtroData"' in conteudo
+        assert 'id="totalSelecionado"' in conteudo
+        assert 'id="totalRestante"' in conteudo
         assert "Todas as datas" in conteudo
 
     script = client.get("/static/js/movimentacoes.js").get_data(as_text=True)
@@ -441,11 +445,15 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert "datasSelecionadas.size>1" in script
     assert "const total=lista.reduce" in script
     assert "datas selecionadas" in script
+    assert "lancamentosSelecionados" in script
+    assert "totalTabela-valorSelecionado" in script
     script_home = client.get("/static/js/home.js").get_data(as_text=True)
     assert "datasSelecionadasDesktop" in script_home
     assert "filtrarLancamentosDesktop" in script_home
     assert "renderizarTabelaDesktop" in script_home
     assert "itensPorPaginaDesktop = 5" in script_home
+    assert "lancamentosSelecionadosDesktop" in script_home
+    assert "totalRestante = totalTabela - valorSelecionado" in script_home
     estilos = client.get("/static/css/home.css").get_data(as_text=True)
     assert ".date-filter-options input" in estilos
     assert "tbody tr { display: grid" in estilos
