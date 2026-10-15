@@ -469,6 +469,69 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert "@media (min-width: 1100px)" in estilos
 
 
+def test_status_pago_persistente_apenas_em_saidas(client, csrf):
+    login_admin(client, csrf)
+    trocar_senha(client, csrf)
+    token = csrf(client.get("/financas/saidas"))
+
+    for tipo, descricao, valor in (
+        ("Entrada", "Receita sem pagamento", "200.00"),
+        ("Saída", "Conta de energia", "150.00"),
+    ):
+        resposta = client.post(
+            "/lancamentos",
+            json={
+                "data": "2026-10-15",
+                "tipo": tipo,
+                "descricao": descricao,
+                "valor": valor,
+                "obs": "",
+            },
+            headers={"X-CSRFToken": token},
+        )
+        assert resposta.status_code == 201
+
+    lancamentos = client.get("/lancamentos").json
+    saida = next(item for item in lancamentos if item["tipo"] == "Saída")
+    entrada = next(item for item in lancamentos if item["tipo"] == "Entrada")
+    assert int(saida["pago"]) == 0
+
+    pago = client.patch(
+        f"/lancamentos/{saida['id']}/pagamento",
+        json={"pago": True},
+        headers={"X-CSRFToken": token},
+    )
+    assert pago.status_code == 200
+    assert pago.json["pago"] is True
+    saida_atualizada = next(
+        item for item in client.get("/lancamentos").json if item["id"] == saida["id"]
+    )
+    assert int(saida_atualizada["pago"]) == 1
+
+    invalido = client.patch(
+        f"/lancamentos/{entrada['id']}/pagamento",
+        json={"pago": True},
+        headers={"X-CSRFToken": token},
+    )
+    assert invalido.status_code == 404
+
+    pendente = client.patch(
+        f"/lancamentos/{saida['id']}/pagamento",
+        json={"pago": False},
+        headers={"X-CSRFToken": token},
+    )
+    assert pendente.status_code == 200
+    assert pendente.json["pago"] is False
+
+    script = client.get("/static/js/movimentacoes.js").get_data(as_text=True)
+    assert "alternarPagamento" in script
+    assert 'viewKey==="saidas"' in script
+    assert "btn-payment-paid" in script
+    estilos = client.get("/static/css/home.css").get_data(as_text=True)
+    assert "tbody tr.item-paid" in estilos
+    assert ".btn-payment-paid" in estilos
+
+
 def test_pwa_instalavel_e_sem_cache_de_dados_autenticados(client, csrf):
     login = client.get("/")
     conteudo = login.get_data(as_text=True)

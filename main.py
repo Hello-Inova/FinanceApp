@@ -19,7 +19,8 @@ from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from database import (
     alterar_senha_propria, alterar_senha_usuario, atualizar_agenda, atualizar_compra, atualizar_meta,
-    atualizar_assinatura_por_subscription, atualizar_dados_usuario, atualizar_lancamento, atualizar_status_compra,
+    atualizar_assinatura_por_subscription, atualizar_dados_usuario, atualizar_lancamento,
+    atualizar_pagamento_lancamento, atualizar_status_compra,
     atualizar_status_meta, atualizar_status_usuario, buscar_configuracoes, buscar_status_solicitacao,
     buscar_usuario, buscar_usuario_por_id, confirmar_pagamento, cpf_usuario_existe,
     criar_admin_inicial, criar_agenda, criar_compra, criar_lancamento, criar_meta, criar_ou_buscar_solicitacao,
@@ -884,6 +885,20 @@ def editar_lancamento(lancamento_id):
 def deletar_lancamento(lancamento_id):
     excluir_lancamento(usuario_atual()["id"], lancamento_id)
     return jsonify({"status": "ok"})
+
+
+@app.route("/lancamentos/<int:lancamento_id>/pagamento", methods=["PATCH"])
+@login_obrigatorio
+def alterar_pagamento_lancamento(lancamento_id):
+    pago = json_body().get("pago")
+    if not isinstance(pago, bool):
+        return resposta_erro("Status de pagamento inválido.")
+    atualizado = atualizar_pagamento_lancamento(
+        usuario_atual()["id"], lancamento_id, pago
+    )
+    if not atualizado:
+        return resposta_erro("Lançamento de saída não encontrado.", 404)
+    return jsonify({"status": "ok", "pago": pago})
 
 
 @app.route("/api/financas")

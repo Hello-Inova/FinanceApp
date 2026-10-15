@@ -199,6 +199,7 @@ def executar_migracoes():
                 descricao TEXT NOT NULL,
                 valor {money} NOT NULL,
                 obs TEXT,
+                pago INTEGER NOT NULL DEFAULT 0,
                 criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -329,7 +330,10 @@ def executar_migracoes():
                 "assinatura_ultimo_pagamento_id": "TEXT",
                 "criado_em": timestamp_addition,
             },
-            "lancamentos": {"criado_em": timestamp_addition},
+            "lancamentos": {
+                "pago": "INTEGER NOT NULL DEFAULT 0",
+                "criado_em": timestamp_addition,
+            },
             "compras": {"criado_em": timestamp_addition},
             "configuracoes": {
                 "valor_cadastro_centavos": "INTEGER NOT NULL DEFAULT 0",
@@ -516,6 +520,11 @@ def executar_migracoes():
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
             (9,),
+        )
+        cursor.execute(
+            "INSERT INTO schema_migrations(version) VALUES (?) "
+            "ON CONFLICT(version) DO NOTHING",
+            (10,),
         )
         conn.commit()
     except Exception:
@@ -1176,12 +1185,27 @@ def atualizar_lancamento(usuario_id, id, data, tipo, descricao, valor, obs):
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE lancamentos SET data = ?, tipo = ?, descricao = ?, valor = ?, obs = ? "
+        "UPDATE lancamentos SET data = ?, tipo = ?, descricao = ?, valor = ?, obs = ?, "
+        "pago = CASE WHEN ? = 'Saída' THEN pago ELSE 0 END "
         "WHERE id = ? AND usuario_id = ?",
-        (data, tipo, descricao, Decimal(str(valor)), obs, id, usuario_id),
+        (data, tipo, descricao, Decimal(str(valor)), obs, tipo, id, usuario_id),
     )
     conn.commit()
     conn.close()
+
+
+def atualizar_pagamento_lancamento(usuario_id, id, pago):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE lancamentos SET pago = ? "
+        "WHERE id = ? AND usuario_id = ? AND tipo = 'Saída'",
+        (1 if pago else 0, id, usuario_id),
+    )
+    atualizado = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return atualizado
 
 
 def excluir_lancamento(usuario_id, id):
