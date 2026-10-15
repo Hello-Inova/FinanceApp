@@ -97,6 +97,22 @@ function criarCheckboxLancamentoDesktop(item) {
   return td;
 }
 
+function atualizarSelecionarTodosDesktop(lista, quantidadeSelecionada) {
+  const checkbox = document.getElementById("selecionarTodosDesktop");
+  if (!checkbox) return;
+  checkbox.disabled = lista.length === 0;
+  checkbox.checked = lista.length > 0 && quantidadeSelecionada === lista.length;
+  checkbox.indeterminate = quantidadeSelecionada > 0 && quantidadeSelecionada < lista.length;
+  checkbox.setAttribute("aria-label", checkbox.checked ? "Desmarcar todos os lançamentos filtrados" : "Selecionar todos os lançamentos filtrados");
+}
+
+function alternarTodosDesktop(marcar) {
+  filtrarLancamentosDesktop().forEach(item => {
+    marcar ? lancamentosSelecionadosDesktop.add(item.id) : lancamentosSelecionadosDesktop.delete(item.id);
+  });
+  renderizarTabelaDesktop();
+}
+
 function renderizarTabelaDesktop() {
   const tabela = document.getElementById("tabelaDesktop");
   if (!tabela) return;
@@ -132,6 +148,7 @@ function renderizarTabelaDesktop() {
   document.getElementById("selecionadosResumoDesktop").textContent = `${selecionados.length} ${selecionados.length === 1 ? "selecionado" : "selecionados"}`;
   document.getElementById("totalSelecionadoDesktop").textContent = formatarMoeda(valorSelecionado);
   document.getElementById("totalRestanteDesktop").textContent = formatarMoeda(totalRestante);
+  atualizarSelecionarTodosDesktop(filtrados, selecionados.length);
   document.getElementById("paginaInfoDesktop").textContent = `Página ${paginaDesktop} de ${totalPaginas}`;
   document.getElementById("paginaAnteriorDesktop").disabled = paginaDesktop === 1;
   document.getElementById("proximaPaginaDesktop").disabled = paginaDesktop === totalPaginas;
@@ -198,6 +215,7 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("iptPesquisaDesktop")?.addEventListener("input", () => { paginaDesktop = 1; renderizarTabelaDesktop(); });
   document.getElementById("filtroMesDesktop")?.addEventListener("change", () => { paginaDesktop = 1; datasSelecionadasDesktop.clear(); preencherDatasDesktop(); renderizarTabelaDesktop(); });
   document.getElementById("limparFiltrosDesktop")?.addEventListener("click", limparFiltrosDesktop);
+  document.getElementById("selecionarTodosDesktop")?.addEventListener("change", event => alternarTodosDesktop(event.currentTarget.checked));
   document.getElementById("paginaAnteriorDesktop")?.addEventListener("click", () => { if (paginaDesktop > 1) { paginaDesktop -= 1; renderizarTabelaDesktop(); } });
   document.getElementById("proximaPaginaDesktop")?.addEventListener("click", () => { const total = Math.ceil(filtrarLancamentosDesktop().length / itensPorPaginaDesktop) || 1; if (paginaDesktop < total) { paginaDesktop += 1; renderizarTabelaDesktop(); } });
   document.addEventListener("click", e => { const filtro = document.getElementById("filtroDataDesktop"); if (filtro?.open && !filtro.contains(e.target)) filtro.removeAttribute("open"); });
