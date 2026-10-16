@@ -27,7 +27,8 @@ from database import (
     criar_tabelas, criar_token_recuperacao, criar_usuario, email_usuario_existe, excluir_agenda, excluir_compra,
     encerrar_ciclo_financeiro, excluir_lancamento, excluir_meta, excluir_usuario,
     finalizar_cadastro, healthcheck,
-    listar_agenda, listar_compras, listar_lancamentos, listar_metas, listar_movimentacoes_meta,
+    listar_agenda, listar_compras, listar_historico_ciclos, listar_lancamentos, listar_metas,
+    listar_movimentacoes_meta,
     listar_usuarios, rate_limit_limpar, rate_limit_permitir, redefinir_senha_com_token,
     registrar_evento_asaas, registrar_movimentacao_meta, salvar_assinatura_usuario,
     salvar_cliente_asaas_usuario, salvar_ou_atualizar_configuracoes,
@@ -911,10 +912,12 @@ def api_financas():
 @app.route("/api/financas/encerrar-ciclo", methods=["POST"])
 @login_obrigatorio
 def api_encerrar_ciclo_financeiro():
-    quantidade = encerrar_ciclo_financeiro(usuario_atual()["id"])
+    resultado = encerrar_ciclo_financeiro(usuario_atual()["id"])
+    quantidade = resultado["quantidade"]
     return jsonify({
         "status": "ok",
         "quantidade": quantidade,
+        "ciclo_id": resultado["ciclo_id"],
         "mensagem": (
             f"Ciclo encerrado. {quantidade} "
             f"lançamento{'s' if quantidade != 1 else ''} movido"
@@ -923,6 +926,12 @@ def api_encerrar_ciclo_financeiro():
             else "Não há lançamentos para mover."
         ),
     })
+
+
+@app.route("/api/financas/historico")
+@login_obrigatorio
+def api_historico_financeiro():
+    return jsonify(listar_historico_ciclos(usuario_atual()["id"]))
 
 
 def validar_compra(dados):

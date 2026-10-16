@@ -220,6 +220,31 @@ def executar_migracoes():
             )
         """)
         cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS ciclos_financeiros (
+                id {identity},
+                usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                periodo_inicio {date_type} NOT NULL,
+                periodo_fim {date_type} NOT NULL,
+                quantidade INTEGER NOT NULL,
+                total_entradas {money} NOT NULL,
+                total_saidas {money} NOT NULL,
+                encerrado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute(f"""
+            CREATE TABLE IF NOT EXISTS ciclo_lancamentos (
+                id {identity},
+                ciclo_id INTEGER NOT NULL REFERENCES ciclos_financeiros(id) ON DELETE CASCADE,
+                lancamento_original_id INTEGER NOT NULL,
+                data {date_type} NOT NULL,
+                tipo TEXT NOT NULL,
+                descricao TEXT NOT NULL,
+                valor {money} NOT NULL,
+                obs TEXT,
+                pago INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS metas (
                 id {identity},
                 usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
@@ -425,6 +450,14 @@ def executar_migracoes():
             "ON compras(usuario_id, id DESC)"
         )
         cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_ciclos_usuario_id "
+            "ON ciclos_financeiros(usuario_id, id DESC)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_ciclo_lancamentos_ciclo "
+            "ON ciclo_lancamentos(ciclo_id, id)"
+        )
+        cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_metas_usuario_status "
             "ON metas(usuario_id, status)"
         )
@@ -526,6 +559,11 @@ def executar_migracoes():
             "INSERT INTO schema_migrations(version) VALUES (?) "
             "ON CONFLICT(version) DO NOTHING",
             (10,),
+        )
+        cursor.execute(
+            "INSERT INTO schema_migrations(version) VALUES (?) "
+            "ON CONFLICT(version) DO NOTHING",
+            (11,),
         )
         conn.commit()
     except Exception:
@@ -1214,10 +1252,47 @@ def encerrar_ciclo_financeiro(usuario_id):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT id, data FROM lancamentos WHERE usuario_id = ?",
+            "SELECT id, data, tipo, descricao, valor, obs, pago "
+            "FROM lancamentos WHERE usuario_id = ? ORDER BY data, id",
             (usuario_id,),
         )
         lancamentos = cursor.fetchall()
+        if not lancamentos:
+            conn.commit()
+            return {"quantidade": 0, "ciclo_id": None}
+
+        datas = [str(item["data"])[:10] for item in lancamentos]
+        total_entradas = sum(
+            (Decimal(str(item["valor"])) for item in lancamentos if item["tipo"] == "Entrada"),
+            Decimal("0"),
+        )
+        total_saidas = sum(
+            (Decimal(str(item["valor"])) for item in lancamentos if item["tipo"] == "Saída"),
+            Decimal("0"),
+        )
+        cursor.execute(
+            "INSERT INTO ciclos_financeiros "
+            "(usuario_id, periodo_inicio, periodo_fim, quantidade, total_entradas, total_saidas) "
+            "VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
+            (
+                usuario_id, min(datas), max(datas), len(lancamentos),
+                total_entradas, total_saidas,
+            ),
+        )
+        ciclo_id = cursor.fetchone()["id"]
+        cursor.executemany(
+            "INSERT INTO ciclo_lancamentos "
+            "(ciclo_id, lancamento_original_id, data, tipo, descricao, valor, obs, pago) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    ciclo_id, item["id"], str(item["data"])[:10], item["tipo"],
+                    item["descricao"], Decimal(str(item["valor"])), item["obs"],
+                    int(item.get("pago") or 0),
+                )
+                for item in lancamentos
+            ],
+        )
         atualizacoes = []
         for lancamento in lancamentos:
             data_atual = date.fromisoformat(str(lancamento["data"])[:10])
@@ -1233,12 +1308,32 @@ def encerrar_ciclo_financeiro(usuario_id):
                 atualizacoes,
             )
         conn.commit()
-        return len(atualizacoes)
+        return {"quantidade": len(atualizacoes), "ciclo_id": ciclo_id}
     except Exception:
         conn.rollback()
         raise
     finally:
         conn.close()
+
+
+def listar_historico_ciclos(usuario_id, limite=24):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM ciclos_financeiros WHERE usuario_id = ? "
+        "ORDER BY id DESC LIMIT ?",
+        (usuario_id, limite),
+    )
+    ciclos = cursor.fetchall()
+    for ciclo in ciclos:
+        cursor.execute(
+            "SELECT data, tipo, descricao, valor, obs, pago "
+            "FROM ciclo_lancamentos WHERE ciclo_id = ? ORDER BY data, id",
+            (ciclo["id"],),
+        )
+        ciclo["lancamentos"] = cursor.fetchall()
+    conn.close()
+    return ciclos
 
 
 def excluir_lancamento(usuario_id, id):

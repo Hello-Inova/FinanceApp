@@ -430,6 +430,8 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert 'id="totalRestanteDesktop"' in conteudo_home
     assert 'id="selecionarTodosDesktop"' in conteudo_home
     assert "Encerrar ciclo" in conteudo_home
+    assert 'id="modalHistorico"' in conteudo_home
+    assert "Histórico de ciclos" in conteudo_home
     for rota in ("/financas/entradas", "/financas/saidas", "/financas/saldo"):
         pagina = client.get(rota)
         assert pagina.status_code == 200
@@ -534,7 +536,7 @@ def test_status_pago_persistente_apenas_em_saidas(client, csrf):
     assert ".btn-payment-paid" in estilos
 
 
-def test_encerrar_ciclo_move_datas_sem_criar_historico(client, csrf):
+def test_encerrar_ciclo_move_datas_e_preserva_historico(client, csrf):
     login_admin(client, csrf)
     trocar_senha(client, csrf)
     token = csrf(client.get("/home"))
@@ -582,6 +584,19 @@ def test_encerrar_ciclo_move_datas_sem_criar_historico(client, csrf):
     assert por_descricao["Conta mensal"]["data"] == "2026-11-15"
     assert int(por_descricao["Conta mensal"]["pago"]) == 0
     assert por_descricao["Fechamento do mês"]["data"] == "2026-02-28"
+    historico = client.get("/api/financas/historico")
+    assert historico.status_code == 200
+    assert len(historico.json) == 1
+    primeiro = historico.json[0]
+    assert primeiro["quantidade"] == 3
+    assert float(primeiro["total_entradas"]) == 1000.0
+    assert float(primeiro["total_saidas"]) == 350.0
+    historico_por_descricao = {
+        item["descricao"]: item for item in primeiro["lancamentos"]
+    }
+    assert historico_por_descricao["Receita mensal"]["data"] == "2026-10-15"
+    assert historico_por_descricao["Conta mensal"]["data"] == "2026-10-15"
+    assert int(historico_por_descricao["Conta mensal"]["pago"]) == 1
 
     segundo_ciclo = client.post(
         "/api/financas/encerrar-ciclo",
@@ -593,12 +608,14 @@ def test_encerrar_ciclo_move_datas_sem_criar_historico(client, csrf):
     }
     assert novamente["Receita mensal"]["data"] == "2026-12-15"
     assert len(novamente) == 3
+    assert len(client.get("/api/financas/historico").json) == 2
 
     script_home = client.get("/static/js/home.js").get_data(as_text=True)
     script_detalhes = client.get("/static/js/movimentacoes.js").get_data(as_text=True)
     assert "/api/financas/encerrar-ciclo" in script_home
+    assert "/api/financas/historico" in script_home
     assert "/api/financas/encerrar-ciclo" in script_detalhes
-    assert "Esta ação não cria histórico" in script_home
+    assert "salvará o mês atual no histórico" in script_home
 
 
 def test_pwa_instalavel_e_sem_cache_de_dados_autenticados(client, csrf):

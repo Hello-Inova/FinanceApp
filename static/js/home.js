@@ -181,7 +181,7 @@ async function carregarResumo() {
 
 async function encerrarCiclo() {
   if (!lancamentos.length) { mostrarToast("Não há lançamentos para mover.", true); return; }
-  const confirmado = confirm("Encerrar o ciclo moverá todos os lançamentos um mês adiante e marcará todas as saídas como pendentes. Esta ação não cria histórico. Deseja continuar?");
+  const confirmado = confirm("Encerrar o ciclo salvará o mês atual no histórico, moverá todos os lançamentos um mês adiante e marcará as saídas como pendentes. Deseja continuar?");
   if (!confirmado) return;
   try {
     const resposta = await respostaJson(await fetch("/api/financas/encerrar-ciclo", { method: "POST", loadingMessage: "Encerrando ciclo financeiro..." }));
@@ -193,6 +193,89 @@ async function encerrarCiclo() {
     await carregarResumo();
     mostrarToast(resposta.mensagem);
   } catch (erro) { mostrarToast(erro.message, true); }
+}
+
+function textoPeriodoHistorico(ciclo) {
+  const inicio = dataIso(ciclo.periodo_inicio);
+  const fim = dataIso(ciclo.periodo_fim);
+  if (inicio.slice(0, 7) === fim.slice(0, 7)) {
+    const [ano, mes] = inicio.split("-");
+    const nome = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(Number(ano), Number(mes) - 1, 1));
+    return nome.charAt(0).toUpperCase() + nome.slice(1);
+  }
+  return `${formatarData(inicio)} a ${formatarData(fim)}`;
+}
+
+function renderizarHistorico(ciclos) {
+  const lista = document.getElementById("listaHistorico");
+  lista.replaceChildren();
+  if (!ciclos.length) {
+    const vazio = document.createElement("div");
+    vazio.className = "history-empty";
+    vazio.textContent = "Nenhum ciclo foi encerrado ainda.";
+    lista.appendChild(vazio);
+    return;
+  }
+  ciclos.forEach(ciclo => {
+    const detalhes = document.createElement("details");
+    detalhes.className = "history-cycle";
+    const resumo = document.createElement("summary");
+    const cabecalho = document.createElement("div");
+    const titulo = document.createElement("strong");
+    const subtitulo = document.createElement("span");
+    titulo.textContent = textoPeriodoHistorico(ciclo);
+    const encerrado = new Date(String(ciclo.encerrado_em).replace(" ", "T"));
+    subtitulo.textContent = `${ciclo.quantidade} ${Number(ciclo.quantidade) === 1 ? "lançamento" : "lançamentos"} • encerrado em ${encerrado.toLocaleString("pt-BR")}`;
+    cabecalho.append(titulo, subtitulo);
+    const saldo = document.createElement("strong");
+    saldo.className = "history-balance";
+    saldo.textContent = formatarMoeda(Number(ciclo.total_entradas) - Number(ciclo.total_saidas));
+    resumo.append(cabecalho, saldo);
+    const totais = document.createElement("div");
+    totais.className = "history-totals";
+    [["Entradas", ciclo.total_entradas, "entrada"], ["Saídas", ciclo.total_saidas, "saida"]].forEach(([rotulo, valor, classe]) => {
+      const item = document.createElement("span");
+      item.className = classe;
+      item.textContent = `${rotulo}: ${formatarMoeda(valor)}`;
+      totais.appendChild(item);
+    });
+    const lancamentosLista = document.createElement("div");
+    lancamentosLista.className = "history-entries";
+    (ciclo.lancamentos || []).forEach(item => {
+      const linha = document.createElement("div");
+      linha.className = `history-entry ${item.tipo === "Saída" && Number(item.pago) === 1 ? "paid" : ""}`;
+      const principal = document.createElement("div");
+      const descricao = document.createElement("strong");
+      const meta = document.createElement("span");
+      descricao.textContent = item.descricao;
+      meta.textContent = `${formatarData(item.data)} • ${item.tipo}${item.tipo === "Saída" ? (Number(item.pago) === 1 ? " • Pago" : " • Pendente") : ""}`;
+      principal.append(descricao, meta);
+      const valor = document.createElement("strong");
+      valor.className = item.tipo === "Entrada" ? "valor-entrada" : "valor-saida";
+      valor.textContent = formatarMoeda(item.valor);
+      linha.append(principal, valor);
+      lancamentosLista.appendChild(linha);
+    });
+    detalhes.append(resumo, totais, lancamentosLista);
+    lista.appendChild(detalhes);
+  });
+}
+
+async function abrirHistorico() {
+  ultimoFoco = document.activeElement;
+  const modal = document.getElementById("modalHistorico");
+  const lista = document.getElementById("listaHistorico");
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  lista.innerHTML = '<div class="table-loading"><span></span>Carregando histórico...</div>';
+  try { renderizarHistorico(await respostaJson(await fetch("/api/financas/historico", { loading: false }))); }
+  catch (erro) { lista.textContent = erro.message; mostrarToast(erro.message, true); }
+}
+
+function fecharHistorico() {
+  document.getElementById("modalHistorico").style.display = "none";
+  document.body.style.overflow = "";
+  ultimoFoco?.focus?.();
 }
 
 function abrirModalNovoRegistro() {
@@ -224,10 +307,11 @@ async function enviarNovoRegistro(preservar) {
 function salvarNovoRegistro() { return enviarNovoRegistro(false); }
 function registrarOutro() { return enviarNovoRegistro(true); }
 
-window.abrirModalNovoRegistro = abrirModalNovoRegistro; window.fecharModalNovoRegistro = fecharModalNovoRegistro; window.salvarNovoRegistro = salvarNovoRegistro; window.registrarOutro = registrarOutro; window.encerrarCiclo = encerrarCiclo;
+window.abrirModalNovoRegistro = abrirModalNovoRegistro; window.fecharModalNovoRegistro = fecharModalNovoRegistro; window.salvarNovoRegistro = salvarNovoRegistro; window.registrarOutro = registrarOutro; window.encerrarCiclo = encerrarCiclo; window.abrirHistorico = abrirHistorico; window.fecharHistorico = fecharHistorico;
 window.addEventListener("DOMContentLoaded", () => {
   ["novoData", "novoTipo", "novoDescricao", "novoValor"].forEach(id => document.getElementById(id).addEventListener("input", e => { e.currentTarget.classList.remove("campo-erro"); erroCamposNull.style.display = "none"; }));
   document.getElementById("modalNovoRegistro").addEventListener("mousedown", e => { if (e.target.id === "modalNovoRegistro") fecharModalNovoRegistro(); });
+  document.getElementById("modalHistorico").addEventListener("mousedown", e => { if (e.target.id === "modalHistorico") fecharHistorico(); });
   document.getElementById("iptPesquisaDesktop")?.addEventListener("input", () => { paginaDesktop = 1; renderizarTabelaDesktop(); });
   document.getElementById("filtroMesDesktop")?.addEventListener("change", () => { paginaDesktop = 1; datasSelecionadasDesktop.clear(); preencherDatasDesktop(); renderizarTabelaDesktop(); });
   document.getElementById("limparFiltrosDesktop")?.addEventListener("click", limparFiltrosDesktop);

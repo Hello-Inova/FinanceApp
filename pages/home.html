@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Finanças | FinanceApp</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css', v=12) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css', v=13) }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app-shell.css', v=4) }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
@@ -17,7 +17,7 @@
   <main class="finance-container finance-overview">
     <header class="page-header">
       <div class="page-heading"><span class="eyebrow">Visão geral</span><h1>💰 Minhas finanças</h1><p>Escolha um card para consultar e administrar os lançamentos correspondentes.</p></div>
-      <div class="page-header-actions"><button class="btn btn-cycle" type="button" onclick="encerrarCiclo()"><span aria-hidden="true">↻</span> Encerrar ciclo</button><button class="btn btn-primary" type="button" onclick="abrirModalNovoRegistro()"><span aria-hidden="true">＋</span> Novo lançamento</button></div>
+      <div class="page-header-actions"><button class="btn btn-ghost" type="button" onclick="abrirHistorico()"><span aria-hidden="true">◷</span> Histórico</button><button class="btn btn-cycle" type="button" onclick="encerrarCiclo()"><span aria-hidden="true">↻</span> Encerrar ciclo</button><button class="btn btn-primary" type="button" onclick="abrirModalNovoRegistro()"><span aria-hidden="true">＋</span> Novo lançamento</button></div>
     </header>
 
     <section class="summary-grid overview-grid" aria-label="Resumo financeiro">
@@ -57,6 +57,14 @@
 
   </main>
 
+  <div id="modalHistorico" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloHistorico">
+    <div class="modal-panel history-modal-panel">
+      <button type="button" class="btn-fechar-modal" onclick="fecharHistorico()" aria-label="Fechar histórico">×</button>
+      <div class="modal-heading"><span class="modal-heading-icon" aria-hidden="true">◷</span><div><h2 id="tituloHistorico">Histórico de ciclos</h2><p>Consulte os lançamentos preservados em cada encerramento.</p></div></div>
+      <div id="listaHistorico" class="history-list"><div class="table-loading"><span></span>Carregando histórico...</div></div>
+    </div>
+  </div>
+
   <div id="modalNovoRegistro" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloNovoRegistro">
     <div class="modal-panel modal-registro">
       <button type="button" class="btn-fechar-modal" onclick="fecharModalNovoRegistro()" aria-label="Fechar">×</button>
@@ -74,6 +82,6 @@
     </div>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="{{ url_for('static', filename='js/security.js', v=2) }}"></script><script src="{{ url_for('static', filename='js/menu.js', v=8) }}"></script><script src="{{ url_for('static', filename='js/home.js', v=5) }}"></script>
+  <script src="{{ url_for('static', filename='js/security.js', v=2) }}"></script><script src="{{ url_for('static', filename='js/menu.js', v=8) }}"></script><script src="{{ url_for('static', filename='js/home.js', v=6) }}"></script>
 </body>
 </html>
