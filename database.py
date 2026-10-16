@@ -1409,6 +1409,20 @@ def atualizar_lancamento_historico(
         conn.close()
 
 
+def atualizar_pagamento_lancamento_historico(usuario_id, lancamento_id, pago):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE ciclo_lancamentos SET pago = ? WHERE id = ? AND tipo = 'Saída' "
+        "AND ciclo_id IN (SELECT id FROM ciclos_financeiros WHERE usuario_id = ?)",
+        (1 if pago else 0, lancamento_id, usuario_id),
+    )
+    atualizado = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return atualizado
+
+
 def excluir_lancamento(usuario_id, id):
     conn = conectar()
     cursor = conn.cursor()
