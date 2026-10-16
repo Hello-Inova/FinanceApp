@@ -25,7 +25,8 @@ from database import (
     buscar_usuario, buscar_usuario_por_id, confirmar_pagamento, cpf_usuario_existe,
     criar_admin_inicial, criar_agenda, criar_compra, criar_lancamento, criar_meta, criar_ou_buscar_solicitacao,
     criar_tabelas, criar_token_recuperacao, criar_usuario, email_usuario_existe, excluir_agenda, excluir_compra,
-    excluir_lancamento, excluir_meta, excluir_usuario, finalizar_cadastro, healthcheck,
+    encerrar_ciclo_financeiro, excluir_lancamento, excluir_meta, excluir_usuario,
+    finalizar_cadastro, healthcheck,
     listar_agenda, listar_compras, listar_lancamentos, listar_metas, listar_movimentacoes_meta,
     listar_usuarios, rate_limit_limpar, rate_limit_permitir, redefinir_senha_com_token,
     registrar_evento_asaas, registrar_movimentacao_meta, salvar_assinatura_usuario,
@@ -905,6 +906,23 @@ def alterar_pagamento_lancamento(lancamento_id):
 @login_obrigatorio
 def api_financas():
     return jsonify(listar_lancamentos(usuario_atual()["id"]))
+
+
+@app.route("/api/financas/encerrar-ciclo", methods=["POST"])
+@login_obrigatorio
+def api_encerrar_ciclo_financeiro():
+    quantidade = encerrar_ciclo_financeiro(usuario_atual()["id"])
+    return jsonify({
+        "status": "ok",
+        "quantidade": quantidade,
+        "mensagem": (
+            f"Ciclo encerrado. {quantidade} "
+            f"lançamento{'s' if quantidade != 1 else ''} movido"
+            f"{'s' if quantidade != 1 else ''} para o próximo mês."
+            if quantidade
+            else "Não há lançamentos para mover."
+        ),
+    })
 
 
 def validar_compra(dados):

@@ -429,6 +429,7 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert 'id="totalSelecionadoDesktop"' in conteudo_home
     assert 'id="totalRestanteDesktop"' in conteudo_home
     assert 'id="selecionarTodosDesktop"' in conteudo_home
+    assert "Encerrar ciclo" in conteudo_home
     for rota in ("/financas/entradas", "/financas/saidas", "/financas/saldo"):
         pagina = client.get(rota)
         assert pagina.status_code == 200
@@ -439,6 +440,7 @@ def test_crud_financeiro_autenticado(client, csrf):
         assert 'id="totalSelecionado"' in conteudo
         assert 'id="totalRestante"' in conteudo
         assert 'id="selecionarTodos"' in conteudo
+        assert "Encerrar ciclo" in conteudo
         assert "Todas as datas" in conteudo
 
     script = client.get("/static/js/movimentacoes.js").get_data(as_text=True)
@@ -530,6 +532,73 @@ def test_status_pago_persistente_apenas_em_saidas(client, csrf):
     estilos = client.get("/static/css/home.css").get_data(as_text=True)
     assert "tbody tr.item-paid" in estilos
     assert ".btn-payment-paid" in estilos
+
+
+def test_encerrar_ciclo_move_datas_sem_criar_historico(client, csrf):
+    login_admin(client, csrf)
+    trocar_senha(client, csrf)
+    token = csrf(client.get("/home"))
+
+    lancamentos = (
+        ("2026-10-15", "Entrada", "Receita mensal", "1000.00"),
+        ("2026-10-15", "Saída", "Conta mensal", "300.00"),
+        ("2026-01-31", "Saída", "Fechamento do mês", "50.00"),
+    )
+    for data, tipo, descricao, valor in lancamentos:
+        resposta = client.post(
+            "/lancamentos",
+            json={
+                "data": data,
+                "tipo": tipo,
+                "descricao": descricao,
+                "valor": valor,
+                "obs": "",
+            },
+            headers={"X-CSRFToken": token},
+        )
+        assert resposta.status_code == 201
+
+    conta = next(
+        item for item in client.get("/lancamentos").json
+        if item["descricao"] == "Conta mensal"
+    )
+    pago = client.patch(
+        f"/lancamentos/{conta['id']}/pagamento",
+        json={"pago": True},
+        headers={"X-CSRFToken": token},
+    )
+    assert pago.status_code == 200
+
+    encerrado = client.post(
+        "/api/financas/encerrar-ciclo",
+        headers={"X-CSRFToken": token},
+    )
+    assert encerrado.status_code == 200
+    assert encerrado.json["quantidade"] == 3
+    atualizados = client.get("/lancamentos").json
+    assert len(atualizados) == 3
+    por_descricao = {item["descricao"]: item for item in atualizados}
+    assert por_descricao["Receita mensal"]["data"] == "2026-11-15"
+    assert por_descricao["Conta mensal"]["data"] == "2026-11-15"
+    assert int(por_descricao["Conta mensal"]["pago"]) == 0
+    assert por_descricao["Fechamento do mês"]["data"] == "2026-02-28"
+
+    segundo_ciclo = client.post(
+        "/api/financas/encerrar-ciclo",
+        headers={"X-CSRFToken": token},
+    )
+    assert segundo_ciclo.status_code == 200
+    novamente = {
+        item["descricao"]: item for item in client.get("/lancamentos").json
+    }
+    assert novamente["Receita mensal"]["data"] == "2026-12-15"
+    assert len(novamente) == 3
+
+    script_home = client.get("/static/js/home.js").get_data(as_text=True)
+    script_detalhes = client.get("/static/js/movimentacoes.js").get_data(as_text=True)
+    assert "/api/financas/encerrar-ciclo" in script_home
+    assert "/api/financas/encerrar-ciclo" in script_detalhes
+    assert "Esta ação não cria histórico" in script_home
 
 
 def test_pwa_instalavel_e_sem_cache_de_dados_autenticados(client, csrf):

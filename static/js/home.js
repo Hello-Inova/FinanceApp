@@ -179,6 +179,22 @@ async function carregarResumo() {
   } finally { document.querySelectorAll(".loading-value").forEach(el => el.classList.remove("loading-value")); }
 }
 
+async function encerrarCiclo() {
+  if (!lancamentos.length) { mostrarToast("Não há lançamentos para mover.", true); return; }
+  const confirmado = confirm("Encerrar o ciclo moverá todos os lançamentos um mês adiante e marcará todas as saídas como pendentes. Esta ação não cria histórico. Deseja continuar?");
+  if (!confirmado) return;
+  try {
+    const resposta = await respostaJson(await fetch("/api/financas/encerrar-ciclo", { method: "POST", loadingMessage: "Encerrando ciclo financeiro..." }));
+    lancamentosSelecionadosDesktop.clear();
+    datasSelecionadasDesktop.clear();
+    paginaDesktop = 1;
+    document.getElementById("iptPesquisaDesktop").value = "";
+    document.getElementById("filtroMesDesktop").value = "";
+    await carregarResumo();
+    mostrarToast(resposta.mensagem);
+  } catch (erro) { mostrarToast(erro.message, true); }
+}
+
 function abrirModalNovoRegistro() {
   ultimoFoco = document.activeElement; limparCamposNovoRegistro(); document.getElementById("novoData").value = new Date().toISOString().slice(0, 10);
   document.getElementById("modalNovoRegistro").style.display = "flex"; document.body.style.overflow = "hidden"; document.getElementById("novoData").focus();
@@ -208,7 +224,7 @@ async function enviarNovoRegistro(preservar) {
 function salvarNovoRegistro() { return enviarNovoRegistro(false); }
 function registrarOutro() { return enviarNovoRegistro(true); }
 
-window.abrirModalNovoRegistro = abrirModalNovoRegistro; window.fecharModalNovoRegistro = fecharModalNovoRegistro; window.salvarNovoRegistro = salvarNovoRegistro; window.registrarOutro = registrarOutro;
+window.abrirModalNovoRegistro = abrirModalNovoRegistro; window.fecharModalNovoRegistro = fecharModalNovoRegistro; window.salvarNovoRegistro = salvarNovoRegistro; window.registrarOutro = registrarOutro; window.encerrarCiclo = encerrarCiclo;
 window.addEventListener("DOMContentLoaded", () => {
   ["novoData", "novoTipo", "novoDescricao", "novoValor"].forEach(id => document.getElementById(id).addEventListener("input", e => { e.currentTarget.classList.remove("campo-erro"); erroCamposNull.style.display = "none"; }));
   document.getElementById("modalNovoRegistro").addEventListener("mousedown", e => { if (e.target.id === "modalNovoRegistro") fecharModalNovoRegistro(); });

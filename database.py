@@ -4,6 +4,7 @@ import secrets
 import sqlite3
 import threading
 import time
+from calendar import monthrange
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -1206,6 +1207,38 @@ def atualizar_pagamento_lancamento(usuario_id, id, pago):
     conn.commit()
     conn.close()
     return atualizado
+
+
+def encerrar_ciclo_financeiro(usuario_id):
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT id, data FROM lancamentos WHERE usuario_id = ?",
+            (usuario_id,),
+        )
+        lancamentos = cursor.fetchall()
+        atualizacoes = []
+        for lancamento in lancamentos:
+            data_atual = date.fromisoformat(str(lancamento["data"])[:10])
+            proximo_mes = 1 if data_atual.month == 12 else data_atual.month + 1
+            proximo_ano = data_atual.year + 1 if data_atual.month == 12 else data_atual.year
+            proximo_dia = min(data_atual.day, monthrange(proximo_ano, proximo_mes)[1])
+            nova_data = date(proximo_ano, proximo_mes, proximo_dia).isoformat()
+            atualizacoes.append((nova_data, lancamento["id"], usuario_id))
+        if atualizacoes:
+            cursor.executemany(
+                "UPDATE lancamentos SET data = ?, pago = 0 "
+                "WHERE id = ? AND usuario_id = ?",
+                atualizacoes,
+            )
+        conn.commit()
+        return len(atualizacoes)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def excluir_lancamento(usuario_id, id):
