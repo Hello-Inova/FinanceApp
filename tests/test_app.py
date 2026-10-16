@@ -598,6 +598,35 @@ def test_encerrar_ciclo_move_datas_e_preserva_historico(client, csrf):
     assert historico_por_descricao["Conta mensal"]["data"] == "2026-10-15"
     assert int(historico_por_descricao["Conta mensal"]["pago"]) == 1
 
+    historicos_filtraveis = client.get(
+        "/api/financas/historico/lancamentos"
+    ).json
+    conta_historica = next(
+        item for item in historicos_filtraveis
+        if item["descricao"] == "Conta mensal"
+    )
+    assert conta_historica["historico"] is True
+    editado = client.put(
+        f"/api/financas/historico/lancamentos/{conta_historica['id']}",
+        json={
+            "data": "2026-10-16",
+            "tipo": "Saída",
+            "descricao": "Conta mensal corrigida",
+            "valor": "325.00",
+            "obs": "Ajuste no mês encerrado",
+        },
+        headers={"X-CSRFToken": token},
+    )
+    assert editado.status_code == 200
+    historico_corrigido = client.get("/api/financas/historico").json[0]
+    assert float(historico_corrigido["total_saidas"]) == 375.0
+    corrigido = next(
+        item for item in historico_corrigido["lancamentos"]
+        if item["descricao"] == "Conta mensal corrigida"
+    )
+    assert corrigido["data"] == "2026-10-16"
+    assert int(corrigido["pago"]) == 1
+
     segundo_ciclo = client.post(
         "/api/financas/encerrar-ciclo",
         headers={"X-CSRFToken": token},
@@ -615,6 +644,9 @@ def test_encerrar_ciclo_move_datas_e_preserva_historico(client, csrf):
     assert "/api/financas/encerrar-ciclo" in script_home
     assert "/api/financas/historico" in script_home
     assert "/api/financas/encerrar-ciclo" in script_detalhes
+    assert "/api/financas/historico/lancamentos" in script_detalhes
+    assert "dadosHistoricos" in script_detalhes
+    assert "eraHistorico" in script_detalhes
     assert "salvará o mês atual no histórico" in script_home
 
 

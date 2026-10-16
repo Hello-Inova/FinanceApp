@@ -18,7 +18,8 @@ from flask import Flask, g, jsonify, redirect, render_template, request, send_fr
 from flask_wtf.csrf import CSRFError, CSRFProtect
 
 from database import (
-    alterar_senha_propria, alterar_senha_usuario, atualizar_agenda, atualizar_compra, atualizar_meta,
+    alterar_senha_propria, alterar_senha_usuario, atualizar_agenda, atualizar_compra,
+    atualizar_lancamento_historico, atualizar_meta,
     atualizar_assinatura_por_subscription, atualizar_dados_usuario, atualizar_lancamento,
     atualizar_pagamento_lancamento, atualizar_status_compra,
     atualizar_status_meta, atualizar_status_usuario, buscar_configuracoes, buscar_status_solicitacao,
@@ -27,8 +28,8 @@ from database import (
     criar_tabelas, criar_token_recuperacao, criar_usuario, email_usuario_existe, excluir_agenda, excluir_compra,
     encerrar_ciclo_financeiro, excluir_lancamento, excluir_meta, excluir_usuario,
     finalizar_cadastro, healthcheck,
-    listar_agenda, listar_compras, listar_historico_ciclos, listar_lancamentos, listar_metas,
-    listar_movimentacoes_meta,
+    listar_agenda, listar_compras, listar_historico_ciclos, listar_lancamentos,
+    listar_lancamentos_historicos, listar_metas, listar_movimentacoes_meta,
     listar_usuarios, rate_limit_limpar, rate_limit_permitir, redefinir_senha_com_token,
     registrar_evento_asaas, registrar_movimentacao_meta, salvar_assinatura_usuario,
     salvar_cliente_asaas_usuario, salvar_ou_atualizar_configuracoes,
@@ -932,6 +933,30 @@ def api_encerrar_ciclo_financeiro():
 @login_obrigatorio
 def api_historico_financeiro():
     return jsonify(listar_historico_ciclos(usuario_atual()["id"]))
+
+
+@app.route("/api/financas/historico/lancamentos")
+@login_obrigatorio
+def api_lancamentos_historicos():
+    return jsonify(listar_lancamentos_historicos(usuario_atual()["id"]))
+
+
+@app.route(
+    "/api/financas/historico/lancamentos/<int:lancamento_id>",
+    methods=["PUT"],
+)
+@login_obrigatorio
+def api_editar_lancamento_historico(lancamento_id):
+    try:
+        atualizado = atualizar_lancamento_historico(
+            usuario_atual()["id"], lancamento_id,
+            *validar_lancamento(json_body()),
+        )
+        if not atualizado:
+            return resposta_erro("Lançamento histórico não encontrado.", 404)
+        return jsonify({"status": "ok"})
+    except ValueError as erro:
+        return resposta_erro(str(erro))
 
 
 def validar_compra(dados):

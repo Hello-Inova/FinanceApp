@@ -1336,6 +1336,79 @@ def listar_historico_ciclos(usuario_id, limite=24):
     return ciclos
 
 
+def listar_lancamentos_historicos(usuario_id, limite_ciclos=24):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT cl.id, cl.ciclo_id, cl.data, cl.tipo, cl.descricao, cl.valor, "
+        "cl.obs, cl.pago FROM ciclo_lancamentos cl "
+        "JOIN ciclos_financeiros cf ON cf.id = cl.ciclo_id "
+        "WHERE cf.usuario_id = ? AND cf.id IN ("
+        "SELECT id FROM ciclos_financeiros WHERE usuario_id = ? "
+        "ORDER BY id DESC LIMIT ?) "
+        "ORDER BY cl.data DESC, cl.id DESC",
+        (usuario_id, usuario_id, limite_ciclos),
+    )
+    lancamentos = cursor.fetchall()
+    conn.close()
+    for item in lancamentos:
+        item["historico"] = True
+    return lancamentos
+
+
+def atualizar_lancamento_historico(
+    usuario_id, lancamento_id, data, tipo, descricao, valor, obs
+):
+    conn = conectar()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT cl.ciclo_id FROM ciclo_lancamentos cl "
+            "JOIN ciclos_financeiros cf ON cf.id = cl.ciclo_id "
+            "WHERE cl.id = ? AND cf.usuario_id = ?",
+            (lancamento_id, usuario_id),
+        )
+        registro = cursor.fetchone()
+        if not registro:
+            conn.rollback()
+            return False
+        ciclo_id = registro["ciclo_id"]
+        cursor.execute(
+            "UPDATE ciclo_lancamentos SET data = ?, tipo = ?, descricao = ?, "
+            "valor = ?, obs = ?, pago = CASE WHEN ? = 'Saída' THEN pago ELSE 0 END "
+            "WHERE id = ? AND ciclo_id = ?",
+            (
+                data, tipo, descricao, Decimal(str(valor)), obs, tipo,
+                lancamento_id, ciclo_id,
+            ),
+        )
+        cursor.execute(
+            "SELECT MIN(data) AS periodo_inicio, MAX(data) AS periodo_fim, "
+            "COUNT(*) AS quantidade, "
+            "COALESCE(SUM(CASE WHEN tipo = 'Entrada' THEN valor ELSE 0 END), 0) AS total_entradas, "
+            "COALESCE(SUM(CASE WHEN tipo = 'Saída' THEN valor ELSE 0 END), 0) AS total_saidas "
+            "FROM ciclo_lancamentos WHERE ciclo_id = ?",
+            (ciclo_id,),
+        )
+        totais = cursor.fetchone()
+        cursor.execute(
+            "UPDATE ciclos_financeiros SET periodo_inicio = ?, periodo_fim = ?, "
+            "quantidade = ?, total_entradas = ?, total_saidas = ? WHERE id = ?",
+            (
+                totais["periodo_inicio"], totais["periodo_fim"],
+                totais["quantidade"], totais["total_entradas"],
+                totais["total_saidas"], ciclo_id,
+            ),
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def excluir_lancamento(usuario_id, id):
     conn = conectar()
     cursor = conn.cursor()
