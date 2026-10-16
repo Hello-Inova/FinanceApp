@@ -81,7 +81,7 @@ def test_identidade_visual_e_threejs_presentes(client):
     menu = client.get("/components/menu.html").get_data(as_text=True)
 
     assert 'class="auth-brand"' in login
-    assert 'type="module" src="/static/js/three-scene.js?v=1"' in login
+    assert 'type="module" src="/static/js/three-scene.js?v=2"' in login
     assert "three@0.186.0" in cena
     assert 'src="/static/img/favicon.png"' in menu
 
@@ -417,6 +417,11 @@ def test_crud_financeiro_autenticado(client, csrf):
     lancamentos = client.get("/api/financas").json
     assert len(lancamentos) == 1
     assert lancamentos[0]["valor"] == 125.5 or lancamentos[0]["valor"] == "125.5"
+    pagina_api = client.get("/api/financas/lancamentos?pagina=1&por_pagina=5").json
+    assert pagina_api["paginacao"]["total"] == 1
+    assert len(pagina_api["itens"]) == 1
+    assert float(pagina_api["totais"]["bruto"]) == 125.5
+    assert pagina_api["filtros"]["datas"] == ["2026-09-26"]
     home = client.get("/home")
     conteudo_home = home.get_data(as_text=True)
     assert home.status_code == 200
@@ -446,10 +451,10 @@ def test_crud_financeiro_autenticado(client, csrf):
         assert "Todas as datas" in conteudo
 
     script = client.get("/static/js/movimentacoes.js").get_data(as_text=True)
-    assert "datasSelecionadas.has(String(i.data))" in script
+    assert "/api/financas/lancamentos?" in script
     assert 'input.type="checkbox"' in script
     assert "datasSelecionadas.size>1" in script
-    assert "const total=lista.reduce" in script
+    assert "respostaAtual?.totais?.saldo" in script
     assert "datas selecionadas" in script
     assert "lancamentosSelecionados" in script
     assert "totalTabela-valorSelecionado" in script
@@ -751,6 +756,34 @@ def test_crud_agenda_autenticada(client, csrf):
     excluida = client.delete(f"/api/agenda/{agenda_id}", headers={"X-CSRFToken": token})
     assert excluida.status_code == 200
     assert client.get("/api/agenda").json == []
+
+
+def test_compras_paginadas_e_filtradas_no_banco(client, csrf):
+    login_admin(client, csrf)
+    trocar_senha(client, csrf)
+    token = csrf(client.get("/compras"))
+    for indice in range(8):
+        resposta = client.post(
+            "/api/compras",
+            json={
+                "data": "2026-10-16",
+                "categoria": "Mercado" if indice < 7 else "Lazer",
+                "item": f"Item {indice}",
+                "quantidade": 1,
+                "valor_unitario": 10 + indice,
+                "obs": "",
+            },
+            headers={"X-CSRFToken": token},
+        )
+        assert resposta.status_code == 201
+
+    primeira = client.get("/api/compras?paginado=1&pagina=1&por_pagina=6").json
+    assert len(primeira["itens"]) == 6
+    assert primeira["paginacao"]["total"] == 8
+    assert primeira["paginacao"]["paginas"] == 2
+    filtrada = client.get("/api/compras?paginado=1&categoria=Lazer").json
+    assert filtrada["paginacao"]["total"] == 1
+    assert filtrada["itens"][0]["categoria"] == "Lazer"
 
 
 def test_crud_metas_com_aportes_e_retiradas(client, csrf):

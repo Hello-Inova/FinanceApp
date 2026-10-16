@@ -587,6 +587,9 @@ def criar_admin_inicial():
     conn = conectar()
     cursor = conn.cursor()
     try:
+        cursor.execute("SELECT id FROM usuarios WHERE email = ?", (email,))
+        if cursor.fetchone():
+            return
         command = "INSERT INTO" if conn.postgres else "INSERT OR IGNORE INTO"
         suffix = " ON CONFLICT (email) DO NOTHING" if conn.postgres else ""
         cursor.execute(
@@ -595,13 +598,6 @@ def criar_admin_inicial():
             "VALUES (?, ?, ?, ?, ?, ?)" + suffix,
             (nome, None, email, generate_password_hash(senha), "Administrativo", 1),
         )
-        cursor.execute("SELECT id, senha FROM usuarios WHERE email = ?", (email,))
-        existente = cursor.fetchone()
-        if existente and check_password_hash(existente["senha"], senha):
-            cursor.execute(
-                "UPDATE usuarios SET must_change_password = 1 WHERE id = ?",
-                (existente["id"],),
-            )
         conn.commit()
     finally:
         conn.close()
@@ -1208,6 +1204,131 @@ def listar_lancamentos(usuario_id):
     return _listar_por_usuario("lancamentos", usuario_id)
 
 
+def resumo_lancamentos(usuario_id):
+    """Return the dashboard totals without materializing every transaction."""
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) AS quantidade, "
+        "COALESCE(SUM(CASE WHEN tipo = 'Entrada' THEN valor ELSE 0 END), 0) AS entradas, "
+        "COALESCE(SUM(CASE WHEN tipo = 'Saída' THEN valor ELSE 0 END), 0) AS saidas "
+        "FROM lancamentos WHERE usuario_id = ?",
+        (usuario_id,),
+    )
+    resumo = cursor.fetchone()
+    conn.close()
+    resumo["saldo"] = Decimal(str(resumo["entradas"])) - Decimal(str(resumo["saidas"]))
+    return resumo
+
+
+def listar_lancamentos_paginados(
+    usuario_id, pagina=1, por_pagina=8, tipo=None, mes=None, datas=None,
+    busca=None, incluir_historico=False,
+):
+    """Filter and paginate transactions in SQL, including closed cycles on demand."""
+    pagina = max(1, int(pagina or 1))
+    por_pagina = max(1, min(int(por_pagina or 8), 100))
+    datas = [str(item)[:10] for item in (datas or []) if item]
+    fonte = (
+        "SELECT id, data, tipo, descricao, valor, obs, pago, 0 AS historico "
+        "FROM lancamentos WHERE usuario_id = ?"
+    )
+    parametros_fonte = [usuario_id]
+    if incluir_historico:
+        fonte += (
+            " UNION ALL SELECT cl.id, cl.data, cl.tipo, cl.descricao, cl.valor, "
+            "cl.obs, cl.pago, 1 AS historico FROM ciclo_lancamentos cl "
+            "JOIN ciclos_financeiros cf ON cf.id = cl.ciclo_id WHERE cf.usuario_id = ?"
+        )
+        parametros_fonte.append(usuario_id)
+
+    filtros = []
+    parametros_filtro = []
+    if tipo in {"Entrada", "Saída"}:
+        filtros.append("tipo = ?")
+        parametros_filtro.append(tipo)
+    if mes:
+        filtros.append("CAST(data AS TEXT) LIKE ?")
+        parametros_filtro.append(f"{str(mes)[:7]}%")
+    if datas:
+        marcadores = ", ".join("?" for _ in datas)
+        filtros.append(f"CAST(data AS TEXT) IN ({marcadores})")
+        parametros_filtro.extend(datas)
+    if busca:
+        filtros.append(
+            "LOWER(COALESCE(descricao, '') || ' ' || COALESCE(obs, '') || ' ' || "
+            "CAST(valor AS TEXT)) LIKE ?"
+        )
+        parametros_filtro.append(f"%{str(busca).strip().lower()}%")
+
+    where = " WHERE " + " AND ".join(filtros) if filtros else ""
+    base = f"FROM ({fonte}) origem{where}"
+    parametros = tuple(parametros_fonte + parametros_filtro)
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) AS quantidade, COALESCE(SUM(valor), 0) AS total_bruto, "
+        "COALESCE(SUM(CASE WHEN tipo = 'Saída' THEN -valor ELSE valor END), 0) AS total_saldo "
+        + base,
+        parametros,
+    )
+    totais = cursor.fetchone()
+    total = int(totais["quantidade"] or 0)
+    paginas = max(1, (total + por_pagina - 1) // por_pagina)
+    pagina = min(pagina, paginas)
+    cursor.execute(
+        "SELECT id, data, tipo, descricao, valor, obs, pago, historico "
+        + base + " ORDER BY data DESC, id DESC LIMIT ? OFFSET ?",
+        parametros + (por_pagina, (pagina - 1) * por_pagina),
+    )
+    itens = cursor.fetchall()
+
+    # Months always cover active and historical records; date choices follow the
+    # selected month (or only the current active cycle when no month is selected).
+    fonte_filtros = (
+        "SELECT data, tipo FROM lancamentos WHERE usuario_id = ? "
+        "UNION ALL SELECT cl.data, cl.tipo FROM ciclo_lancamentos cl "
+        "JOIN ciclos_financeiros cf ON cf.id = cl.ciclo_id WHERE cf.usuario_id = ?"
+    )
+    filtro_tipo = " WHERE tipo = ?" if tipo in {"Entrada", "Saída"} else ""
+    params_meta = (usuario_id, usuario_id) + ((tipo,) if filtro_tipo else ())
+    cursor.execute(
+        f"SELECT DISTINCT SUBSTR(CAST(data AS TEXT), 1, 7) AS mes FROM ({fonte_filtros}) f"
+        f"{filtro_tipo} ORDER BY mes DESC",
+        params_meta,
+    )
+    meses = [row["mes"] for row in cursor.fetchall() if row.get("mes")]
+
+    fonte_datas = fonte_filtros if mes else "SELECT data, tipo FROM lancamentos WHERE usuario_id = ?"
+    params_datas = [usuario_id, usuario_id] if mes else [usuario_id]
+    filtros_datas = []
+    if tipo in {"Entrada", "Saída"}:
+        filtros_datas.append("tipo = ?")
+        params_datas.append(tipo)
+    if mes:
+        filtros_datas.append("CAST(data AS TEXT) LIKE ?")
+        params_datas.append(f"{str(mes)[:7]}%")
+    where_datas = " WHERE " + " AND ".join(filtros_datas) if filtros_datas else ""
+    cursor.execute(
+        f"SELECT DISTINCT CAST(data AS TEXT) AS data FROM ({fonte_datas}) d"
+        f"{where_datas} ORDER BY data DESC",
+        tuple(params_datas),
+    )
+    opcoes_datas = [str(row["data"])[:10] for row in cursor.fetchall()]
+    conn.close()
+    return {
+        "itens": itens,
+        "paginacao": {
+            "pagina": pagina, "por_pagina": por_pagina,
+            "total": total, "paginas": paginas,
+        },
+        "totais": {
+            "bruto": totais["total_bruto"], "saldo": totais["total_saldo"],
+        },
+        "filtros": {"meses": meses, "datas": opcoes_datas},
+    }
+
+
 def criar_lancamento(usuario_id, data, tipo, descricao, valor, obs):
     conn = conectar()
     cursor = conn.cursor()
@@ -1325,13 +1446,19 @@ def listar_historico_ciclos(usuario_id, limite=24):
         (usuario_id, limite),
     )
     ciclos = cursor.fetchall()
-    for ciclo in ciclos:
+    por_ciclo = {ciclo["id"]: [] for ciclo in ciclos}
+    if ciclos:
+        marcadores = ", ".join("?" for _ in ciclos)
         cursor.execute(
-            "SELECT data, tipo, descricao, valor, obs, pago "
-            "FROM ciclo_lancamentos WHERE ciclo_id = ? ORDER BY data, id",
-            (ciclo["id"],),
+            "SELECT ciclo_id, data, tipo, descricao, valor, obs, pago "
+            f"FROM ciclo_lancamentos WHERE ciclo_id IN ({marcadores}) "
+            "ORDER BY ciclo_id DESC, data, id",
+            tuple(ciclo["id"] for ciclo in ciclos),
         )
-        ciclo["lancamentos"] = cursor.fetchall()
+        for lancamento in cursor.fetchall():
+            por_ciclo[lancamento.pop("ciclo_id")].append(lancamento)
+    for ciclo in ciclos:
+        ciclo["lancamentos"] = por_ciclo[ciclo["id"]]
     conn.close()
     return ciclos
 
@@ -1436,6 +1563,64 @@ def excluir_lancamento(usuario_id, id):
 
 def listar_compras(usuario_id):
     return _listar_por_usuario("compras", usuario_id)
+
+
+def listar_compras_paginadas(
+    usuario_id, pagina=1, por_pagina=6, busca=None, categoria=None, comprado=None,
+):
+    pagina = max(1, int(pagina or 1))
+    por_pagina = max(1, min(int(por_pagina or 6), 100))
+    filtros = ["usuario_id = ?"]
+    parametros = [usuario_id]
+    if busca:
+        filtros.append(
+            "LOWER(COALESCE(item, '') || ' ' || COALESCE(categoria, '') || ' ' || "
+            "COALESCE(obs, '')) LIKE ?"
+        )
+        parametros.append(f"%{str(busca).strip().lower()}%")
+    if categoria:
+        filtros.append("categoria = ?")
+        parametros.append(categoria)
+    if comprado in {0, 1, "0", "1"}:
+        filtros.append("comprado = ?")
+        parametros.append(int(comprado))
+    where = " WHERE " + " AND ".join(filtros)
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) AS quantidade, COALESCE(SUM(valor_total), 0) AS valor "
+        "FROM compras" + where,
+        tuple(parametros),
+    )
+    filtrado = cursor.fetchone()
+    total = int(filtrado["quantidade"] or 0)
+    paginas = max(1, (total + por_pagina - 1) // por_pagina)
+    pagina = min(pagina, paginas)
+    cursor.execute(
+        "SELECT * FROM compras" + where + " ORDER BY id DESC LIMIT ? OFFSET ?",
+        tuple(parametros) + (por_pagina, (pagina - 1) * por_pagina),
+    )
+    itens = cursor.fetchall()
+    cursor.execute(
+        "SELECT COUNT(*) AS total, "
+        "COALESCE(SUM(CASE WHEN comprado = 1 THEN 1 ELSE 0 END), 0) AS comprados, "
+        "COALESCE(SUM(valor_total), 0) AS valor FROM compras WHERE usuario_id = ?",
+        (usuario_id,),
+    )
+    resumo = cursor.fetchone()
+    cursor.execute(
+        "SELECT DISTINCT categoria FROM compras WHERE usuario_id = ? ORDER BY categoria",
+        (usuario_id,),
+    )
+    categorias = [row["categoria"] for row in cursor.fetchall() if row.get("categoria")]
+    conn.close()
+    return {
+        "itens": itens,
+        "paginacao": {"pagina": pagina, "por_pagina": por_pagina, "total": total, "paginas": paginas},
+        "filtrado": {"valor": filtrado["valor"]},
+        "resumo": resumo,
+        "filtros": {"categorias": categorias},
+    }
 
 
 def criar_compra(usuario_id, data, categoria, item, quantidade, valor_unitario, obs):

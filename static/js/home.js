@@ -2,6 +2,9 @@ const API_URL = window.location.origin;
 let toastTimer = null;
 let ultimoFoco = null;
 let lancamentos = [];
+let respostaTabelaDesktop = null;
+let resumoFinanceiroAtual = null;
+let buscaDesktopTimer = null;
 let paginaDesktop = 1;
 const itensPorPaginaDesktop = 5;
 const datasSelecionadasDesktop = new Set();
@@ -17,7 +20,7 @@ function preencherMesesDesktop() {
   const select = document.getElementById("filtroMesDesktop");
   if (!select) return;
   const atual = select.value;
-  const meses = [...new Set(lancamentos.map(i => dataIso(i.data).slice(0, 7)).filter(Boolean))].sort().reverse();
+  const meses = respostaTabelaDesktop?.filtros?.meses || [];
   select.innerHTML = '<option value="">Todos os meses</option>';
   meses.forEach(valor => {
     const [ano, mes] = valor.split("-");
@@ -40,8 +43,7 @@ function atualizarResumoDatasDesktop() {
 function preencherDatasDesktop() {
   const opcoes = document.getElementById("filtroDataOpcoesDesktop");
   if (!opcoes) return;
-  const mes = document.getElementById("filtroMesDesktop")?.value || "";
-  const datas = [...new Set(lancamentos.map(i => dataIso(i.data)).filter(data => data && (!mes || data.startsWith(mes))))].sort().reverse();
+  const datas = respostaTabelaDesktop?.filtros?.datas || [];
   [...datasSelecionadasDesktop].forEach(data => { if (!datas.includes(data)) datasSelecionadasDesktop.delete(data); });
   opcoes.replaceChildren();
   if (!datas.length) {
@@ -63,7 +65,7 @@ function preencherDatasDesktop() {
       input.checked ? datasSelecionadasDesktop.add(data) : datasSelecionadasDesktop.delete(data);
       paginaDesktop = 1;
       atualizarResumoDatasDesktop();
-      renderizarTabelaDesktop();
+      carregarTabelaDesktop();
     });
     label.append(input, texto);
     opcoes.appendChild(label);
@@ -72,13 +74,7 @@ function preencherDatasDesktop() {
 }
 
 function filtrarLancamentosDesktop() {
-  const pesquisa = (document.getElementById("iptPesquisaDesktop")?.value || "").trim().toLocaleLowerCase("pt-BR");
-  const mes = document.getElementById("filtroMesDesktop")?.value || "";
-  return lancamentos.filter(item => {
-    const data = dataIso(item.data);
-    const texto = [item.descricao, item.obs, item.tipo, formatarMoeda(item.valor), formatarData(item.data)].join(" ").toLocaleLowerCase("pt-BR");
-    return (!pesquisa || texto.includes(pesquisa)) && (!mes || data.startsWith(mes)) && (!datasSelecionadasDesktop.size || datasSelecionadasDesktop.has(data));
-  });
+  return lancamentos;
 }
 
 function celula(texto, classe = "") { const td = document.createElement("td"); td.textContent = texto; if (classe) td.className = classe; return td; }
@@ -107,7 +103,7 @@ function atualizarSelecionarTodosDesktop(lista, quantidadeSelecionada) {
 }
 
 function alternarTodosDesktop(marcar) {
-  filtrarLancamentosDesktop().forEach(item => {
+  lancamentos.forEach(item => {
     marcar ? lancamentosSelecionadosDesktop.add(item.id) : lancamentosSelecionadosDesktop.delete(item.id);
   });
   renderizarTabelaDesktop();
@@ -116,12 +112,12 @@ function alternarTodosDesktop(marcar) {
 function renderizarTabelaDesktop() {
   const tabela = document.getElementById("tabelaDesktop");
   if (!tabela) return;
-  const filtrados = filtrarLancamentosDesktop();
-  const totalPaginas = Math.ceil(filtrados.length / itensPorPaginaDesktop) || 1;
-  paginaDesktop = Math.min(paginaDesktop, totalPaginas);
-  const pagina = filtrados.slice((paginaDesktop - 1) * itensPorPaginaDesktop, paginaDesktop * itensPorPaginaDesktop);
-  const totalTabela = filtrados.reduce((total, item) => total + Number(item.valor || 0), 0);
-  const selecionados = filtrados.filter(item => lancamentosSelecionadosDesktop.has(item.id));
+  const pagina = lancamentos;
+  const paginacao = respostaTabelaDesktop?.paginacao || { pagina: 1, paginas: 1, total: 0 };
+  const totalPaginas = paginacao.paginas;
+  paginaDesktop = paginacao.pagina;
+  const totalTabela = Number(respostaTabelaDesktop?.totais?.bruto || 0);
+  const selecionados = pagina.filter(item => lancamentosSelecionadosDesktop.has(item.id));
   const valorSelecionado = selecionados.reduce((total, item) => total + Number(item.valor || 0), 0);
   const totalRestante = totalTabela - valorSelecionado;
   tabela.replaceChildren();
@@ -143,12 +139,12 @@ function renderizarTabelaDesktop() {
     link.className = "home-details-link"; link.href = item.tipo === "Entrada" ? "/financas/entradas" : "/financas/saidas"; link.textContent = "Abrir →";
     link.setAttribute("aria-label", `Abrir detalhes de ${item.descricao || "lançamento"}`); acoes.appendChild(link); tr.appendChild(acoes); tabela.appendChild(tr);
   });
-  document.getElementById("contadorLancamentosDesktop").textContent = `${filtrados.length} ${filtrados.length === 1 ? "lançamento encontrado" : "lançamentos encontrados"}`;
+  document.getElementById("contadorLancamentosDesktop").textContent = `${paginacao.total} ${paginacao.total === 1 ? "lançamento encontrado" : "lançamentos encontrados"}`;
   document.getElementById("totalFiltradoDesktop").textContent = formatarMoeda(totalTabela);
   document.getElementById("selecionadosResumoDesktop").textContent = `${selecionados.length} ${selecionados.length === 1 ? "selecionado" : "selecionados"}`;
   document.getElementById("totalSelecionadoDesktop").textContent = formatarMoeda(valorSelecionado);
   document.getElementById("totalRestanteDesktop").textContent = formatarMoeda(totalRestante);
-  atualizarSelecionarTodosDesktop(filtrados, selecionados.length);
+  atualizarSelecionarTodosDesktop(pagina, selecionados.length);
   document.getElementById("paginaInfoDesktop").textContent = `Página ${paginaDesktop} de ${totalPaginas}`;
   document.getElementById("paginaAnteriorDesktop").disabled = paginaDesktop === 1;
   document.getElementById("proximaPaginaDesktop").disabled = paginaDesktop === totalPaginas;
@@ -156,18 +152,35 @@ function renderizarTabelaDesktop() {
 
 function limparFiltrosDesktop() {
   document.getElementById("iptPesquisaDesktop").value = ""; document.getElementById("filtroMesDesktop").value = "";
-  datasSelecionadasDesktop.clear(); paginaDesktop = 1; preencherDatasDesktop(); renderizarTabelaDesktop();
+  datasSelecionadasDesktop.clear(); paginaDesktop = 1; carregarTabelaDesktop();
+}
+
+function parametrosTabelaDesktop() {
+  const params = new URLSearchParams({ pagina: paginaDesktop, por_pagina: itensPorPaginaDesktop });
+  const busca = document.getElementById("iptPesquisaDesktop")?.value.trim();
+  const mes = document.getElementById("filtroMesDesktop")?.value;
+  if (busca) params.set("busca", busca);
+  if (mes) params.set("mes", mes);
+  datasSelecionadasDesktop.forEach(data => params.append("data", data));
+  return params;
+}
+
+async function carregarTabelaDesktop() {
+  respostaTabelaDesktop = await respostaJson(await fetch(`/api/financas/lancamentos?${parametrosTabelaDesktop()}`, { loading: false }));
+  paginaDesktop = respostaTabelaDesktop.paginacao.pagina;
+  lancamentos = respostaTabelaDesktop.itens;
+  preencherMesesDesktop(); preencherDatasDesktop(); renderizarTabelaDesktop();
 }
 
 async function carregarResumo() {
   try {
-    lancamentos = await respostaJson(await fetch("/lancamentos", { loadingMessage: "Carregando suas finanças..." }));
-    const idsAtuais = new Set(lancamentos.map(item => item.id));
-    [...lancamentosSelecionadosDesktop].forEach(id => { if (!idsAtuais.has(id)) lancamentosSelecionadosDesktop.delete(id); });
-    const entradas = lancamentos.filter(i => i.tipo === "Entrada").reduce((s, i) => s + Number(i.valor || 0), 0);
-    const saidas = lancamentos.filter(i => i.tipo === "Saída").reduce((s, i) => s + Number(i.valor || 0), 0);
+    const [resumo] = await Promise.all([
+      respostaJson(await fetch("/api/financas/resumo", { loadingMessage: "Carregando suas finanças..." })),
+      window.matchMedia("(min-width: 1100px)").matches ? carregarTabelaDesktop() : Promise.resolve(),
+    ]);
+    resumoFinanceiroAtual = resumo;
+    const entradas = Number(resumo.entradas || 0), saidas = Number(resumo.saidas || 0);
     document.getElementById("totalEntradas").textContent = formatarMoeda(entradas); document.getElementById("totalSaidas").textContent = formatarMoeda(saidas); document.getElementById("saldo").textContent = formatarMoeda(entradas - saidas);
-    preencherMesesDesktop(); preencherDatasDesktop(); renderizarTabelaDesktop();
   } catch (erro) {
     const tabela = document.getElementById("tabelaDesktop");
     if (tabela) {
@@ -180,7 +193,7 @@ async function carregarResumo() {
 }
 
 async function encerrarCiclo() {
-  if (!lancamentos.length) { mostrarToast("Não há lançamentos para mover.", true); return; }
+  if (!Number(resumoFinanceiroAtual?.quantidade || 0)) { mostrarToast("Não há lançamentos para mover.", true); return; }
   const confirmado = confirm("Encerrar o ciclo salvará o mês atual no histórico, moverá todos os lançamentos um mês adiante e marcará as saídas como pendentes. Deseja continuar?");
   if (!confirmado) return;
   try {
@@ -241,20 +254,24 @@ function renderizarHistorico(ciclos) {
     });
     const lancamentosLista = document.createElement("div");
     lancamentosLista.className = "history-entries";
-    (ciclo.lancamentos || []).forEach(item => {
-      const linha = document.createElement("div");
-      linha.className = `history-entry ${item.tipo === "Saída" && Number(item.pago) === 1 ? "paid" : ""}`;
-      const principal = document.createElement("div");
-      const descricao = document.createElement("strong");
-      const meta = document.createElement("span");
-      descricao.textContent = item.descricao;
-      meta.textContent = `${formatarData(item.data)} • ${item.tipo}${item.tipo === "Saída" ? (Number(item.pago) === 1 ? " • Pago" : " • Pendente") : ""}`;
-      principal.append(descricao, meta);
-      const valor = document.createElement("strong");
-      valor.className = item.tipo === "Entrada" ? "valor-entrada" : "valor-saida";
-      valor.textContent = formatarMoeda(item.valor);
-      linha.append(principal, valor);
-      lancamentosLista.appendChild(linha);
+    detalhes.addEventListener("toggle", () => {
+      if (!detalhes.open || lancamentosLista.dataset.rendered) return;
+      (ciclo.lancamentos || []).forEach(item => {
+        const linha = document.createElement("div");
+        linha.className = `history-entry ${item.tipo === "Saída" && Number(item.pago) === 1 ? "paid" : ""}`;
+        const principal = document.createElement("div");
+        const descricao = document.createElement("strong");
+        const meta = document.createElement("span");
+        descricao.textContent = item.descricao;
+        meta.textContent = `${formatarData(item.data)} • ${item.tipo}${item.tipo === "Saída" ? (Number(item.pago) === 1 ? " • Pago" : " • Pendente") : ""}`;
+        principal.append(descricao, meta);
+        const valor = document.createElement("strong");
+        valor.className = item.tipo === "Entrada" ? "valor-entrada" : "valor-saida";
+        valor.textContent = formatarMoeda(item.valor);
+        linha.append(principal, valor);
+        lancamentosLista.appendChild(linha);
+      });
+      lancamentosLista.dataset.rendered = "true";
     });
     detalhes.append(resumo, totais, lancamentosLista);
     lista.appendChild(detalhes);
@@ -312,12 +329,12 @@ window.addEventListener("DOMContentLoaded", () => {
   ["novoData", "novoTipo", "novoDescricao", "novoValor"].forEach(id => document.getElementById(id).addEventListener("input", e => { e.currentTarget.classList.remove("campo-erro"); erroCamposNull.style.display = "none"; }));
   document.getElementById("modalNovoRegistro").addEventListener("mousedown", e => { if (e.target.id === "modalNovoRegistro") fecharModalNovoRegistro(); });
   document.getElementById("modalHistorico").addEventListener("mousedown", e => { if (e.target.id === "modalHistorico") fecharHistorico(); });
-  document.getElementById("iptPesquisaDesktop")?.addEventListener("input", () => { paginaDesktop = 1; renderizarTabelaDesktop(); });
-  document.getElementById("filtroMesDesktop")?.addEventListener("change", () => { paginaDesktop = 1; datasSelecionadasDesktop.clear(); preencherDatasDesktop(); renderizarTabelaDesktop(); });
+  document.getElementById("iptPesquisaDesktop")?.addEventListener("input", () => { clearTimeout(buscaDesktopTimer); buscaDesktopTimer = setTimeout(() => { paginaDesktop = 1; carregarTabelaDesktop(); }, 250); });
+  document.getElementById("filtroMesDesktop")?.addEventListener("change", () => { paginaDesktop = 1; datasSelecionadasDesktop.clear(); carregarTabelaDesktop(); });
   document.getElementById("limparFiltrosDesktop")?.addEventListener("click", limparFiltrosDesktop);
   document.getElementById("selecionarTodosDesktop")?.addEventListener("change", event => alternarTodosDesktop(event.currentTarget.checked));
-  document.getElementById("paginaAnteriorDesktop")?.addEventListener("click", () => { if (paginaDesktop > 1) { paginaDesktop -= 1; renderizarTabelaDesktop(); } });
-  document.getElementById("proximaPaginaDesktop")?.addEventListener("click", () => { const total = Math.ceil(filtrarLancamentosDesktop().length / itensPorPaginaDesktop) || 1; if (paginaDesktop < total) { paginaDesktop += 1; renderizarTabelaDesktop(); } });
+  document.getElementById("paginaAnteriorDesktop")?.addEventListener("click", () => { if (paginaDesktop > 1) { paginaDesktop -= 1; carregarTabelaDesktop(); } });
+  document.getElementById("proximaPaginaDesktop")?.addEventListener("click", () => { const total = respostaTabelaDesktop?.paginacao?.paginas || 1; if (paginaDesktop < total) { paginaDesktop += 1; carregarTabelaDesktop(); } });
   document.addEventListener("click", e => { const filtro = document.getElementById("filtroDataDesktop"); if (filtro?.open && !filtro.contains(e.target)) filtro.removeAttribute("open"); });
   carregarResumo();
 });

@@ -1,7 +1,9 @@
 (() => {
   const reduzirMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const economizarDados = navigator.connection?.saveData;
-  if (reduzirMovimento || economizarDados || !window.WebGLRenderingContext) return;
+  const dispositivoLimitado = (navigator.deviceMemory && navigator.deviceMemory <= 2)
+    || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
+  if (reduzirMovimento || economizarDados || dispositivoLimitado || !window.WebGLRenderingContext) return;
 
   const iniciar = async () => {
     if (document.querySelector(".three-background")) return;

@@ -21,7 +21,7 @@ python main.py
 python -m pytest tests -q
 ```
 
-Copie `.env.example` para `.env`, use `APP_ENV=development` e configure uma `SECRET_KEY` local. O schema é atualizado automaticamente por migrações idempotentes. O CI executa compilação e testes a cada push e pull request.
+Copie `.env.example` para `.env`, use `APP_ENV=development` e configure uma `SECRET_KEY` local. Em desenvolvimento, o schema é atualizado automaticamente. Em produção, execute `python migrate.py` como etapa explícita antes do deploy; isso evita que toda inicialização serverless repita as migrações. O CI executa compilação e testes a cada push e pull request.
 
 ## Variáveis de produção
 
@@ -29,6 +29,9 @@ Copie `.env.example` para `.env`, use `APP_ENV=development` e configure uma `SEC
 - `SECRET_KEY`: segredo aleatório longo; nunca versionar.
 - `APP_ENV=production`.
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: somente para o primeiro acesso. Remova `ADMIN_PASSWORD` depois da troca da senha.
+- `RUN_DB_MIGRATIONS_ON_STARTUP`: mantenha `false` em produção e use `python migrate.py` no deploy.
+- `BOOTSTRAP_ADMIN_ON_STARTUP`: use apenas no primeiro provisionamento; mantenha `false` depois disso.
+- `USER_CACHE_TTL_SECONDS`: cache curto da validação de sessão em instâncias aquecidas (padrão: 10 segundos).
 - `PAYMENTS_ENABLED=false`: mantenha assim até validar todo o fluxo no Sandbox da Asaas.
 - `PERIODO_TESTE_DIAS=7`: valor inicial usado antes de existir uma configuração salva no painel.
 - `CADASTRO_VALOR_CENTAVOS`: preço inicial/fallback em centavos. Depois da primeira

@@ -1,6 +1,8 @@
 const API_URL = window.location.origin;
 
 let comprasGlobais = [];
+let comprasResposta = null;
+let filtroTimer = null;
 let paginaAtual = 1;
 let compraEditId = null;
 
@@ -16,63 +18,46 @@ function formatarMoeda(valor) {
 function filtrarComprados() {
   filtroStatus.value = "1";
   paginaAtual = 1;
-  renderizarCompras();
+  carregarCompras();
 }
 
 function filtrarPendentes() {
   filtroStatus.value = "0";
   paginaAtual = 1;
-  renderizarCompras();
+  carregarCompras();
 }
 
 function mostrarTodasCompras() {
   filtroStatus.value = "";
   paginaAtual = 1;
-  renderizarCompras();
+  carregarCompras();
 }
 
 
 async function carregarCompras() {
-  const res = await fetch(`${API_URL}/api/compras`, { loadingMessage: "Carregando suas compras..." });
+  const params = new URLSearchParams({ paginado: "1", pagina: paginaAtual, por_pagina: itensPorPagina });
+  const pesquisa = document.getElementById("iptPesquisaCompra")?.value.trim();
+  const categoria = document.getElementById("filtroCategoria")?.value;
+  const status = document.getElementById("filtroStatus")?.value;
+  if (pesquisa) params.set("busca", pesquisa);
+  if (categoria) params.set("categoria", categoria);
+  if (status !== "" && status != null) params.set("comprado", status);
+  const res = await fetch(`${API_URL}/api/compras?${params}`, { loadingMessage: "Carregando suas compras..." });
 
   if (!res.ok) {
     console.error("Erro ao carregar compras");
     return;
   }
 
-  comprasGlobais = await res.json();
+  comprasResposta = await res.json();
+  comprasGlobais = comprasResposta.itens;
+  paginaAtual = comprasResposta.paginacao.pagina;
 
   renderizarCompras();
 }
 
 function obterComprasFiltradas() {
-  const pesquisa = document
-    .getElementById("iptPesquisaCompra")
-    .value
-    .trim()
-    .toLowerCase();
-
-  const categoria =
-    document.getElementById("filtroCategoria").value;
-
-  const status =
-    document.getElementById("filtroStatus").value;
-
-  return comprasGlobais.filter(compra => {
-    const buscaOk =
-      !pesquisa ||
-      String(compra.item || "").toLowerCase().includes(pesquisa) ||
-      String(compra.categoria || "").toLowerCase().includes(pesquisa) ||
-      String(compra.obs || "").toLowerCase().includes(pesquisa);
-
-    const categoriaOk =
-      !categoria || compra.categoria === categoria;
-
-    const statusOk =
-      status === "" || String(compra.comprado) === status;
-
-    return buscaOk && categoriaOk && statusOk;
-  });
+  return comprasGlobais;
 }
 
 function criarCelula(row, label, conteudo, classe = "", permitirHtml = false) {
@@ -100,11 +85,7 @@ function renderizarCompras() {
 
   const lista = obterComprasFiltradas();
 
-  const inicio =
-    (paginaAtual - 1) * itensPorPagina;
-
-  const pagina =
-    lista.slice(inicio, inicio + itensPorPagina);
+  const pagina = lista;
 
   if (!pagina.length) {
     const row = tbody.insertRow();
@@ -200,29 +181,24 @@ function renderizarCompras() {
   });
 
   atualizarResumo();
-  atualizarPaginacao(lista.length);
+  atualizarPaginacao();
 }
 
 function atualizarResumo() {
-  const total = comprasGlobais.reduce((soma, item) => {
-    return soma + Number(item.valor_total || 0);
-  }, 0);
-
-  const comprados =
-    comprasGlobais.filter(i => Number(i.comprado) === 1).length;
-
-  const pendentes =
-    comprasGlobais.length - comprados;
+  const resumo = comprasResposta?.resumo || {};
+  const total = Number(resumo.valor || 0);
+  const comprados = Number(resumo.comprados || 0);
+  const quantidade = Number(resumo.total || 0);
+  const pendentes = quantidade - comprados;
 
   totalGeral.innerText = formatarMoeda(total);
-  totalItens.innerText = comprasGlobais.length;
+  totalItens.innerText = quantidade;
   totalComprados.innerText = comprados;
   totalPendentes.innerText = pendentes;
 }
 
-function atualizarPaginacao(totalRegistros) {
-  const totalPaginas =
-    Math.ceil(totalRegistros / itensPorPagina) || 1;
+function atualizarPaginacao() {
+  const totalPaginas = comprasResposta?.paginacao?.paginas || 1;
 
   if (paginaAtual > totalPaginas) {
     paginaAtual = totalPaginas;
@@ -241,17 +217,16 @@ function atualizarPaginacao(totalRegistros) {
 function paginaAnterior() {
   if (paginaAtual > 1) {
     paginaAtual--;
-    renderizarCompras();
+    carregarCompras();
   }
 }
 
 function proximaPagina() {
-  const totalPaginas =
-    Math.ceil(obterComprasFiltradas().length / itensPorPagina) || 1;
+  const totalPaginas = comprasResposta?.paginacao?.paginas || 1;
 
   if (paginaAtual < totalPaginas) {
     paginaAtual++;
-    renderizarCompras();
+    carregarCompras();
   }
 }
 
@@ -475,12 +450,13 @@ function configurarEventos() {
 
     campo.addEventListener("input", () => {
       paginaAtual = 1;
-      renderizarCompras();
+      clearTimeout(filtroTimer);
+      filtroTimer = setTimeout(carregarCompras, 250);
     });
 
     campo.addEventListener("change", () => {
       paginaAtual = 1;
-      renderizarCompras();
+      carregarCompras();
     });
   });
 

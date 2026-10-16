@@ -4,8 +4,10 @@
 
   const LOADING_STYLE_ID = "financeapp-loading-style";
   const LOADING_OVERLAY_ID = "financeapp-loading";
-  const SHOW_DELAY_MS = 120;
-  const MIN_VISIBLE_MS = 280;
+  // Fast requests should complete without flashing a blocking overlay. When it
+  // does appear, keep it only long enough to avoid visual flicker.
+  const SHOW_DELAY_MS = 220;
+  const MIN_VISIBLE_MS = 120;
   let pendingRequests = 0;
   let showTimer = null;
   let visibleSince = 0;

@@ -129,7 +129,7 @@ window.fecharMenu = fecharMenu;
 window.navegar = navegar;
 window.addEventListener("DOMContentLoaded", carregarMenu);
 window.addEventListener("load", () => {
-  const carregarCena = () => import("/static/js/three-scene.js?v=1").catch(() => {});
+  const carregarCena = () => import("/static/js/three-scene.js?v=2").catch(() => {});
   if ("requestIdleCallback" in window) window.requestIdleCallback(carregarCena, { timeout: 1500 });
   else window.setTimeout(carregarCena, 400);
 });

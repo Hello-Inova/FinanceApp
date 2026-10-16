@@ -1,91 +1,64 @@
 const viewKey = document.querySelector('meta[name="finance-view"]')?.content || "saldo";
 const itensPorPagina = 8;
-let dados = [], dadosHistoricos = [], paginaAtual = 1, editId = null, editHistorico = false, toastTimer;
-const datasSelecionadas = new Set();
-const lancamentosSelecionados = new Set();
+let dados = [], dadosHistoricos = [], respostaAtual = null, paginaAtual = 1;
+let editId = null, editHistorico = false, toastTimer, buscaTimer;
+const datasSelecionadas = new Set(), lancamentosSelecionados = new Set(), valoresSelecionados = new Map();
 const moeda = valor => Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dataLocal = valor => new Intl.DateTimeFormat("pt-BR").format(new Date(`${valor}T00:00:00`));
 async function json(res) { const body = await res.json().catch(() => ({})); if (!res.ok) throw new Error(body.mensagem || "Não foi possível concluir a operação."); return body; }
 function toast(msg, erro=false) { const el=document.getElementById("toast"); clearTimeout(toastTimer); el.textContent=`${erro?"⚠":"✓"} ${msg}`; el.classList.toggle("error",erro); el.classList.add("show"); toastTimer=setTimeout(()=>el.classList.remove("show"),3500); }
 function tipoDaPagina() { return viewKey==="entradas"?"Entrada":viewKey==="saidas"?"Saída":null; }
-function chaveItem(item){return `${item.historico?"h":"a"}-${item.id}`;}
-function dadosDaPagina() { const tipo=tipoDaPagina(); const termo=iptPesquisa.value.trim().toLocaleLowerCase("pt-BR"); const mes=filtroMes.value; const fonte=mes?[...dados,...dadosHistoricos]:dados; return fonte.filter(i=>(!tipo||i.tipo===tipo)&&(!mes||String(i.data).slice(0,7)===mes)&&(!datasSelecionadas.size||datasSelecionadas.has(String(i.data)))&&(!termo||[i.descricao,i.obs,i.valor,moeda(i.valor)].some(v=>String(v||"").toLocaleLowerCase("pt-BR").includes(termo)))); }
-function valorNaPagina(item) { return (viewKey === "saldo" && item.tipo === "Saída" ? -1 : 1) * Number(item.valor || 0); }
-function atualizarSelecionarTodos(lista, quantidadeSelecionada){const checkbox=document.getElementById("selecionarTodos");if(!checkbox)return;checkbox.disabled=lista.length===0;checkbox.checked=lista.length>0&&quantidadeSelecionada===lista.length;checkbox.indeterminate=quantidadeSelecionada>0&&quantidadeSelecionada<lista.length;checkbox.setAttribute("aria-label",checkbox.checked?"Desmarcar todos os lançamentos filtrados":"Selecionar todos os lançamentos filtrados");}
-function alternarTodos(marcar){dadosDaPagina().forEach(item=>{const chave=chaveItem(item);marcar?lancamentosSelecionados.add(chave):lancamentosSelecionados.delete(chave);});renderizar();}
+function chaveItem(item){return `${Number(item.historico)?"h":"a"}-${item.id}`;}
 function estaPago(item){return Number(item.pago||0)===1;}
-function preencherMeses(){ const atual=filtroMes.value; const tipo=tipoDaPagina(); filtroMes.innerHTML='<option value="">Mês atual</option>'; const nomes=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]; [...new Set([...dados,...dadosHistoricos].filter(i=>!tipo||i.tipo===tipo).map(i=>String(i.data).slice(0,7)))].sort().reverse().forEach(chave=>{const [a,m]=chave.split("-"); filtroMes.add(new Option(`${nomes[Number(m)-1]}/${a}`,chave));}); filtroMes.value=[...filtroMes.options].some(opcao=>opcao.value===atual)?atual:""; }
-function atualizarResumoDatas(){ const quantidade=datasSelecionadas.size; filtroDataResumo.textContent=quantidade===0?"Todas as datas":quantidade===1?dataLocal([...datasSelecionadas][0]):`${quantidade} datas`; }
-function preencherDatas(){ const tipo=tipoDaPagina(); const mes=filtroMes.value; const fonte=mes?[...dados,...dadosHistoricos]:dados; const disponiveis=[...new Set(fonte.filter(i=>(!tipo||i.tipo===tipo)&&(!mes||String(i.data).slice(0,7)===mes)).map(i=>String(i.data)))].sort().reverse(); [...datasSelecionadas].forEach(data=>{if(!disponiveis.includes(data))datasSelecionadas.delete(data);}); filtroDataOpcoes.replaceChildren(); if(!disponiveis.length){const vazio=document.createElement("span");vazio.className="date-filter-empty";vazio.textContent="Nenhuma data disponível";filtroDataOpcoes.append(vazio);} disponiveis.forEach(data=>{const label=document.createElement("label");const input=document.createElement("input");const texto=document.createElement("span");input.type="checkbox";input.value=data;input.checked=datasSelecionadas.has(data);input.setAttribute("aria-label",dataLocal(data));texto.textContent=dataLocal(data);input.addEventListener("change",()=>{input.checked?datasSelecionadas.add(data):datasSelecionadas.delete(data);atualizarResumoDatas();paginaAtual=1;renderizar();});label.append(input,texto);filtroDataOpcoes.append(label);}); atualizarResumoDatas(); }
-function renderizar(){
-  const lista=dadosDaPagina(), totalPaginas=Math.ceil(lista.length/itensPorPagina)||1;
-  paginaAtual=Math.min(paginaAtual,totalPaginas);
-  const pagina=lista.slice((paginaAtual-1)*itensPorPagina,paginaAtual*itensPorPagina);
-  const selecionados=lista.filter(item=>lancamentosSelecionados.has(chaveItem(item)));
-  const total=lista.reduce((s,item)=>s+valorNaPagina(item),0);
-  const totalTabela=lista.reduce((s,item)=>s+Number(item.valor||0),0);
-  const valorSelecionado=selecionados.reduce((s,item)=>s+Number(item.valor||0),0);
-  tabela.replaceChildren();
-  if(!pagina.length){
-    const tr=tabela.insertRow(),td=tr.insertCell();
-    td.colSpan=7;
-    td.innerHTML='<div class="empty-table"><strong>Nenhum lançamento encontrado</strong><span>Ajuste os filtros ou use o botão Novo lançamento acima.</span></div>';
-  }
-  pagina.forEach(item=>{
-    const tr=tabela.insertRow();
-    if(viewKey==="saidas"&&estaPago(item))tr.classList.add("item-paid");
-    if(lancamentosSelecionados.has(chaveItem(item)))tr.classList.add("item-selected");
-    if(item.historico)tr.classList.add("item-history");
-    const selecao=tr.insertCell();
-    selecao.className="selection-cell";
-    const checkbox=document.createElement("input");
-    checkbox.type="checkbox";
-    checkbox.className="item-checkbox";
-    checkbox.checked=lancamentosSelecionados.has(chaveItem(item));
-    checkbox.setAttribute("aria-label",`Selecionar ${item.descricao||"lançamento"}`);
-    checkbox.addEventListener("change",()=>{
-      const chave=chaveItem(item);checkbox.checked?lancamentosSelecionados.add(chave):lancamentosSelecionados.delete(chave);
-      renderizar();
-    });
-    selecao.appendChild(checkbox);
-    const rotulos=["Data","Tipo","Descrição","Valor","Observação"];
-    [dataLocal(item.data),item.tipo,item.descricao,moeda(item.valor),item.obs||"—"].forEach((valor,n)=>{
-      const td=tr.insertCell();
-      td.textContent=valor;
-      td.dataset.label=rotulos[n];
-      if(n===4)td.className="desktop-only";
-      if(n===3)td.className=item.tipo==="Entrada"?"valor-entrada":"valor-saida";
-    });
-    const acoes=tr.insertCell();
-    acoes.dataset.label="Ações";
-    const pago=estaPago(item);
-    const botaoPagamento=viewKey==="saidas"?`<button type="button" class="btn-acao btn-payment ${pago?"btn-payment-paid":""}" onclick="alternarPagamento(${item.id},${pago?"false":"true"},${item.historico?"true":"false"})" aria-label="${pago?"Marcar como não pago":"Marcar como pago"}">${pago?"✓ Pago":"Pagar"}</button>`:"";
-    const indicadorHistorico=item.historico?'<span class="history-row-badge">Histórico</span>':"";
-    const botaoExcluir=item.historico?"":`<button type="button" class="btn-acao btn-delete" onclick="excluir(${item.id})" aria-label="Excluir">🗑️</button>`;
-    acoes.innerHTML=`<div class="acoes-tabela">${indicadorHistorico}${botaoPagamento}<button type="button" class="btn-acao btn-edit" onclick="editar(${item.id},${item.historico?"true":"false"})" aria-label="Editar">✏️</button>${botaoExcluir}</div>`;
-  });
-  totalPagina.textContent=moeda(total);
-  totalPagina.classList.remove("loading-value");
-  selecionadosResumo.textContent=`${selecionados.length} ${selecionados.length===1?"selecionado":"selecionados"}`;
-  totalSelecionado.textContent=moeda(valorSelecionado);
-  totalRestante.textContent=moeda(totalTabela-valorSelecionado);
-  atualizarSelecionarTodos(lista,selecionados.length);
-  contadorLancamentos.textContent=`${lista.length} ${lista.length===1?"lançamento":"lançamentos"}`;
-  pageInfo.textContent=`Página ${paginaAtual} de ${totalPaginas}`;
-  prevBtn.disabled=paginaAtual===1;
-  nextBtn.disabled=paginaAtual===totalPaginas;
-  resumoPeriodo.textContent=datasSelecionadas.size===1?`Em ${dataLocal([...datasSelecionadas][0])}`:(datasSelecionadas.size>1?`Em ${datasSelecionadas.size} datas selecionadas`:(filtroMes.selectedIndex>0?filtroMes.options[filtroMes.selectedIndex].text:"Em todos os meses"));
+
+function parametrosConsulta() {
+  const params = new URLSearchParams({ pagina: paginaAtual, por_pagina: itensPorPagina });
+  const tipo = tipoDaPagina(), mes = filtroMes.value, busca = iptPesquisa.value.trim();
+  if (tipo) params.set("tipo", tipo); if (mes) params.set("mes", mes); if (busca) params.set("busca", busca);
+  datasSelecionadas.forEach(data => params.append("data", data));
+  return params;
 }
-async function carregar(){try{[dados,dadosHistoricos]=await Promise.all([json(await fetch("/lancamentos",{loadingMessage:"Carregando lançamentos..."})),json(await fetch("/api/financas/historico/lancamentos",{loading:false}))]);const chavesAtuais=new Set([...dados,...dadosHistoricos].map(chaveItem));[...lancamentosSelecionados].forEach(chave=>{if(!chavesAtuais.has(chave))lancamentosSelecionados.delete(chave);});preencherMeses();preencherDatas();renderizar();}catch(e){tabela.innerHTML=`<tr><td colspan="7"><div class="empty-table"><strong>Erro ao carregar</strong><span>${e.message}</span></div></td></tr>`;toast(e.message,true);}}
-async function encerrarCiclo(){if(!dados.length){toast("Não há lançamentos para mover.",true);return;}if(!confirm("Encerrar o ciclo salvará o mês atual no histórico, moverá todos os lançamentos um mês adiante e marcará as saídas como pendentes. Deseja continuar?"))return;try{const resposta=await json(await fetch("/api/financas/encerrar-ciclo",{method:"POST",loadingMessage:"Encerrando ciclo financeiro..."}));lancamentosSelecionados.clear();datasSelecionadas.clear();paginaAtual=1;iptPesquisa.value="";filtroMes.value="";await carregar();toast(resposta.mensagem);}catch(e){toast(e.message,true);}}
-function limparFiltros(){iptPesquisa.value="";filtroMes.value="";datasSelecionadas.clear();preencherDatas();filtroData.open=false;paginaAtual=1;renderizar();}
-function editar(id,historico=false){const fonte=historico?dadosHistoricos:dados;const i=fonte.find(x=>x.id===id);if(!i)return;editId=id;editHistorico=historico;editData.value=i.data;editTipo.value=i.tipo;editDescricao.value=i.descricao;editValor.value=i.valor;editObs.value=i.obs||"";modalEdit.style.display="flex";document.body.style.overflow="hidden";}
+function preencherMeses(meses=[]) {
+  const atual=filtroMes.value, nomes=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  filtroMes.innerHTML='<option value="">Mês atual</option>';
+  meses.forEach(chave=>{const [a,m]=chave.split("-"); filtroMes.add(new Option(`${nomes[Number(m)-1]}/${a}`,chave));});
+  filtroMes.value=meses.includes(atual)?atual:"";
+}
+function atualizarResumoDatas(){const n=datasSelecionadas.size;filtroDataResumo.textContent=n===0?"Todas as datas":n===1?dataLocal([...datasSelecionadas][0]):`${n} datas`;}
+function preencherDatas(disponiveis=[]) {
+  [...datasSelecionadas].forEach(data=>{if(!disponiveis.includes(data))datasSelecionadas.delete(data);}); filtroDataOpcoes.replaceChildren();
+  if(!disponiveis.length){const vazio=document.createElement("span");vazio.className="date-filter-empty";vazio.textContent="Nenhuma data disponível";filtroDataOpcoes.append(vazio);}
+  disponiveis.forEach(data=>{const label=document.createElement("label"),input=document.createElement("input"),texto=document.createElement("span");input.type="checkbox";input.value=data;input.checked=datasSelecionadas.has(data);input.setAttribute("aria-label",dataLocal(data));texto.textContent=dataLocal(data);input.addEventListener("change",()=>{input.checked?datasSelecionadas.add(data):datasSelecionadas.delete(data);atualizarResumoDatas();paginaAtual=1;carregar();});label.append(input,texto);filtroDataOpcoes.append(label);}); atualizarResumoDatas();
+}
+function atualizarSelecionarTodos(lista){const checkbox=document.getElementById("selecionarTodos");if(!checkbox)return;const n=lista.filter(i=>lancamentosSelecionados.has(chaveItem(i))).length;checkbox.disabled=!lista.length;checkbox.checked=lista.length>0&&n===lista.length;checkbox.indeterminate=n>0&&n<lista.length;checkbox.setAttribute("aria-label",checkbox.checked?"Desmarcar os itens desta página":"Selecionar os itens desta página");}
+function alternarTodos(marcar){(respostaAtual?.itens||[]).forEach(item=>{const chave=chaveItem(item);if(marcar){lancamentosSelecionados.add(chave);valoresSelecionados.set(chave,Number(item.valor||0));}else{lancamentosSelecionados.delete(chave);valoresSelecionados.delete(chave);}});renderizar();}
+
+function renderizar(){
+  const lista=respostaAtual?.itens||[], pag=respostaAtual?.paginacao||{pagina:1,paginas:1,total:0};
+  const total=Number(viewKey==="saldo"?respostaAtual?.totais?.saldo:respostaAtual?.totais?.bruto)||0, totalTabela=Number(respostaAtual?.totais?.bruto||0), valorSelecionado=[...valoresSelecionados.values()].reduce((s,v)=>s+v,0);
+  tabela.replaceChildren();
+  if(!lista.length){const tr=tabela.insertRow(),td=tr.insertCell();td.colSpan=7;td.innerHTML='<div class="empty-table"><strong>Nenhum lançamento encontrado</strong><span>Ajuste os filtros ou use o botão Novo lançamento acima.</span></div>';}
+  lista.forEach(item=>{
+    const tr=tabela.insertRow(),chave=chaveItem(item),historico=Boolean(Number(item.historico));
+    if(viewKey==="saidas"&&estaPago(item))tr.classList.add("item-paid");if(lancamentosSelecionados.has(chave))tr.classList.add("item-selected");if(historico)tr.classList.add("item-history");
+    const selecao=tr.insertCell(),checkbox=document.createElement("input");selecao.className="selection-cell";checkbox.type="checkbox";checkbox.className="item-checkbox";checkbox.checked=lancamentosSelecionados.has(chave);checkbox.setAttribute("aria-label",`Selecionar ${item.descricao||"lançamento"}`);checkbox.addEventListener("change",()=>{if(checkbox.checked){lancamentosSelecionados.add(chave);valoresSelecionados.set(chave,Number(item.valor||0));}else{lancamentosSelecionados.delete(chave);valoresSelecionados.delete(chave);}renderizar();});selecao.appendChild(checkbox);
+    const rotulos=["Data","Tipo","Descrição","Valor","Observação"];
+    [dataLocal(item.data),item.tipo,item.descricao,moeda(item.valor),item.obs||"—"].forEach((valor,n)=>{const td=tr.insertCell();td.textContent=valor;td.dataset.label=rotulos[n];if(n===4)td.className="desktop-only";if(n===3)td.className=item.tipo==="Entrada"?"valor-entrada":"valor-saida";});
+    const acoes=tr.insertCell(),pago=estaPago(item);acoes.dataset.label="Ações";const botaoPagamento=viewKey==="saidas"?`<button type="button" class="btn-acao btn-payment ${pago?"btn-payment-paid":""}" onclick="alternarPagamento(${item.id},${pago?"false":"true"},${historico})">${pago?"✓ Pago":"Pagar"}</button>`:"";const indicadorHistorico=historico?'<span class="history-row-badge">Histórico</span>':"";const botaoExcluir=historico?"":`<button type="button" class="btn-acao btn-delete" onclick="excluir(${item.id})" aria-label="Excluir">🗑️</button>`;acoes.innerHTML=`<div class="acoes-tabela">${indicadorHistorico}${botaoPagamento}<button type="button" class="btn-acao btn-edit" onclick="editar(${item.id},${historico})" aria-label="Editar">✏️</button>${botaoExcluir}</div>`;
+  });
+  totalPagina.textContent=moeda(total);totalPagina.classList.remove("loading-value");selecionadosResumo.textContent=`${lancamentosSelecionados.size} ${lancamentosSelecionados.size===1?"selecionado":"selecionados"}`;totalSelecionado.textContent=moeda(valorSelecionado);totalRestante.textContent=moeda(totalTabela-valorSelecionado);atualizarSelecionarTodos(lista);contadorLancamentos.textContent=`${pag.total} ${pag.total===1?"lançamento":"lançamentos"}`;pageInfo.textContent=`Página ${pag.pagina} de ${pag.paginas}`;prevBtn.disabled=pag.pagina===1;nextBtn.disabled=pag.pagina===pag.paginas;resumoPeriodo.textContent=datasSelecionadas.size===1?`Em ${dataLocal([...datasSelecionadas][0])}`:(datasSelecionadas.size>1?`Em ${datasSelecionadas.size} datas selecionadas`:(filtroMes.selectedIndex>0?filtroMes.options[filtroMes.selectedIndex].text:"No ciclo atual"));
+}
+async function carregar(){try{const resposta=await json(await fetch(`/api/financas/lancamentos?${parametrosConsulta()}`,{loadingMessage:"Carregando lançamentos..."}));respostaAtual=resposta;paginaAtual=resposta.paginacao.pagina;dados=resposta.itens.filter(i=>!Number(i.historico));dadosHistoricos=resposta.itens.filter(i=>Number(i.historico));preencherMeses(resposta.filtros.meses);preencherDatas(resposta.filtros.datas);renderizar();}catch(e){tabela.innerHTML=`<tr><td colspan="7"><div class="empty-table"><strong>Erro ao carregar</strong><span>${e.message}</span></div></td></tr>`;toast(e.message,true);}}
+async function encerrarCiclo(){if(!confirm("Encerrar o ciclo salvará o mês atual no histórico, moverá todos os lançamentos um mês adiante e marcará as saídas como pendentes. Deseja continuar?"))return;try{const resposta=await json(await fetch("/api/financas/encerrar-ciclo",{method:"POST",loadingMessage:"Encerrando ciclo financeiro..."}));lancamentosSelecionados.clear();valoresSelecionados.clear();datasSelecionadas.clear();paginaAtual=1;iptPesquisa.value="";filtroMes.value="";await carregar();toast(resposta.mensagem);}catch(e){toast(e.message,true);}}
+function limparFiltros(){iptPesquisa.value="";filtroMes.value="";datasSelecionadas.clear();filtroData.open=false;paginaAtual=1;carregar();}
+function itemAtual(id,historico=false){return (respostaAtual?.itens||[]).find(i=>i.id===id&&Boolean(Number(i.historico))===historico);}
+function editar(id,historico=false){const i=itemAtual(id,historico);if(!i)return;editId=id;editHistorico=historico;editData.value=i.data;editTipo.value=i.tipo;editDescricao.value=i.descricao;editValor.value=i.valor;editObs.value=i.obs||"";modalEdit.style.display="flex";document.body.style.overflow="hidden";}
 function fecharModalEdit(){modalEdit.style.display="none";document.body.style.overflow="";editId=null;editHistorico=false;}
-async function salvarEdicao(){const body={data:editData.value,tipo:editTipo.value,descricao:editDescricao.value.trim(),valor:Number(editValor.value),obs:editObs.value.trim()};if(!body.data||!body.descricao||body.valor<=0){erroEdicao.textContent="Preencha os campos obrigatórios.";erroEdicao.style.display="block";return;}try{const eraHistorico=editHistorico;const url=eraHistorico?`/api/financas/historico/lancamentos/${editId}`:`/lancamentos/${editId}`;await json(await fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),loadingMessage:"Atualizando lançamento..."}));fecharModalEdit();await carregar();toast(eraHistorico?"Lançamento do histórico atualizado.":"Lançamento atualizado.");}catch(e){erroEdicao.textContent=e.message;erroEdicao.style.display="block";}}
-async function excluir(id){const i=dados.find(x=>x.id===id);if(!i||!confirm(`Excluir o lançamento “${i.descricao}”?`))return;try{await json(await fetch(`/lancamentos/${id}`,{method:"DELETE",loadingMessage:"Excluindo lançamento..."}));await carregar();toast("Lançamento excluído.");}catch(e){toast(e.message,true);}}
-async function alternarPagamento(id,pago,historico=false){const fonte=historico?dadosHistoricos:dados;const item=fonte.find(x=>x.id===id);if(!item||item.tipo!=="Saída")return;try{const url=historico?`/api/financas/historico/lancamentos/${id}/pagamento`:`/lancamentos/${id}/pagamento`;const resposta=await json(await fetch(url,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({pago}),loadingMessage:pago?"Marcando como pago...":"Reabrindo pagamento..."}));item.pago=resposta.pago?1:0;renderizar();toast(resposta.pago?"Lançamento marcado como pago.":"Lançamento marcado como pendente.");}catch(e){toast(e.message,true);}}
-function abrirNovoLancamento(){const tipo=viewKey==="saidas"?"Saída":"Entrada";novoData.value=new Date().toISOString().slice(0,10);novoTipo.value=tipo;novoDescricao.value="";novoValor.value="";novoObs.value="";erroNovoLancamento.style.display="none";modalNovoLancamento.style.display="flex";document.body.style.overflow="hidden";novoDescricao.focus();}
+async function salvarEdicao(){const body={data:editData.value,tipo:editTipo.value,descricao:editDescricao.value.trim(),valor:Number(editValor.value),obs:editObs.value.trim()};if(!body.data||!body.descricao||body.valor<=0){erroEdicao.textContent="Preencha os campos obrigatórios.";erroEdicao.style.display="block";return;}try{const eraHistorico=editHistorico,url=eraHistorico?`/api/financas/historico/lancamentos/${editId}`:`/lancamentos/${editId}`;await json(await fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),loadingMessage:"Atualizando lançamento..."}));fecharModalEdit();await carregar();toast(eraHistorico?"Lançamento do histórico atualizado.":"Lançamento atualizado.");}catch(e){erroEdicao.textContent=e.message;erroEdicao.style.display="block";}}
+async function excluir(id){const i=itemAtual(id,false);if(!i||!confirm(`Excluir o lançamento “${i.descricao}”?`))return;try{await json(await fetch(`/lancamentos/${id}`,{method:"DELETE",loadingMessage:"Excluindo lançamento..."}));await carregar();toast("Lançamento excluído.");}catch(e){toast(e.message,true);}}
+async function alternarPagamento(id,pago,historico=false){const item=itemAtual(id,historico);if(!item||item.tipo!=="Saída")return;try{const url=historico?`/api/financas/historico/lancamentos/${id}/pagamento`:`/lancamentos/${id}/pagamento`;const resposta=await json(await fetch(url,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({pago}),loadingMessage:pago?"Marcando como pago...":"Reabrindo pagamento..."}));item.pago=resposta.pago?1:0;renderizar();toast(resposta.pago?"Lançamento marcado como pago.":"Lançamento marcado como pendente.");}catch(e){toast(e.message,true);}}
+function abrirNovoLancamento(){novoData.value=new Date().toISOString().slice(0,10);novoTipo.value=viewKey==="saidas"?"Saída":"Entrada";novoDescricao.value="";novoValor.value="";novoObs.value="";erroNovoLancamento.style.display="none";modalNovoLancamento.style.display="flex";document.body.style.overflow="hidden";novoDescricao.focus();}
 function fecharNovoLancamento(){modalNovoLancamento.style.display="none";document.body.style.overflow="";}
-async function salvarNovoLancamento(){const body={data:novoData.value,tipo:novoTipo.value,descricao:novoDescricao.value.trim(),valor:Number(novoValor.value),obs:novoObs.value.trim()};if(!body.data||!body.descricao||body.valor<=0){erroNovoLancamento.textContent="Preencha data, descrição e um valor maior que zero.";erroNovoLancamento.style.display="block";return;}try{await json(await fetch("/lancamentos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),loadingMessage:"Salvando lançamento..."}));fecharNovoLancamento();await carregar();toast("Lançamento salvo com sucesso.");}catch(e){erroNovoLancamento.textContent=e.message;erroNovoLancamento.style.display="block";}}
+async function salvarNovoLancamento(){const body={data:novoData.value,tipo:novoTipo.value,descricao:novoDescricao.value.trim(),valor:Number(novoValor.value),obs:novoObs.value.trim()};if(!body.data||!body.descricao||body.valor<=0){erroNovoLancamento.textContent="Preencha data, descrição e um valor maior que zero.";erroNovoLancamento.style.display="block";return;}try{await json(await fetch("/lancamentos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),loadingMessage:"Salvando lançamento..."}));fecharNovoLancamento();paginaAtual=1;await carregar();toast("Lançamento salvo com sucesso.");}catch(e){erroNovoLancamento.textContent=e.message;erroNovoLancamento.style.display="block";}}
 window.limparFiltros=limparFiltros;window.editar=editar;window.excluir=excluir;window.alternarPagamento=alternarPagamento;window.encerrarCiclo=encerrarCiclo;window.fecharModalEdit=fecharModalEdit;window.salvarEdicao=salvarEdicao;window.abrirNovoLancamento=abrirNovoLancamento;window.fecharNovoLancamento=fecharNovoLancamento;window.salvarNovoLancamento=salvarNovoLancamento;
-window.addEventListener("DOMContentLoaded",()=>{iptPesquisa.addEventListener("input",()=>{paginaAtual=1;renderizar();});filtroMes.addEventListener("change",()=>{preencherDatas();paginaAtual=1;renderizar();});document.getElementById("selecionarTodos").addEventListener("change",e=>alternarTodos(e.currentTarget.checked));prevBtn.addEventListener("click",()=>{if(paginaAtual>1){paginaAtual--;renderizar();}});nextBtn.addEventListener("click",()=>{paginaAtual++;renderizar();});modalNovoLancamento.addEventListener("mousedown",e=>{if(e.target===modalNovoLancamento)fecharNovoLancamento();});document.addEventListener("click",e=>{if(filtroData.open&&!filtroData.contains(e.target))filtroData.open=false;});carregar();});
+window.addEventListener("DOMContentLoaded",()=>{iptPesquisa.addEventListener("input",()=>{clearTimeout(buscaTimer);buscaTimer=setTimeout(()=>{paginaAtual=1;carregar();},250);});filtroMes.addEventListener("change",()=>{datasSelecionadas.clear();paginaAtual=1;carregar();});document.getElementById("selecionarTodos").addEventListener("change",e=>alternarTodos(e.currentTarget.checked));prevBtn.addEventListener("click",()=>{if(paginaAtual>1){paginaAtual--;carregar();}});nextBtn.addEventListener("click",()=>{if(paginaAtual<(respostaAtual?.paginacao?.paginas||1)){paginaAtual++;carregar();}});modalNovoLancamento.addEventListener("mousedown",e=>{if(e.target===modalNovoLancamento)fecharNovoLancamento();});document.addEventListener("click",e=>{if(filtroData.open&&!filtroData.contains(e.target))filtroData.open=false;});carregar();});

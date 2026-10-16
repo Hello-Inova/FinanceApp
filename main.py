@@ -4,6 +4,8 @@ import logging
 import os
 import re
 import secrets
+import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -29,8 +31,9 @@ from database import (
     criar_tabelas, criar_token_recuperacao, criar_usuario, email_usuario_existe, excluir_agenda, excluir_compra,
     encerrar_ciclo_financeiro, excluir_lancamento, excluir_meta, excluir_usuario,
     finalizar_cadastro, healthcheck,
-    listar_agenda, listar_compras, listar_historico_ciclos, listar_lancamentos,
-    listar_lancamentos_historicos, listar_metas, listar_movimentacoes_meta,
+    listar_agenda, listar_compras, listar_compras_paginadas, listar_historico_ciclos,
+    listar_lancamentos, listar_lancamentos_historicos, listar_lancamentos_paginados,
+    listar_metas, listar_movimentacoes_meta, resumo_lancamentos,
     listar_usuarios, rate_limit_limpar, rate_limit_permitir, redefinir_senha_com_token,
     registrar_evento_asaas, registrar_movimentacao_meta, salvar_assinatura_usuario,
     salvar_cliente_asaas_usuario, salvar_ou_atualizar_configuracoes,
@@ -57,8 +60,16 @@ if not app.config["SECRET_KEY"]:
         raise RuntimeError("SECRET_KEY deve ser configurada no ambiente.")
 
 csrf = CSRFProtect(app)
-criar_tabelas()
-criar_admin_inicial()
+if (
+    os.getenv("APP_ENV", "production") == "development"
+    or os.getenv("RUN_DB_MIGRATIONS_ON_STARTUP", "false").lower() == "true"
+):
+    criar_tabelas()
+if (
+    os.getenv("APP_ENV", "production") == "development"
+    or os.getenv("BOOTSTRAP_ADMIN_ON_STARTUP", "false").lower() == "true"
+):
+    criar_admin_inicial()
 
 PERFIS = {"Padrão", "Administrativo"}
 TIPOS_LANCAMENTO = {"Entrada", "Saída"}
@@ -405,11 +416,44 @@ def ip_cliente():
     return request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or request.remote_addr or "desconhecido"
 
 
+_USUARIO_CACHE = {}
+_USUARIO_CACHE_LOCK = threading.Lock()
+_USUARIO_CACHE_TTL = (
+    0 if os.getenv("APP_ENV", "production") == "development"
+    else max(0, min(float(os.getenv("USER_CACHE_TTL_SECONDS", "10")), 60))
+)
+
+
+def _buscar_usuario_sessao(usuario_id):
+    if not usuario_id or _USUARIO_CACHE_TTL <= 0:
+        return buscar_usuario_por_id(usuario_id) if usuario_id else None
+    agora = time.monotonic()
+    with _USUARIO_CACHE_LOCK:
+        item = _USUARIO_CACHE.get(usuario_id)
+        if item and agora - item[0] < _USUARIO_CACHE_TTL:
+            return dict(item[1])
+    usuario = buscar_usuario_por_id(usuario_id)
+    with _USUARIO_CACHE_LOCK:
+        if usuario:
+            _USUARIO_CACHE[usuario_id] = (agora, dict(usuario))
+        else:
+            _USUARIO_CACHE.pop(usuario_id, None)
+    return usuario
+
+
+def invalidar_cache_usuario(usuario_id=None):
+    with _USUARIO_CACHE_LOCK:
+        if usuario_id is None:
+            _USUARIO_CACHE.clear()
+        else:
+            _USUARIO_CACHE.pop(usuario_id, None)
+
+
 def usuario_atual():
     if hasattr(g, "usuario_atual"):
         return g.usuario_atual
     usuario_id = session.get("usuario_id")
-    usuario = buscar_usuario_por_id(usuario_id) if usuario_id else None
+    usuario = _buscar_usuario_sessao(usuario_id)
     if usuario_id and (
         not usuario
         or usuario["ativo"] != 1
@@ -440,6 +484,11 @@ def admin_obrigatorio(funcao):
             return resposta_erro("Acesso negado.", 403)
         return funcao(*args, **kwargs)
     return wrapper
+
+
+@app.before_request
+def iniciar_metrica_requisicao():
+    g.request_started_at = time.perf_counter()
 
 
 @app.before_request
@@ -486,6 +535,15 @@ def exigir_assinatura_ativa():
 
 @app.after_request
 def cabecalhos_seguranca(response):
+    iniciado = getattr(g, "request_started_at", None)
+    if iniciado is not None:
+        duracao_ms = (time.perf_counter() - iniciado) * 1000
+        response.headers["Server-Timing"] = f'app;dur={duracao_ms:.1f}'
+        if duracao_ms >= 750:
+            logger.warning(
+                "Requisição lenta method=%s path=%s status=%s duration_ms=%.1f",
+                request.method, request.path, response.status_code, duracao_ms,
+            )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -677,6 +735,7 @@ def login():
     if not usuario:
         return resposta_erro("Credenciais inválidas.", 401)
     rate_limit_limpar(chave)
+    invalidar_cache_usuario()
     session.clear()
     session.permanent = True
     session["usuario_id"] = usuario["id"]
@@ -755,6 +814,7 @@ def alterar_senha_conta():
     nova_versao = alterar_senha_propria(usuario_atual()["id"], senha_atual, nova_senha)
     if nova_versao is None:
         return resposta_erro("Senha atual incorreta.", 401)
+    invalidar_cache_usuario(usuario_atual()["id"])
     session["session_version"] = nova_versao
     return jsonify({"status": "ok"})
 
@@ -802,6 +862,7 @@ def admin_atualizar_dados_usuario(usuario_id):
         if usuario_id == usuario_atual()["id"] and perfil != "Administrativo":
             raise ValueError("Você não pode remover seu próprio acesso administrativo.")
         atualizar_dados_usuario(usuario_id, nome, email, perfil)
+        invalidar_cache_usuario(usuario_id)
         if usuario_id == usuario_atual()["id"]:
             session.clear()
         return jsonify({"status": "ok"})
@@ -821,6 +882,7 @@ def admin_status_usuario(usuario_id):
     if not isinstance(ativo, bool):
         return resposta_erro("Status inválido.")
     atualizar_status_usuario(usuario_id, ativo)
+    invalidar_cache_usuario(usuario_id)
     return jsonify({"status": "ok"})
 
 
@@ -832,6 +894,7 @@ def admin_alterar_senha(usuario_id):
     except ValueError as erro:
         return resposta_erro(str(erro))
     alterar_senha_usuario(usuario_id, senha, force_change=1)
+    invalidar_cache_usuario(usuario_id)
     if usuario_id == usuario_atual()["id"]:
         session.clear()
     return jsonify({"status": "ok"})
@@ -843,6 +906,7 @@ def admin_excluir_usuario(usuario_id):
     if usuario_id == usuario_atual()["id"]:
         return resposta_erro("Você não pode excluir seu próprio usuário.")
     excluir_usuario(usuario_id)
+    invalidar_cache_usuario(usuario_id)
     return jsonify({"status": "ok"})
 
 
@@ -909,6 +973,37 @@ def alterar_pagamento_lancamento(lancamento_id):
 @login_obrigatorio
 def api_financas():
     return jsonify(listar_lancamentos(usuario_atual()["id"]))
+
+
+@app.route("/api/financas/resumo")
+@login_obrigatorio
+def api_resumo_financeiro():
+    return jsonify(resumo_lancamentos(usuario_atual()["id"]))
+
+
+@app.route("/api/financas/lancamentos")
+@login_obrigatorio
+def api_lancamentos_paginados():
+    try:
+        pagina = int(request.args.get("pagina", 1))
+        por_pagina = int(request.args.get("por_pagina", 8))
+    except (TypeError, ValueError):
+        return resposta_erro("Paginação inválida.")
+    mes = request.args.get("mes", "").strip()
+    tipo = request.args.get("tipo", "").strip() or None
+    if tipo and tipo not in TIPOS_LANCAMENTO:
+        return resposta_erro("Tipo de lançamento inválido.")
+    datas = request.args.getlist("data")
+    try:
+        datas = [data_iso(valor) for valor in datas]
+    except ValueError as erro:
+        return resposta_erro(str(erro))
+    return jsonify(listar_lancamentos_paginados(
+        usuario_atual()["id"], pagina=pagina, por_pagina=por_pagina,
+        tipo=tipo, mes=mes or None, datas=datas,
+        busca=request.args.get("busca", "").strip() or None,
+        incluir_historico=bool(mes) or request.args.get("historico") == "1",
+    ))
 
 
 @app.route("/api/financas/encerrar-ciclo", methods=["POST"])
@@ -991,6 +1086,18 @@ def validar_compra(dados):
 @app.route("/api/compras", methods=["GET"])
 @login_obrigatorio
 def api_listar_compras():
+    if request.args.get("paginado") == "1":
+        try:
+            pagina = int(request.args.get("pagina", 1))
+            por_pagina = int(request.args.get("por_pagina", 6))
+        except (TypeError, ValueError):
+            return resposta_erro("Paginação inválida.")
+        return jsonify(listar_compras_paginadas(
+            usuario_atual()["id"], pagina=pagina, por_pagina=por_pagina,
+            busca=request.args.get("busca", "").strip() or None,
+            categoria=request.args.get("categoria", "").strip() or None,
+            comprado=request.args.get("comprado", ""),
+        ))
     return jsonify(listar_compras(usuario_atual()["id"]))
 
 
@@ -1287,6 +1394,7 @@ def api_assinatura():
         salvar_assinatura_usuario(
             usuario["id"], subscription_id, metodo, status_local, proximo, payment_id
         )
+        invalidar_cache_usuario(usuario["id"])
         resposta = {
             "status": status_local,
             "metodo": metodo,
