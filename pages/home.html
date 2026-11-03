@@ -30,7 +30,7 @@
       <header class="home-table-header">
         <div><span class="eyebrow">Movimentações</span><h2 id="tituloLancamentosDesktop">Lançamentos recentes</h2><p id="contadorLancamentosDesktop">Carregando lançamentos...</p></div>
         <div class="selection-totals" aria-live="polite">
-          <label class="select-all-control" for="selecionarTodosDesktop"><input id="selecionarTodosDesktop" class="item-checkbox" type="checkbox"><span>Selecionar todos</span></label>
+          <div class="home-filter-total balance-total"><span id="saldoPeriodoRotuloDesktop">Saldo do período</span><strong id="saldoPeriodoDesktop">R$ 0,00</strong></div>
           <div class="home-filter-total"><span>Total da tabela</span><strong id="totalFiltradoDesktop">R$ 0,00</strong></div>
           <div class="home-filter-total"><span id="selecionadosResumoDesktop">0 selecionados</span><strong id="totalSelecionadoDesktop">R$ 0,00</strong></div>
           <div class="home-filter-total remaining-total"><span>Total restante</span><strong id="totalRestanteDesktop">R$ 0,00</strong></div>
@@ -47,7 +47,7 @@
       <div class="table-card home-table-card">
         <div class="table-wrapper">
           <table aria-label="Lançamentos financeiros">
-            <thead><tr><th><span class="sr-only">Selecionar</span></th><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Observação</th><th>Ações</th></tr></thead>
+            <thead><tr><th class="selection-header"><input id="selecionarTodosDesktop" class="item-checkbox" type="checkbox" aria-label="Selecionar todos os lançamentos desta página"></th><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Observação</th><th>Ações</th></tr></thead>
             <tbody id="tabelaDesktop"><tr><td colspan="7"><div class="table-loading"><span></span>Carregando lançamentos...</div></td></tr></tbody>
           </table>
         </div>
@@ -82,6 +82,6 @@
     </div>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="{{ url_for('static', filename='js/security.js', v=3) }}"></script><script src="{{ url_for('static', filename='js/menu.js', v=9) }}"></script><script src="{{ url_for('static', filename='js/home.js', v=7) }}"></script>
+  <script src="{{ url_for('static', filename='js/security.js', v=3) }}"></script><script src="{{ url_for('static', filename='js/menu.js', v=9) }}"></script><script src="{{ url_for('static', filename='js/home.js', v=8) }}"></script>
 </body>
 </html>

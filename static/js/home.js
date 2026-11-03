@@ -117,6 +117,7 @@ function renderizarTabelaDesktop() {
   const totalPaginas = paginacao.paginas;
   paginaDesktop = paginacao.pagina;
   const totalTabela = Number(respostaTabelaDesktop?.totais?.bruto || 0);
+  const saldoDoPeriodo = Number(respostaTabelaDesktop?.totais?.saldo_periodo || 0);
   const selecionados = pagina.filter(item => lancamentosSelecionadosDesktop.has(item.id));
   const valorSelecionado = selecionados.reduce((total, item) => total + Number(item.valor || 0), 0);
   const totalRestante = totalTabela - valorSelecionado;
@@ -141,6 +142,10 @@ function renderizarTabelaDesktop() {
   });
   document.getElementById("contadorLancamentosDesktop").textContent = `${paginacao.total} ${paginacao.total === 1 ? "lançamento encontrado" : "lançamentos encontrados"}`;
   document.getElementById("totalFiltradoDesktop").textContent = formatarMoeda(totalTabela);
+  const saldoPeriodoDesktop = document.getElementById("saldoPeriodoDesktop");
+  saldoPeriodoDesktop.textContent = formatarMoeda(saldoDoPeriodo);
+  document.getElementById("saldoPeriodoRotuloDesktop").textContent = datasSelecionadasDesktop.size === 1 ? "Saldo da data" : datasSelecionadasDesktop.size > 1 ? "Saldo das datas" : "Saldo do período";
+  saldoPeriodoDesktop.closest(".balance-total")?.classList.toggle("is-negative", saldoDoPeriodo < 0);
   document.getElementById("selecionadosResumoDesktop").textContent = `${selecionados.length} ${selecionados.length === 1 ? "selecionado" : "selecionados"}`;
   document.getElementById("totalSelecionadoDesktop").textContent = formatarMoeda(valorSelecionado);
   document.getElementById("totalRestanteDesktop").textContent = formatarMoeda(totalRestante);

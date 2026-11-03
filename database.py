@@ -1244,22 +1244,33 @@ def listar_lancamentos_paginados(
 
     filtros = []
     parametros_filtro = []
+    filtros_saldo = []
+    parametros_saldo = []
     if tipo in {"Entrada", "Saída"}:
         filtros.append("tipo = ?")
         parametros_filtro.append(tipo)
     if mes:
         filtros.append("CAST(data AS TEXT) LIKE ?")
         parametros_filtro.append(f"{str(mes)[:7]}%")
+        filtros_saldo.append("CAST(data AS TEXT) LIKE ?")
+        parametros_saldo.append(f"{str(mes)[:7]}%")
     if datas:
         marcadores = ", ".join("?" for _ in datas)
         filtros.append(f"CAST(data AS TEXT) IN ({marcadores})")
         parametros_filtro.extend(datas)
+        filtros_saldo.append(f"CAST(data AS TEXT) IN ({marcadores})")
+        parametros_saldo.extend(datas)
     if busca:
         filtros.append(
             "LOWER(COALESCE(descricao, '') || ' ' || COALESCE(obs, '') || ' ' || "
             "CAST(valor AS TEXT)) LIKE ?"
         )
         parametros_filtro.append(f"%{str(busca).strip().lower()}%")
+        filtros_saldo.append(
+            "LOWER(COALESCE(descricao, '') || ' ' || COALESCE(obs, '') || ' ' || "
+            "CAST(valor AS TEXT)) LIKE ?"
+        )
+        parametros_saldo.append(f"%{str(busca).strip().lower()}%")
 
     where = " WHERE " + " AND ".join(filtros) if filtros else ""
     base = f"FROM ({fonte}) origem{where}"
@@ -1273,6 +1284,15 @@ def listar_lancamentos_paginados(
         parametros,
     )
     totais = cursor.fetchone()
+    saldo_periodo = totais["total_saldo"]
+    if tipo in {"Entrada", "Saída"}:
+        where_saldo = " WHERE " + " AND ".join(filtros_saldo) if filtros_saldo else ""
+        cursor.execute(
+            "SELECT COALESCE(SUM(CASE WHEN tipo = 'Saída' THEN -valor ELSE valor END), 0) "
+            f"AS saldo_periodo FROM ({fonte}) origem{where_saldo}",
+            tuple(parametros_fonte + parametros_saldo),
+        )
+        saldo_periodo = cursor.fetchone()["saldo_periodo"]
     total = int(totais["quantidade"] or 0)
     paginas = max(1, (total + por_pagina - 1) // por_pagina)
     pagina = min(pagina, paginas)
@@ -1324,6 +1344,7 @@ def listar_lancamentos_paginados(
         },
         "totais": {
             "bruto": totais["total_bruto"], "saldo": totais["total_saldo"],
+            "saldo_periodo": saldo_periodo,
         },
         "filtros": {"meses": meses, "datas": opcoes_datas},
     }

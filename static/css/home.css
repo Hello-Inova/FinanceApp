@@ -334,6 +334,10 @@ input:focus, select:focus { border-color: var(--interactive); }
 .selection-total strong { color: var(--on-surface); font-size: 1rem; }
 .remaining-total { border-color: rgba(56, 189, 248, .28); background: rgba(14, 165, 233, .08); }
 .remaining-total strong { color: #7dd3fc; }
+.balance-total { border-color: rgba(34, 197, 94, .3); background: rgba(34, 197, 94, .09); }
+.balance-total strong { color: #86efac; }
+.balance-total.is-negative { border-color: rgba(248, 113, 113, .32); background: rgba(239, 68, 68, .09); }
+.balance-total.is-negative strong { color: #fca5a5; }
 
 .select-all-control {
   display: inline-flex;
@@ -354,6 +358,8 @@ input:focus, select:focus { border-color: var(--interactive); }
 .select-all-control:has(input:disabled) { cursor: not-allowed; opacity: .5; }
 
 .selection-cell { width: 50px; text-align: center; }
+.selection-header { width: 50px; text-align: center; }
+.selection-header .item-checkbox { vertical-align: middle; }
 .item-checkbox {
   position: relative;
   width: 19px;
@@ -744,7 +750,7 @@ tbody tr:last-child td { border-bottom: 0; }
   .section-heading { align-items: flex-end; }
   .transactions-section .section-heading { align-items: stretch; flex-direction: column; }
   .transactions-section .selection-totals { display: grid; grid-template-columns: 1fr 1fr; }
-  .transactions-section .select-all-control { grid-column: 1 / -1; justify-content: center; }
+  .transactions-section .balance-total { grid-column: 1 / -1; }
   .selection-total { min-width: 0; }
   .table-card { border-radius: 15px; }
   .table-wrapper { overflow: visible; }
@@ -779,6 +785,7 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 
 @media (max-width: 380px) {
+  .transactions-section .selection-totals { grid-template-columns: 1fr; }
   .paginacao { grid-template-columns: 1fr; }
   #pageInfo, #prevBtn, #nextBtn { grid-column: 1; }
   #pageInfo { grid-row: 1; }

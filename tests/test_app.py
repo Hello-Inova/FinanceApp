@@ -421,6 +421,7 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert pagina_api["paginacao"]["total"] == 1
     assert len(pagina_api["itens"]) == 1
     assert float(pagina_api["totais"]["bruto"]) == 125.5
+    assert float(pagina_api["totais"]["saldo_periodo"]) == 125.5
     assert pagina_api["filtros"]["datas"] == ["2026-09-26"]
     home = client.get("/home")
     conteudo_home = home.get_data(as_text=True)
@@ -434,6 +435,9 @@ def test_crud_financeiro_autenticado(client, csrf):
     assert 'id="totalSelecionadoDesktop"' in conteudo_home
     assert 'id="totalRestanteDesktop"' in conteudo_home
     assert 'id="selecionarTodosDesktop"' in conteudo_home
+    assert 'id="saldoPeriodoDesktop"' in conteudo_home
+    assert 'class="selection-header"><input id="selecionarTodosDesktop"' in conteudo_home
+    assert 'class="select-all-control"' not in conteudo_home
     assert "Encerrar ciclo" in conteudo_home
     assert 'id="modalHistorico"' in conteudo_home
     assert "Histórico de ciclos" in conteudo_home
@@ -447,6 +451,9 @@ def test_crud_financeiro_autenticado(client, csrf):
         assert 'id="totalSelecionado"' in conteudo
         assert 'id="totalRestante"' in conteudo
         assert 'id="selecionarTodos"' in conteudo
+        assert 'id="saldoPeriodo"' in conteudo
+        assert 'class="selection-header"><input id="selecionarTodos"' in conteudo
+        assert 'class="select-all-control"' not in conteudo
         assert "Encerrar ciclo" in conteudo
         assert "Todas as datas" in conteudo
 
@@ -484,8 +491,8 @@ def test_status_pago_persistente_apenas_em_saidas(client, csrf):
     token = csrf(client.get("/financas/saidas"))
 
     for tipo, descricao, valor in (
-        ("Entrada", "Receita sem pagamento", "200.00"),
-        ("Saída", "Conta de energia", "150.00"),
+        ("Entrada", "Receita sem pagamento", "5000.00"),
+        ("Saída", "Conta de energia", "3780.00"),
     ):
         resposta = client.post(
             "/lancamentos",
@@ -504,6 +511,12 @@ def test_status_pago_persistente_apenas_em_saidas(client, csrf):
     saida = next(item for item in lancamentos if item["tipo"] == "Saída")
     entrada = next(item for item in lancamentos if item["tipo"] == "Entrada")
     assert int(saida["pago"]) == 0
+
+    saldo_data = client.get(
+        "/api/financas/lancamentos?tipo=Sa%C3%ADda&data=2026-10-15"
+    ).json
+    assert float(saldo_data["totais"]["bruto"]) == 3780
+    assert float(saldo_data["totais"]["saldo_periodo"]) == 1220
 
     pago = client.patch(
         f"/lancamentos/{saida['id']}/pagamento",
